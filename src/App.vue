@@ -4,14 +4,21 @@
       <router-link :to="homeUrl">홈</router-link>
       <router-link :to="adoptionUrl">입양하기</router-link>
       <router-link :to="volunteerUrl">봉사활동</router-link>
-      <router-link v-if="!isAuthenticated" :to="loginUrl">로그인</router-link>
-      <router-link v-if="!isAuthenticated" :to="signupUrl"
+      <router-link v-if="!authStore.isAuthenticated" :to="loginUrl"
+        >로그인</router-link
+      >
+      <router-link v-if="!authStore.isAuthenticated" :to="signupUrl"
         >회원가입</router-link
       >
-      <router-link v-if="isAuthenticated" :to="homeUrl" @click="handleLogout"
+      <router-link
+        v-if="authStore.isAuthenticated"
+        :to="homeUrl"
+        @click="handleLogout"
         >로그아웃</router-link
       >
-      <router-link v-if="isAuthenticated" :to="profileUrl">프로필</router-link>
+      <router-link v-if="authStore.isAuthenticated" :to="profileUrl"
+        >프로필</router-link
+      >
     </nav>
 
     <router-view />
@@ -21,7 +28,7 @@
 
 <script setup>
 import { onMounted } from "vue";
-import { useAuth } from "./composables/useAuth";
+import { useAuthStore } from "./stores/auth";
 import { useRouter } from "vue-router";
 
 const homeUrl = process.env.VUE_APP_HOME;
@@ -31,13 +38,15 @@ const loginUrl = process.env.VUE_APP_LOGIN;
 const signupUrl = process.env.VUE_APP_SIGNUP;
 const profileUrl = process.env.VUE_APP_PROFILE;
 
-const { isAuthenticated, checkAuth, logout } = useAuth();
+const authStore = useAuthStore();
+
+authStore.isAuthenticated;
 
 const router = useRouter();
 
 async function handleLogout() {
   try {
-    await logout();
+    await authStore.logout();
     router.push(homeUrl);
   } catch (err) {
     alert("로그아웃 실패");
@@ -47,7 +56,7 @@ async function handleLogout() {
 }
 
 onMounted(async () => {
-  await checkAuth();
+  await authStore.getAuthStatus();
 });
 </script>
 

@@ -25,17 +25,18 @@
     <div class="divider"></div>
 
     <!-- 기관회원 로그인 -->
-    <button class="login-btn-institution" @click="loginAsInstitution">
+    <button class="login-btn-institution" @click="goToInstitutionLoginForm">
       <img src="@/assets/mail-icon.png" /> 기관회원 로그인
     </button>
 
     <!-- 회원가입 -->
-    <p class="signup-page-btn" @click="goToSignup">회원가입하기</p>
+    <p class="signup-page-btn" @click="goToSignupForm">회원가입 화면으로</p>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from "vue-router";
+import api from "@/api";
 
 const router = useRouter();
 
@@ -48,17 +49,20 @@ async function loginWithKakao() {
 // 네이버 로그인
 function loginWithNaver() {
   const naverLoginUrl = process.env.VUE_APP_API_OAUTH2_NAVER_LOGIN;
-  window.location.href = naverLoginUrl;
+  // window.location.href = naverLoginUrl;
+  api.post();
 }
 
 // 기관회원 로그인
-function loginAsInstitution() {
-  alert("기관회원 로그인 페이지 준비중...");
+function goToInstitutionLoginForm() {
+  // alert("기관회원 로그인 페이지 준비중...");
+  const institutionLoginUrl = process.env.VUE_APP_LOGIN_INSTITUTION;
+  router.push(institutionLoginUrl);
 }
 
 // 회원가입 페이지 이동
-function goToSignup() {
-  router.push(process.env.VUE_APP_SIGNUP_URL);
+function goToSignupForm() {
+  router.push(process.env.VUE_APP_SIGNUP);
 }
 </script>
 
@@ -105,6 +109,7 @@ button {
   justify-content: left;
   padding-left: 2rem;
   cursor: pointer;
+  border: 1px solid #0000005c;
 }
 
 button > img {
@@ -115,7 +120,7 @@ button > img {
 /* 카카오 로그인 */
 button.login-btn-kakao {
   background-color: #ffeb00;
-  color: #191919; /* text-gray-800 */
+  color: #000000; /* text-gray-800 */
   margin-bottom: 0.75rem; /* mb-3 */
 }
 

@@ -141,7 +141,9 @@ const handleSubmit = async () => {
     router.push(adoptionFormUrl);
   } catch (err) {
     const msg = err.response.data;
+
     console.error(err.response);
+
     if (msg.species) errors.species = msg.species;
     if (msg.name) errors.name = msg.name;
     if (msg.age) errors.age = msg.age;
