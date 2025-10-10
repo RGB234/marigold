@@ -54,7 +54,7 @@ const router = useRouter();
 const handleSubmit = async () => {
   // const payload = { ...form };
   const formData = new URLSearchParams();
-  formData.append("username", form.email); // Spring Security는 username 필드 사용
+  formData.append("username", form.username);
   formData.append("password", form.password);
   try {
     const response = api.post(apiLoginInst, formData, {
