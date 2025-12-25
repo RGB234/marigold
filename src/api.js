@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // 환경변수로 API 기본 URL 설정
-const apiBase = process.env.VUE_APP_API_BASE;
+const apiBase = import.meta.env.VITE_APP_API_BASE;
 
 // Axios 인스턴스 생성
 const api = axios.create({
@@ -26,13 +26,13 @@ api.interceptors.response.use(
       // UNAUTHORIZED
       alert("UNAUTHORIZED");
       console.error(error.response);
-      // window.location.href = process.env.VUE_APP_HOME;
+      // window.location.href = import.meta.env.VITE_APP_HOME;
     }
     if (error.response?.status === 404) {
       // NOT FOUND
       alert("NOT FOUND");
       console.error(error.response);
-      // window.location.href = process.env.VUE_APP_HOME;
+      // window.location.href = import.meta.env.VITE_APP_HOME;
     }
     return Promise.reject(error);
   }

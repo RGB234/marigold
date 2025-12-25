@@ -33,21 +33,21 @@ const router = useRouter();
 
 // 카카오 로그인
 async function loginWithKakao() {
-  const kakaoLoginUrl = process.env.VUE_APP_API_OAUTH2_KAKAO_LOGIN;
+  const kakaoLoginUrl = import.meta.env.VITE_APP_API_OAUTH2_KAKAO_LOGIN;
   window.location.href = kakaoLoginUrl;
 
 }
 
 // 네이버 로그인
 function loginWithNaver() {
-  const naverLoginUrl = process.env.VUE_APP_API_OAUTH2_NAVER_LOGIN;
+  const naverLoginUrl = import.meta.env.VITE_APP_API_OAUTH2_NAVER_LOGIN;
   window.location.href = naverLoginUrl;
 
 }
 
 // 회원가입 페이지 이동
 function goToSignupForm() {
-  router.push(process.env.VUE_APP_SIGNUP);
+  router.push(import.meta.env.VITE_APP_SIGNUP);
 }
 </script>
 

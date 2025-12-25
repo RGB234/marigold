@@ -11,17 +11,17 @@ import SignupForm from "@/views/signup/SignupForm.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const routes = [
-  { name: "Home", path: process.env.VUE_APP_HOME, component: HomeForm },
-  { name: "Login", path: process.env.VUE_APP_LOGIN, component: LoginForm },
-  { name: "Signup", path: process.env.VUE_APP_SIGNUP, component: SignupForm },
+  { name: "Home", path: import.meta.env.VITE_APP_HOME, component: HomeForm },
+  { name: "Login", path: import.meta.env.VITE_APP_LOGIN, component: LoginForm },
+  { name: "Signup", path: import.meta.env.VITE_APP_SIGNUP, component: SignupForm },
   {
     name: "Adoption",
-    path: process.env.VUE_APP_ADOPTION,
+    path: import.meta.env.VITE_APP_ADOPTION,
     component: AdoptionForm,
   },
   {
     name: "Adoption_write",
-    path: process.env.VUE_APP_ADOPTION_WRITE,
+    path: import.meta.env.VITE_APP_ADOPTION_WRITE,
     component: AdoptionWriteForm,
     meta: {
       requiresAuth: true,
@@ -29,12 +29,12 @@ const routes = [
   },
   {
     name: "Volunteer",
-    path: process.env.VUE_APP_VOLUNTEER,
+    path: import.meta.env.VITE_APP_VOLUNTEER,
     component: VolunteerForm,
   },
   {
     name: "Profile",
-    path: process.env.VUE_APP_PROFILE,
+    path: import.meta.env.VITE_APP_PROFILE,
     component: ProfileForm,
   },
 ];

@@ -43,7 +43,7 @@ const handleSocialLogin = (providerName) => {
 
 // 회원가입 페이지 이동
 function goToLoginForm() {
-  router.push(process.env.VUE_APP_LOGIN);
+  router.push(import.meta.env.VITE_APP_LOGIN);
 }
 </script>
 

@@ -31,12 +31,12 @@ import { onMounted } from "vue";
 import { useAuthStore } from "./stores/auth";
 import { useRouter } from "vue-router";
 
-const homeUrl = process.env.VUE_APP_HOME;
-const adoptionUrl = process.env.VUE_APP_ADOPTION;
-const volunteerUrl = process.env.VUE_APP_VOLUNTEER;
-const loginUrl = process.env.VUE_APP_LOGIN;
-const signupUrl = process.env.VUE_APP_SIGNUP;
-const profileUrl = process.env.VUE_APP_PROFILE;
+const homeUrl = import.meta.env.VITE_APP_HOME;
+const adoptionUrl = import.meta.env.VITE_APP_ADOPTION;
+const volunteerUrl = import.meta.env.VITE_APP_VOLUNTEER;
+const loginUrl = import.meta.env.VITE_APP_LOGIN;
+const signupUrl = import.meta.env.VITE_APP_SIGNUP;
+const profileUrl = import.meta.env.VITE_APP_PROFILE;
 
 const authStore = useAuthStore();
 

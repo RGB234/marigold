@@ -10,7 +10,7 @@ export const useAuthStore = defineStore("auth", {
   actions: {
     async login(){
       try {
-        const response = await api.post(process.env.VUE_APP_API_AUTH_LOGIN);
+        const response = await api.post(import.meta.env.VITE_APP_API_AUTH_LOGIN);
         this.isAuthenticated = true;
         this.authorities.push(...response.data.authorities);
         console.info(response.data);
@@ -22,7 +22,7 @@ export const useAuthStore = defineStore("auth", {
 
     async logout() {
       try {
-        const response = await api.post(process.env.VUE_APP_API_AUTH_LOGOUT);
+        const response = await api.post(import.meta.env.VITE_APP_API_AUTH_LOGOUT);
         this.isAuthenticated = false;
         this.authorities = [];
 
@@ -35,7 +35,7 @@ export const useAuthStore = defineStore("auth", {
 
     async getAuthStatus() {
       try {
-        const response = await api.get(process.env.VUE_APP_API_AUTH_STATUS);
+        const response = await api.get(import.meta.env.VITE_APP_API_AUTH_STATUS);
         const authState = response.data;
         this.isAuthenticated = authState.authenticated;
         this.authorities.push(...authState.authorities);

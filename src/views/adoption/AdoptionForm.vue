@@ -85,8 +85,8 @@ import { onMounted } from "vue";
 import api from "@/api";
 
 // 상수 및 변수
-const adoptionWriteUrl = process.env.VUE_APP_ADOPTION_WRITE;
-const apiAdoptionInfos = process.env.VUE_APP_API_ADOPTION_ALL;
+const adoptionWriteUrl = import.meta.env.VITE_APP_ADOPTION_WRITE;
+const apiAdoptionInfos = import.meta.env.VITE_APP_API_ADOPTION_ALL;
 
 const cardData = ref([]);
 

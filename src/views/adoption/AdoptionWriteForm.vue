@@ -126,8 +126,8 @@ const errors = reactive({
 
 const router = useRouter();
 
-const apiAdoptionCreate = process.env.VUE_APP_API_ADOPTION_CREATE;
-const adoptionFormUrl = process.env.VUE_APP_ADOPTION;
+const apiAdoptionCreate = import.meta.env.VITE_APP_API_ADOPTION_CREATE;
+const adoptionFormUrl = import.meta.env.VITE_APP_ADOPTION;
 
 const handleSubmit = async () => {
   // 에러 초기화
