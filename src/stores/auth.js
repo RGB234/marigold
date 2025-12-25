@@ -8,14 +8,17 @@ export const useAuthStore = defineStore("auth", {
     authorities: [],
   }),
   actions: {
-    // login(role) {
-    //   this.isAuthenticated = true;
-    //   if (Array.isArray(role)) {
-    //     this.authorities.add(...role);
-    //   } else {
-    //     this.authorities.push(role);
-    //   }
-    // },
+    async login(){
+      try {
+        const response = await api.post(process.env.VUE_APP_API_AUTH_LOGIN);
+        this.isAuthenticated = true;
+        this.authorities.push(...response.data.authorities);
+        console.info(response.data);
+      } catch (err) {
+        alert("로그인 실패");
+        console.error("로그인 실패: ", err);
+      }
+    },
 
     async logout() {
       try {

@@ -5,54 +5,41 @@
       <img src="@/assets/logo.png" alt="Marigold" />
       <h1>Marigold</h1>
     </div>
-
-    <div class="content">
-      <div class="type-selection">
-        <button class="type-btn">개인회원</button>
-        <button class="type-btn" @click="goToSignupSubmitForm">기관회원</button>
-      </div>
-
-      <!-- 카카오 연동 -->
-      <button class="login-btn-kakao" @click="loginWithKakao">
-        <!-- <span class="mr-2">💬</span> 카카오톡으로 로그인 -->
-        <img src="@/assets/kakaotalk-icon.png" /> 카카오톡 연동 회원가입
-      </button>
-
-      <!-- 네이버 연동 -->
-      <button
-        class="login-btn-naver"
-        style="background-color: #03c75a"
-        @click="loginWithNaver"
-      >
-        <img src="@/assets/naver-icon.png" /> 네이버 연동 회원가입
-      </button>
-      <!-- 로그인 -->
-      <p class="login-page-btn" @click="goToLoginForm">로그인 화면으로</p>
+    <!-- 구분선 -->
+    <div class="divider">
+      <span class="divider-text">소셜 계정으로 회원가입</span>
     </div>
+
+    <!-- 회원가입 -->
+    <div class="social-buttons">
+      <button v-for="provider in providers" :key="provider.name" class="social-btn" :class="provider.name"
+        @click="handleSocialLogin(provider.name)" :aria-label="provider.label">
+        <img :src="provider.icon" />
+      </button>
+    </div>
+
+    <!-- 로그인 리다이렉션 -->
+    <p class="login-page-btn" @click="goToLoginForm">로그인 화면으로</p>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
+import { ref } from 'vue';
+import naverIcon from '@/assets/naver-icon.png';
+import kakaoIcon from '@/assets/kakaotalk-icon.png';
+import router from '@/router';
 
-const router = useRouter();
+// 소셜 로그인 제공자 데이터
+const providers = ref([
+  { name: 'naver', label: '네이버 로그인', icon: naverIcon },
+  { name: 'kakao', label: '카카오 로그인', icon: kakaoIcon },
+]);
 
-// 기업 회원가입 입력 양식화면 이동
-function goToSignupSubmitForm() {
-  router.push(process.env.VUE_APP_SIGNUP_SUBMIT);
-}
-
-// 카카오 로그인
-async function loginWithKakao() {
-  const kakaoLoginUrl = process.env.VUE_APP_API_OAUTH2_KAKAO_LOGIN;
-  window.location.href = kakaoLoginUrl;
-}
-
-// 네이버 로그인
-function loginWithNaver() {
-  const naverLoginUrl = process.env.VUE_APP_API_OAUTH2_NAVER_LOGIN;
-  window.location.href = naverLoginUrl;
-}
+// 로그인 클릭 핸들러
+const handleSocialLogin = (providerName) => {
+  console.log(`${providerName} 로그인 시도`);
+  // 여기에 실제 OAuth 로직 구현
+};
 
 // 회원가입 페이지 이동
 function goToLoginForm() {
@@ -62,114 +49,117 @@ function goToLoginForm() {
 
 <style scoped>
 /* 전체 화면 중앙 정렬 */
-.main-container {
+div.main-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
   justify-content: center;
+  width: 100%;
   min-height: 100vh;
   background-color: white;
 }
 
 /* 로고 영역 */
-.logo {
+div.main-container>div.logo {
   margin-bottom: 2rem;
+  /* mb-8 */
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
-.logo > img {
-  width: 12rem;
-  height: 12rem;
+div.logo>img {
+  width: 8rem;
+  height: 8rem;
   margin-bottom: 0.5rem;
+  justify-content: center;
+  align-items: center;
 }
 
-.logo > h1 {
-  font-size: 1.5rem; /* text-2xl */
+div.logo>h1 {
+  font-size: 1.5rem;
+  /* text-2xl */
   font-weight: bold;
-  color: #b45309; /* text-amber-800 */
+  color: #b45309;
+  /* text-amber-800 */
 }
 
-.content {
+/* 1. 구분선 스타일 */
+.divider {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  width: 30%;
+  min-width: 300px;
+  margin-bottom: 24px;
+  color: #888;
 }
 
-/* 회원가입 타입 선택 버튼*/
-div.type-selection {
-  display: flex;
-  width: 16rem;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-  /* overflow: hidden; */
-  border: none;
-}
-
-button.type-btn {
+.divider::before,
+.divider::after {
+  content: "";
   flex: 1;
-  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-button.type-btn:first-child {
-  border: 1.6px solid #eaa221;
-}
-
-button.type-btn:last-child {
-  border: 1px solid #0000005c;
-  border-left: none;
-}
-
-/* 로그인 버튼 공통 */
-button {
-  width: 16rem;
-  padding: 0.75rem 0;
-  font-weight: 600;
+.divider-text {
+  padding: 0 10px;
   font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* 2. 소셜 버튼 컨테이너 */
+.social-buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+/* 공통 버튼 스타일 */
+.social-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+
   display: flex;
   align-items: center;
-  justify-content: left;
-  padding-left: 2rem;
-  cursor: pointer;
-  border: 1px solid #0000005c;
-  /* border: none; */
+  justify-content: center;
+  overflow: hidden;
+
+  transition: transform 0.2s;
 }
 
-button > img {
-  width: 2rem;
-  margin-right: 1rem;
+.social-btn:hover {
+  transform: scale(1.05);
 }
 
-/* 카카오 로그인 */
-button.login-btn-kakao {
-  background-color: #ffeb00;
-  color: #191919; /* text-gray-800 */
-  border-radius: 0.5rem; /* rounded-lg */
+.social-btn img {
+  width: 90%;
+  height: auto;
+  object-fit: cover;
 }
 
-/* 네이버 로그인 */
-button.login-btn-naver {
-  background-color: #00bf18;
+/* 각 브랜드별 색상 (이미지가 없을 때 배경색으로 표현) */
+.social-btn.naver {
+  background-color: #03C75A;
   color: white;
-  border-radius: 0.5rem; /* rounded-lg */
 }
 
-/* 기관회원 로그인 */
-button.login-btn-institution {
-  background-color: white;
-  border: 1px solid #9ca3af; /* border-gray-400 */
-  color: #374151; /* text-gray-700 */
-  font-weight: 500; /* font-medium */
-  margin-bottom: 1rem; /* mb-4 */
+.social-btn.kakao {
+  background-color: #FEE500;
+  color: #3C1E1E;
+  /* 카카오 갈색 */
 }
 
 /* 로그인 텍스트 */
 p.login-page-btn {
-  font-size: 0.875rem; /* text-sm */
-  color: #4b5563; /* text-gray-600 */
+  font-size: 0.875rem;
+  /* text-sm */
+  color: #4b5563;
+  /* text-gray-600 */
   cursor: pointer;
 }
 

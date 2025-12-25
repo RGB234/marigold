@@ -8,23 +8,12 @@ import VolunteerForm from "@/views/VolunteerForm.vue";
 import ProfileForm from "@/views/ProfileForm.vue";
 import AdoptionWriteForm from "@/views/adoption/AdoptionWriteForm.vue";
 import SignupForm from "@/views/signup/SignupForm.vue";
-import SignupSubmitForm from "@/views/signup/SignupSubmitForm.vue";
-import InstitutionLoginForm from "@/views/login/InstitutionLoginForm.vue";
+import { useAuthStore } from "@/stores/auth";
 
 const routes = [
   { name: "Home", path: process.env.VUE_APP_HOME, component: HomeForm },
   { name: "Login", path: process.env.VUE_APP_LOGIN, component: LoginForm },
-  {
-    name: "Login_institution",
-    path: process.env.VUE_APP_LOGIN_INSTITUTION,
-    component: InstitutionLoginForm,
-  },
   { name: "Signup", path: process.env.VUE_APP_SIGNUP, component: SignupForm },
-  {
-    name: "Signup_submit",
-    path: process.env.VUE_APP_SIGNUP_SUBMIT,
-    component: SignupSubmitForm,
-  },
   {
     name: "Adoption",
     path: process.env.VUE_APP_ADOPTION,
@@ -36,7 +25,6 @@ const routes = [
     component: AdoptionWriteForm,
     meta: {
       requiresAuth: true,
-      roles: ["ROLE_ADMIN", "ROLE_PERSON", "ROLE_INSTITUTION"],
     },
   },
   {
@@ -54,6 +42,32 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// 전역 설정
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  await authStore.getAuthStatus();
+  // 권한 필요
+  if (to.meta.requiresAuth) {
+    // 인증 X
+    if (!authStore.isAuthenticated) {
+      alert("로그인 필요");
+      return next({ name: "Login" });
+    }
+
+    if (Array.isArray(to.meta.roles) && to.meta.roles.length > 0) {
+      const hasAuthority = authStore.authorities.some((auth) =>
+        to.meta.roles.includes(auth)
+      );
+      // 권한 부족
+      if (!hasAuthority) {
+        alert("권한이 없습니다");
+        return next({ name: "Home" });
+      }
+    }
+  }
+  next();
 });
 
 export default router;

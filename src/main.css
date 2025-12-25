@@ -1,0 +1,54 @@
+/* Bold */
+
+@font-face {
+    font-family: Suit-Bold;
+    src: url('./assets/fonts/SUIT-Bold.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: Suit-SemiBold;
+    src: url('./assets/fonts/SUIT-SemiBold.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: Suit-ExtraBold;
+    src: url('./assets/fonts/SUIT-ExtraBold.ttf') format('truetype');
+}
+
+/* Light */
+
+@font-face {
+    font-family: Suit-Light;
+    src: url('./assets/fonts/SUIT-Light.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: Suit-ExtraLight;
+    src: url('./assets/fonts/SUIT-ExtraLight.ttf') format('truetype');
+}
+
+/* Regular */
+
+@font-face {
+    font-family: Suit-Regular;
+    src: url('./assets/fonts/SUIT-Regular.ttf') format('truetype');
+}
+
+/* Medium */
+
+@font-face {
+    font-family: Suit-Medium;
+    src: url('./assets/fonts/SUIT-Medium.ttf') format('truetype');
+}
+
+/* TEST */
+
+@font-face {
+    font-family: DaeguJungguEubseong;
+    src: url('./assets/fonts/대구중구읍성 Regular.ttf') format('truetype');
+}
+
+body {
+    font-family: 'Suit-SemiBold', sans-serif;
+}
+

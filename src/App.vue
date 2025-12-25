@@ -40,8 +40,6 @@ const profileUrl = process.env.VUE_APP_PROFILE;
 
 const authStore = useAuthStore();
 
-authStore.isAuthenticated;
-
 const router = useRouter();
 
 async function handleLogout() {

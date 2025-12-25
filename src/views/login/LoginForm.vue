@@ -6,27 +6,19 @@
       <h1>Marigold</h1>
     </div>
 
+    <!-- 구분선 -->
+    <div class="divider">
+      <span class="divider-text">소셜 계정으로 로그인</span>
+    </div>
+
     <!-- 카카오 로그인 -->
     <button class="login-btn-kakao" @click="loginWithKakao">
-      <!-- <span class="mr-2">💬</span> 카카오톡으로 로그인 -->
-      <img src="@/assets/kakaotalk-icon.png" /> 카카오톡으로 로그인
+      <img src="@/assets/kakaotalk-icon.png" /> <span>카카오 로그인</span>
     </button>
 
     <!-- 네이버 로그인 -->
-    <button
-      class="login-btn-naver"
-      style="background-color: #03c75a"
-      @click="loginWithNaver"
-    >
-      <img src="@/assets/naver-icon.png" /> 네이버로 로그인
-    </button>
-
-    <!-- 구분선 -->
-    <div class="divider"></div>
-
-    <!-- 기관회원 로그인 -->
-    <button class="login-btn-institution" @click="goToInstitutionLoginForm">
-      <img src="@/assets/mail-icon.png" /> 기관회원 로그인
+    <button class="login-btn-naver" @click="loginWithNaver">
+      <img src="@/assets/naver-icon.png" /> <span>네이버 로그인</span>
     </button>
 
     <!-- 회원가입 -->
@@ -36,7 +28,6 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import api from "@/api";
 
 const router = useRouter();
 
@@ -44,20 +35,14 @@ const router = useRouter();
 async function loginWithKakao() {
   const kakaoLoginUrl = process.env.VUE_APP_API_OAUTH2_KAKAO_LOGIN;
   window.location.href = kakaoLoginUrl;
+
 }
 
 // 네이버 로그인
 function loginWithNaver() {
   const naverLoginUrl = process.env.VUE_APP_API_OAUTH2_NAVER_LOGIN;
-  // window.location.href = naverLoginUrl;
-  api.post();
-}
+  window.location.href = naverLoginUrl;
 
-// 기관회원 로그인
-function goToInstitutionLoginForm() {
-  // alert("기관회원 로그인 페이지 준비중...");
-  const institutionLoginUrl = process.env.VUE_APP_LOGIN_INSTITUTION;
-  router.push(institutionLoginUrl);
 }
 
 // 회원가입 페이지 이동
@@ -78,79 +63,109 @@ div.main-container {
 }
 
 /* 로고 영역 */
-div.main-container > div.logo {
-  margin-bottom: 2rem; /* mb-8 */
+div.main-container>div.logo {
+  margin-bottom: 2rem;
+  /* mb-8 */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-div.logo > img {
-  width: 8rem; /* w-32 */
-  height: 8rem; /* h-32 */
-  margin-bottom: 0.5rem; /* mb-2 */
+div.logo>img {
+  width: 8rem;
+  /* w-32 */
+  height: 8rem;
+  /* h-32 */
+  margin-bottom: 0.5rem;
+  /* mb-2 */
 }
 
-div.logo > h1 {
-  font-size: 1.5rem; /* text-2xl */
+div.logo>h1 {
+  font-size: 1.5rem;
+  /* text-2xl */
   font-weight: bold;
-  color: #b45309; /* text-amber-800 */
+  color: #b45309;
+  /* text-amber-800 */
+}
+
+/* 1. 구분선 스타일 */
+.divider {
+  display: flex;
+  align-items: center;
+  width: 30%;
+  min-width: 300px;
+  margin-bottom: 24px;
+  color: #888;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.divider-text {
+  padding: 0 10px;
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
 }
 
 /* 로그인 버튼 공통 */
 button {
-  width: 16rem; /* w-64 */
-  padding: 0.75rem 0; /* py-3 */
-  border-radius: 0.5rem; /* rounded-lg */
-  font-weight: 600; /* font-semibold */
-  font-size: 0.875rem; /* text-sm */
+  width: 16rem;
+  padding: 0.75rem 0;
+  border-radius: 0.5rem;
+  font-family: Suit-ExtraBold, sans-serif;
+  font-size: 0.875rem;
+
   display: flex;
   align-items: center;
-  justify-content: left;
+  justify-content: center;
+
   padding-left: 2rem;
   cursor: pointer;
-  border: 1px solid #0000005c;
+  border: none;
+
+  position: relative;
 }
 
-button > img {
+button>img {
   width: 2rem;
   margin-right: 1rem;
+
+  position: absolute;
+  left: 15px; /* 왼쪽 여백 조절 */
+  
+  /* 이미지 세로 중앙 정렬 */
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 /* 카카오 로그인 */
 button.login-btn-kakao {
-  background-color: #ffeb00;
-  color: #000000; /* text-gray-800 */
-  margin-bottom: 0.75rem; /* mb-3 */
+  background-color: #fae100;
+  color: #000000;
+  /* text-gray-800 */
+  margin-bottom: 0.75rem;
+  /* mb-3 */
 }
 
 /* 네이버 로그인 */
 button.login-btn-naver {
-  background-color: #00bf18;
-  color: white;
-  margin-bottom: 1.5rem; /* mb-6 */
-}
-
-/* 기관회원 로그인 */
-button.login-btn-institution {
-  background-color: white;
-  border: 1px solid #9ca3af; /* border-gray-400 */
-  color: #374151; /* text-gray-700 */
-  font-weight: 500; /* font-medium */
-  margin-bottom: 1rem; /* mb-4 */
-}
-
-/* 구분선 */
-div.divider {
-  width: 16rem; /* w-64 */
-  border-top: 1px solid #d1d5db; /* border-gray-300 */
-  margin-bottom: 1.5rem; /* mb-6 */
+  background-color: #03c158;
+  color: #000000;
+  margin-bottom: 1.5rem;
+  /* mb-6 */
 }
 
 /* 회원가입 텍스트 */
 p.signup-page-btn {
-  font-size: 0.875rem; /* text-sm */
-  color: #4b5563; /* text-gray-600 */
+  font-size: 0.875rem;
+  /* text-sm */
+  color: #4b5563;
+  /* text-gray-600 */
   cursor: pointer;
 }
 
