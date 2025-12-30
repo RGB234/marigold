@@ -1,10 +1,10 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_APP_API_BASE;
 
 // Axios 인스턴스 생성
-const api = axios.create({
+const api : AxiosInstance = axios.create({
   baseURL: apiBase,
   withCredentials: true, // 쿠키/세션 포함
   headers: {

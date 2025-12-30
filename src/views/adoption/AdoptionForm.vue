@@ -80,8 +80,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import api from "@/api";
 
 // 상수 및 변수

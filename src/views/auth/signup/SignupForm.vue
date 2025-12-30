@@ -11,9 +11,9 @@
     </div>
 
     <!-- 회원가입 -->
-    <div class="social-buttons">
-      <button v-for="provider in providers" :key="provider.name" class="social-btn" :class="provider.name"
-        @click="handleSocialLogin(provider.name)" :aria-label="provider.label">
+    <div class="signup-buttons">
+      <button v-for="provider in providers" :key="provider.name" :class="provider.class"
+        @click="handleSocialSignUp(provider.name)">
         <img :src="provider.icon" />
       </button>
     </div>
@@ -24,21 +24,39 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRoute } from "vue-router";
+import { EnumProviderCode, useAuthStore } from '@/stores/auth';
 import naverIcon from '@/assets/naver-icon.png';
 import kakaoIcon from '@/assets/kakaotalk-icon.png';
 import router from '@/router';
 
 // 소셜 로그인 제공자 데이터
 const providers = ref([
-  { name: 'naver', label: '네이버 로그인', icon: naverIcon },
-  { name: 'kakao', label: '카카오 로그인', icon: kakaoIcon },
+  { name: EnumProviderCode.NAVER, description: '네이버 계정으로 화원가입', class: 'btn-naver', icon: naverIcon },
+  { name: EnumProviderCode.KAKAO, description: '카카오 계정으로 회원가입', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
-// 로그인 클릭 핸들러
-const handleSocialLogin = (providerName) => {
-  console.log(`${providerName} 로그인 시도`);
-  // 여기에 실제 OAuth 로직 구현
+const authStore = useAuthStore();
+const route = useRoute();
+
+onMounted(() => {
+  const responseCode = route.query.code;
+
+  if (responseCode) {
+    // 1. 에러 핸들링 (알림창 등)
+    // handleLoginError(errorCode);
+    alert(responseCode);
+
+    // 2. URL 파라미터 제거 (중요!)
+    // 현재 페이지는 유지하되, 주소창에서 쿼리만 지웁니다.
+    router.replace({ query: {} });
+  }
+});
+
+// 소셜 계정으로 회원가입
+const handleSocialSignUp = (providerName) => {
+  authStore.signup(providerName);
 };
 
 // 회원가입 페이지 이동
@@ -110,14 +128,14 @@ div.logo>h1 {
 }
 
 /* 2. 소셜 버튼 컨테이너 */
-.social-buttons {
+.signup-buttons {
   display: flex;
   gap: 16px;
   margin-bottom: 30px;
 }
 
 /* 공통 버튼 스타일 */
-.social-btn {
+button {
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -132,26 +150,27 @@ div.logo>h1 {
   transition: transform 0.2s;
 }
 
-.social-btn:hover {
+button:hover {
   transform: scale(1.05);
 }
 
-.social-btn img {
+button img {
   width: 90%;
   height: auto;
   object-fit: cover;
 }
 
 /* 각 브랜드별 색상 (이미지가 없을 때 배경색으로 표현) */
-.social-btn.naver {
-  background-color: #03C75A;
-  color: white;
-}
 
-.social-btn.kakao {
+button.btn-kakao {
   background-color: #FEE500;
   color: #3C1E1E;
   /* 카카오 갈색 */
+}
+
+button.btn-naver {
+  background-color: #03C75A;
+  color: white;
 }
 
 /* 로그인 텍스트 */

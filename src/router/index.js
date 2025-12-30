@@ -1,41 +1,38 @@
+import { useAuthStore } from "@/stores/auth";
 import { createRouter, createWebHistory } from "vue-router";
 
-// 화면 컴포넌트 불러오기
-import HomeForm from "../views/HomeForm.vue";
-import LoginForm from "../views/login/LoginForm.vue";
-import AdoptionForm from "@/views/adoption/AdoptionForm.vue";
-import VolunteerForm from "@/views/VolunteerForm.vue";
-import ProfileForm from "@/views/ProfileForm.vue";
-import AdoptionWriteForm from "@/views/adoption/AdoptionWriteForm.vue";
-import SignupForm from "@/views/signup/SignupForm.vue";
-import { useAuthStore } from "@/stores/auth";
-
 const routes = [
-  { name: "Home", path: import.meta.env.VITE_APP_HOME, component: HomeForm },
-  { name: "Login", path: import.meta.env.VITE_APP_LOGIN, component: LoginForm },
-  { name: "Signup", path: import.meta.env.VITE_APP_SIGNUP, component: SignupForm },
+  {
+    name: "Home",
+    path: import.meta.env.VITE_APP_HOME,
+    component: () => import("@/views/HomeForm.vue")
+  },
+  { 
+    name: "Login", 
+    path: import.meta.env.VITE_APP_AUTH_LOGIN, 
+    component: () => import("@/views/auth/login/LoginForm.vue") 
+  },
+  { name: "Signup", 
+    path: import.meta.env.VITE_APP_AUTH_SIGNUP, 
+    component: () => import("@/views/auth/signup/SignupForm.vue") 
+  },
   {
     name: "Adoption",
     path: import.meta.env.VITE_APP_ADOPTION,
-    component: AdoptionForm,
+    component: () => import("@/views/adoption/AdoptionForm.vue"),
   },
   {
     name: "Adoption_write",
     path: import.meta.env.VITE_APP_ADOPTION_WRITE,
-    component: AdoptionWriteForm,
+    component: () => import("@/views/adoption/AdoptionWriteForm.vue"),
     meta: {
       requiresAuth: true,
     },
   },
   {
-    name: "Volunteer",
-    path: import.meta.env.VITE_APP_VOLUNTEER,
-    component: VolunteerForm,
-  },
-  {
     name: "Profile",
     path: import.meta.env.VITE_APP_PROFILE,
-    component: ProfileForm,
+    component: () => import("@/views/ProfileForm.vue"),
   },
 ];
 
@@ -47,17 +44,18 @@ const router = createRouter({
 // 전역 설정
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  await authStore.getAuthStatus();
+  
   // 권한 필요
   if (to.meta.requiresAuth) {
-    // 인증 X
-    if (!authStore.isAuthenticated) {
+    // 인증 X - 토큰 유효성 검사
+    if (!authStore.checkTokenValid()) {
       alert("로그인 필요");
       return next({ name: "Login" });
     }
 
+    // 특정 역할(role) 필요
     if (Array.isArray(to.meta.roles) && to.meta.roles.length > 0) {
-      const hasAuthority = authStore.authorities.some((auth) =>
+      const hasAuthority = authStore.userAuthorities.some((auth) =>
         to.meta.roles.includes(auth)
       );
       // 권한 부족

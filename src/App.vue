@@ -1,22 +1,21 @@
 <template>
   <div>
     <nav>
-      <router-link :to="homeUrl">홈</router-link>
-      <router-link :to="adoptionUrl">입양하기</router-link>
-      <router-link :to="volunteerUrl">봉사활동</router-link>
-      <router-link v-if="!authStore.isAuthenticated" :to="loginUrl"
+      <router-link :to="{ name: 'Home' }">홈</router-link>
+      <router-link :to="{ name: 'Adoption' }">입양하기</router-link>
+      <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }"
         >로그인</router-link
       >
-      <router-link v-if="!authStore.isAuthenticated" :to="signupUrl"
+      <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }"
         >회원가입</router-link
       >
       <router-link
-        v-if="authStore.isAuthenticated"
-        :to="homeUrl"
-        @click="handleLogout"
+        v-if="isLoggedIn"
+        :to="{ name: 'Home' }"
+        @click="authStore.logout()"
         >로그아웃</router-link
       >
-      <router-link v-if="authStore.isAuthenticated" :to="profileUrl"
+      <router-link v-if="isLoggedIn" :to="{ name: 'Profile' }"
         >프로필</router-link
       >
     </nav>
@@ -29,33 +28,15 @@
 <script setup>
 import { onMounted } from "vue";
 import { useAuthStore } from "./stores/auth";
-import { useRouter } from "vue-router";
-
-const homeUrl = import.meta.env.VITE_APP_HOME;
-const adoptionUrl = import.meta.env.VITE_APP_ADOPTION;
-const volunteerUrl = import.meta.env.VITE_APP_VOLUNTEER;
-const loginUrl = import.meta.env.VITE_APP_LOGIN;
-const signupUrl = import.meta.env.VITE_APP_SIGNUP;
-const profileUrl = import.meta.env.VITE_APP_PROFILE;
+import router from '@/router';
 
 const authStore = useAuthStore();
 
-const router = useRouter();
-
-async function handleLogout() {
-  try {
-    await authStore.logout();
-    router.push(homeUrl);
-  } catch (err) {
-    alert("로그아웃 실패");
-    console.error("로그아웃 실패");
-    console.error(err);
-  }
-}
-
 onMounted(async () => {
-  await authStore.getAuthStatus();
+  const isLoggedIn = authStore.isLoggedIn();
+  console.info(isLoggedIn);
 });
+
 </script>
 
 <style scoped>

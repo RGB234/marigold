@@ -11,14 +11,10 @@
       <span class="divider-text">소셜 계정으로 로그인</span>
     </div>
 
-    <!-- 카카오 로그인 -->
-    <button class="login-btn-kakao" @click="loginWithKakao">
-      <img src="@/assets/kakaotalk-icon.png" /> <span>카카오 로그인</span>
-    </button>
-
-    <!-- 네이버 로그인 -->
-    <button class="login-btn-naver" @click="loginWithNaver">
-      <img src="@/assets/naver-icon.png" /> <span>네이버 로그인</span>
+    <button v-for="provider in providers" @click="loginWithSocial(provider.name)" :class="provider.class"
+      :key="provider.name">
+      <img :src="provider.icon" />
+      <span>{{ provider.description }}</span>
     </button>
 
     <!-- 회원가입 -->
@@ -27,27 +23,49 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
+import { ref, onMounted } from 'vue';
+import { useRoute } from "vue-router";
 
-const router = useRouter();
+import { useAuthStore } from "@/stores/auth";
+import { EnumProviderCode } from "@/stores/auth";
 
-// 카카오 로그인
-async function loginWithKakao() {
-  const kakaoLoginUrl = import.meta.env.VITE_APP_API_OAUTH2_KAKAO_LOGIN;
-  window.location.href = kakaoLoginUrl;
+import naverIcon from '@/assets/naver-icon.png';
+import kakaoIcon from '@/assets/kakaotalk-icon.png';
+import router from '@/router';
 
-}
+const route = useRoute();
+const authStore = useAuthStore();
+const providers = ref([
+  { name: EnumProviderCode.NAVER, description: '네이버 계정으로 로그인', class: 'btn-naver', icon: naverIcon },
+  { name: EnumProviderCode.KAKAO, description: '카카오 계정으로 로그인', class: 'btn-kakao', icon: kakaoIcon },
+]);
 
-// 네이버 로그인
-function loginWithNaver() {
-  const naverLoginUrl = import.meta.env.VITE_APP_API_OAUTH2_NAVER_LOGIN;
-  window.location.href = naverLoginUrl;
+onMounted(() => {
+  const responseCode = route.query.code;
 
+  console.info(responseCode);
+
+  if (responseCode) {
+    // 1. 에러 핸들링 (알림창 등)
+    alert(responseCode);
+
+    // 2. URL 파라미터 제거 (중요!)
+    // 현재 페이지는 유지하되, 주소창에서 쿼리만 지웁니다.
+    router.replace({ query: {} });
+  }
+});
+
+function loginWithSocial(providerName) {
+  authStore.login(providerName);
 }
 
 // 회원가입 페이지 이동
 function goToSignupForm() {
-  router.push(import.meta.env.VITE_APP_SIGNUP);
+  router.push({ name: "Signup" });
+}
+
+function handleLoginError(errorCode){
+  alert(errorCode);
 }
 </script>
 
@@ -136,28 +154,29 @@ button>img {
   margin-right: 1rem;
 
   position: absolute;
-  left: 15px; /* 왼쪽 여백 조절 */
-  
+  left: 15px;
+  /* 왼쪽 여백 조절 */
+
   /* 이미지 세로 중앙 정렬 */
   top: 50%;
   transform: translateY(-50%);
 }
 
+/* 네이버 로그인 */
+button.btn-naver {
+  background-color: #03c158;
+  color: #000000;
+  margin-bottom: 1.5rem;
+  /* mb-6 */
+}
+
 /* 카카오 로그인 */
-button.login-btn-kakao {
+button.btn-kakao {
   background-color: #fae100;
   color: #000000;
   /* text-gray-800 */
   margin-bottom: 0.75rem;
   /* mb-3 */
-}
-
-/* 네이버 로그인 */
-button.login-btn-naver {
-  background-color: #03c158;
-  color: #000000;
-  margin-bottom: 1.5rem;
-  /* mb-6 */
 }
 
 /* 회원가입 텍스트 */
