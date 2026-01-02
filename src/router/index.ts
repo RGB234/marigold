@@ -52,6 +52,7 @@ router.beforeEach(async (to, _from, next) => {
   // meta 필드 접근 시 타입 안정성을 위해 옵셔널 체이닝 사용 권장
   if (to.meta?.requiresAuth) {
     // 인증 X - 로그인 상태 확인
+    authStore.initializeAuth();
     if (!authStore.isLoggedIn) {
       alert("로그인 필요");
       return next({ name: "Login" });
@@ -62,11 +63,8 @@ router.beforeEach(async (to, _from, next) => {
     const roles = to.meta.roles;
     
     if (Array.isArray(roles) && roles.length > 0) {
-      // roles 배열의 요소를 string으로 간주하고 비교
-      const hasAuthority = authStore.userAuthorities.some((auth: string) =>
-        roles.includes(auth)
-      );
-
+      // roles 중 하나라도 만족하면 True
+      const hasAuthority = authStore.hasAnyAuthority(roles);
       // 권한 부족
       if (!hasAuthority) {
         alert("권한이 없습니다");
