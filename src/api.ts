@@ -18,21 +18,13 @@ api.interceptors.response.use(
   (error) => {
     console.error("API Error:", error.response);
     if (error.response?.status === 400) {
-      // BAD REQUEST
       alert("BAD REQUEST");
-      console.error(error.response);
     }
     if (error.response?.status === 401) {
-      // UNAUTHORIZED
       alert("UNAUTHORIZED");
-      console.error(error.response);
-      // window.location.href = import.meta.env.VITE_APP_HOME;
     }
     if (error.response?.status === 404) {
-      // NOT FOUND
       alert("NOT FOUND");
-      console.error(error.response);
-      // window.location.href = import.meta.env.VITE_APP_HOME;
     }
     return Promise.reject(error);
   }

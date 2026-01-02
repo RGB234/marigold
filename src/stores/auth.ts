@@ -25,8 +25,14 @@ export const useAuthStore = defineStore("auth", {
     // 권한 목록
     userAuthorities: (state) => state.authorities,
     // 특정 권한 보유 여부 확인
-    hasAuthority: (state) => (authority: string) => 
-      state.authorities.includes(authority),
+    hasAnyAuthority: (state) => (authorities: string[]) => {
+      for (const auth of authorities) {
+        if (state.authorities.includes(auth)) {
+          return true;
+        }
+      }
+      return false;
+    }
   },
   
   actions: {
