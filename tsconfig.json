@@ -29,7 +29,7 @@
     /* Type definitions */
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "src/router/index.ts", "src/router/index.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 

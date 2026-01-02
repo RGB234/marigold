@@ -1,21 +1,27 @@
 // stores/auth.js
 import { defineStore } from "pinia";
 import api from "@/api.js";
-import { jwtDecode, type JwtPayload } from "jwt-decode";
+import router from "@/router/index.ts";
 
 export enum EnumProviderCode {
   KAKAO = "KAKAO",
   NAVER = "NAVER",
 }
+
+/*
+  HttpOnly Cookie를 사용하여 인증 상태 관리
+  프론트엔드 UI 업데이트를 위한 최소한의 인증 정보를 백엔드에 요청해서 저장
+*/
+
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    isAuthenticated: false,
+    authenticated: false,
     authorities: [] as string[],
   }),
   
   getters: {
     // 로그인 여부 확인
-    isLoggedIn: (state) => state.isAuthenticated,
+    isLoggedIn: (state) => state.authenticated,
     // 권한 목록
     userAuthorities: (state) => state.authorities,
     // 특정 권한 보유 여부 확인
@@ -24,27 +30,21 @@ export const useAuthStore = defineStore("auth", {
   },
   
   actions: {
-    // JWT 토큰 유효성 검사
-    checkTokenValid(): boolean {
-      const accessToken = this.getAccessToken();
-      if (!accessToken) return false;
-    
+    // 로그인 상태 초기화 (앱 시작 시 호출)
+    async initializeAuth() {  
       try {
-        // 1. 타입 캐스팅을 통해 exp 속성 보장
-        const decodedToken = jwtDecode<JwtPayload>(accessToken);
+        const response = await api.get(import.meta.env.VITE_API_AUTH_STATUS);
+        console.log("AUTH STATUS response", response.data);
+
+        // 전역 상태 업데이트
+        this.authenticated = response.data.authenticated || false;
+        this.authorities = response.data.authorities || [];
         
-        if (!decodedToken.exp) return false;
-    
-        // 2. 현재 시간에 10초~30초 정도의 버퍼를 더함 (Network Latency 및 Clock Skew 방지)
-        const buffer = 10; 
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        // 만료 시간보다 (현재 시간 + 버퍼)가 작아야 유효한 것으로 판단
-        return decodedToken.exp > (currentTime + buffer);
-        
+        return true;
       } catch (error) {
-        // 토큰이 손상되었거나 형식이 잘못된 경우
-        console.error("Invalid token format:", error);
+        console.error("❌ 인증 상태 확인 실패:", error);
+        // 에러 발생 시 인증되지 않은 것으로 처리
+        this.resetAuthState();
         return false;
       }
     },
@@ -72,39 +72,23 @@ export const useAuthStore = defineStore("auth", {
     },    
 
     async logout() {
+      await this.reoveToken();
+      this.resetAuthState();
+      router.push({ name: "Home" });
+    },
+
+    async reoveToken(): Promise<void> {
       try {
         const response = await api.post(import.meta.env.VITE_API_AUTH_LOGOUT);
-        this.isAuthenticated = false;
-        this.authorities = [];
-
-        console.info(response.data);
+        console.log("Logout response", response.data);
       } catch (err) {
-        alert("로그아웃 실패");
         console.error("로그아웃 실패: ", err);
-      } finally {
-        this.removeToken();
       }
     },
 
-    saveAccessToken(token:string) : void{
-      localStorage.setItem("accessToken", token);
-    },
-
-    saveRefreshToken(token:string) : void{
-      localStorage.setItem("refreshToken", token);
-    },
-
-    getAccessToken() : string | null{
-      return localStorage.getItem("accessToken");
-    },
-
-    getRefreshToken() : string | null{
-      return localStorage.getItem("refreshToken");
-    },
-
-    removeToken(): void {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+    resetAuthState(): void {
+      this.authenticated = false;
+      this.authorities = [];
     },
   },
 });

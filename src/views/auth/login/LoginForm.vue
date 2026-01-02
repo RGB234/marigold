@@ -42,9 +42,6 @@ const providers = ref([
 
 onMounted(() => {
   const responseCode = route.query.code;
-
-  console.info(responseCode);
-
   if (responseCode) {
     // 1. 에러 핸들링 (알림창 등)
     alert(responseCode);

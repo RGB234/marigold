@@ -26,15 +26,17 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, computed } from "vue";
 import { useAuthStore } from "./stores/auth";
-import router from '@/router';
 
 const authStore = useAuthStore();
 
+// 로그인 상태를 반응형으로 사용
+const isLoggedIn = computed(() => authStore.isLoggedIn);
+
 onMounted(async () => {
-  const isLoggedIn = authStore.isLoggedIn();
-  console.info(isLoggedIn);
+  // 앱 시작 시 로그인 상태 초기화 (전역 상태 업데이트)
+  await authStore.initializeAuth();
 });
 
 </script>

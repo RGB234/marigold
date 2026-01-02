@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 
+
 interface ImportMetaEnv {
   readonly VITE_APP_HOME: string
 
@@ -22,6 +23,7 @@ interface ImportMetaEnv {
   readonly VITE_API_ADOPTION_SEARCH: string
 }
 
+// 기존 Vite 타입에 사용자 정의 타입을 '합침(Merge)'
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
