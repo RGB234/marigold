@@ -1,6 +1,6 @@
 // stores/auth.js
 import { defineStore } from "pinia";
-import api from "@/api.js";
+import api from "@/api/api.js";
 import router from "@/router/index.ts";
 
 export enum EnumProviderCode {

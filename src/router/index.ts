@@ -8,21 +8,33 @@ const routes: Array<RouteRecordRaw> = [
     name: "Home",
     path: import.meta.env.VITE_APP_HOME as string,
     component: () => import("@/views/HomeForm.vue"),
+    meta:{
+      requiresAuth: false,
+    }
   },
   {
     name: "Login",
     path: import.meta.env.VITE_APP_AUTH_LOGIN as string,
     component: () => import("@/views/auth/login/LoginForm.vue"),
+    meta:{
+      requiresAuth: false,
+    }
   },
   {
     name: "Signup",
     path: import.meta.env.VITE_APP_AUTH_SIGNUP as string,
     component: () => import("@/views/auth/signup/SignupForm.vue"),
+    meta:{
+      requiresAuth: false,
+    }
   },
   {
     name: "Adoption",
     path: import.meta.env.VITE_APP_ADOPTION as string,
     component: () => import("@/views/adoption/AdoptionForm.vue"),
+    meta:{
+      requiresAuth: false,
+    }
   },
   {
     name: "Adoption_write",
@@ -34,9 +46,20 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    name: "Adoption_detail",
+    path: import.meta.env.VITE_APP_ADOPTION_DETAIL as string,
+    component: () => import("@/views/adoption/AdoptionDetail.vue"),
+    meta:{
+      requiresAuth: false,
+    }
+  },
+  {
     name: "Profile",
     path: import.meta.env.VITE_APP_PROFILE as string,
     component: () => import("@/views/ProfileForm.vue"),
+    meta:{
+      requiresAuth: true,
+    }
   },
 ];
 
@@ -53,8 +76,8 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta?.requiresAuth) {
     // 인증 X - 로그인 상태 확인
     authStore.initializeAuth();
-    if (!authStore.isLoggedIn) {
-      alert("로그인 필요");
+    if (!authStore.authenticated) {
+      alert("로그인이 필요한 서비스입니다.");
       return next({ name: "Login" });
     }
 

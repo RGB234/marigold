@@ -30,8 +30,6 @@ import { onMounted, computed } from "vue";
 import { useAuthStore } from "./stores/auth";
 
 const authStore = useAuthStore();
-
-// 로그인 상태를 반응형으로 사용
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 
 onMounted(async () => {

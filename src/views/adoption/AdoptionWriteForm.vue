@@ -109,7 +109,7 @@
 
 <script setup>
 import { reactive, ref } from "vue";
-import api from "@/api";
+import api from "@/api/api";
 import { useRouter } from "vue-router";
 
 const species = Object.freeze({
