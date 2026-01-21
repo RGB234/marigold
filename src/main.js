@@ -8,6 +8,8 @@ import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 
+import LoadingOverlay from "./components/LoadingOverlay.vue";
+
 
 const vuetify = createVuetify({
   components,
@@ -15,6 +17,8 @@ const vuetify = createVuetify({
 });
 
 const app = createApp(App);
+
+app.component('LoadingOverlay', LoadingOverlay);
 
 const pinia = createPinia();
 app.use(pinia);

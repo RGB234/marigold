@@ -7,7 +7,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     name: "Home",
     path: import.meta.env.VITE_APP_HOME as string,
-    component: () => import("@/views/HomeForm.vue"),
+    component: () => import("@/views/HomepageForm.vue"),
     meta:{
       requiresAuth: false,
     }
@@ -29,16 +29,16 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    name: "Adoption",
+    name: "Adoption_list",
     path: import.meta.env.VITE_APP_ADOPTION as string,
-    component: () => import("@/views/adoption/AdoptionForm.vue"),
+    component: () => import("@/views/adoption/AdoptionListForm.vue"),
     meta:{
       requiresAuth: false,
     }
   },
   {
     name: "Adoption_write",
-    path: import.meta.env.VITE_APP_ADOPTION_WRITE as string,
+    path: `${import.meta.env.VITE_APP_ADOPTION}/write`,
     component: () => import("@/views/adoption/AdoptionWriteForm.vue"),
     meta: {
       requiresAuth: true,
@@ -47,20 +47,44 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Adoption_detail",
-    path: import.meta.env.VITE_APP_ADOPTION_DETAIL as string,
-    component: () => import("@/views/adoption/AdoptionDetail.vue"),
+    path: `${import.meta.env.VITE_APP_ADOPTION}/:id`,
+    component: () => import("@/views/adoption/AdoptionDetailForm.vue"),
     meta:{
       requiresAuth: false,
     }
   },
   {
+    name: "Adoption_edit",
+    path: `${import.meta.env.VITE_APP_ADOPTION}/:id/edit`,
+    component: () => import("@/views/adoption/AdoptionEditForm.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     name: "Profile",
     path: import.meta.env.VITE_APP_PROFILE as string,
-    component: () => import("@/views/ProfileForm.vue"),
+    component: () => import("@/views/user/ProfileForm.vue"),
     meta:{
       requiresAuth: true,
     }
   },
+  {
+    name: "Profile_edit",
+    path: `${import.meta.env.VITE_APP_PROFILE}/edit`,
+    component: () => import("@/views/user/ProfileEditForm.vue"),
+    meta:{
+      requiresAuth: true,
+    }
+  },
+  {
+    name: "Profile_history",
+    path: `${import.meta.env.VITE_APP_PROFILE}/history` as string,
+    component: () => import("@/views/user/ProfileHistoryForm.vue"),
+    meta:{
+      requiresAuth: true,
+    }
+  }
 ];
 
 const router = createRouter({
@@ -75,8 +99,8 @@ router.beforeEach(async (to, _from, next) => {
   // meta 필드 접근 시 타입 안정성을 위해 옵셔널 체이닝 사용 권장
   if (to.meta?.requiresAuth) {
     // 인증 X - 로그인 상태 확인
-    authStore.initializeAuth();
-    if (!authStore.authenticated) {
+    await authStore.initializeAuth();
+    if (!authStore.isLoggedIn) {
       alert("로그인이 필요한 서비스입니다.");
       return next({ name: "Login" });
     }

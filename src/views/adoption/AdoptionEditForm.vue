@@ -3,7 +3,7 @@
     <LoadingOverlay v-if="loading"></LoadingOverlay>
     <div class="writing-wrap">
       <div class="writing-header">
-        <h1>입양글 작성</h1>
+        <h1>입양글 수정</h1>
       </div>
       <div class="writing-content">
         <div class="field">
@@ -110,10 +110,10 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import api from "@/api/api";
-import { useRouter } from "vue-router";
-import { createAdoption } from "@/api/adoption";
+import { useRouter, useRoute } from "vue-router";
+import { editAdoption, getAdoptionDetail } from "@/api/adoption";
 import { convertToFormData } from "@/utils/objectUtils";
 
 const species = Object.freeze({
@@ -163,6 +163,7 @@ const errors = reactive({
   images: "",
 });
 
+const route = useRoute();
 const router = useRouter();
 const imagePreviews = ref([]);
 const loading = ref(false);
@@ -216,11 +217,31 @@ const removeImage = (index) => {
   }
 };
 
+const handleFetchAdoption = async () => {
+  const data = await getAdoptionDetail(route.params.id);
+  form.species = data.species;
+  form.title = data.title;
+  form.age = data.age;
+  form.sex = data.sex;
+  form.area = data.area;
+  form.weight = data.weight;
+  form.neutering = data.neutering;
+  form.features = data.features;
+  if (data.imageUrls && data.imageUrls.length > 0) {
+    data.imageUrls.forEach((imageUrl) => {
+      // 화면에 띄우기만 하고 form은 채우지 않음
+      imagePreviews.value.push(imageUrl);
+    });
+    form.images = [];
+  }
+}
+
 const handleSubmit = async () => {
   loading.value = true;
   // 에러 초기화
   Object.keys(errors).forEach((key) => (errors[key] = ""));
   
+  console.log("form.images", form.images);
   
   const formData = convertToFormData(form);
   
@@ -242,12 +263,11 @@ const handleSubmit = async () => {
   // }
 
   try {
-    const createdPostId = await createAdoption(formData);
-    console.log("createdPostId", createdPostId);
-    alert("입양글 작성이 완료되었습니다.");
-    router.push({ name: 'Adoption_detail', params: { id: createdPostId } });
+    const response = await editAdoption(route.params.id, formData);
+    alert("입양글 수정이 완료되었습니다.");
+    router.push({ name: 'Adoption_detail', params: { id: response.id } });
   } catch (err) {
-    console.error("입양글 작성 중 오류 발생:", err);
+    console.error("입양글 수정 중 오류 발생:", err);
     const msg = err.response.data;
 
     if (msg.species) errors.species = msg.species;
@@ -268,6 +288,11 @@ const handleSubmit = async () => {
 const handleCancel = () => {
   router.push(adoptionFormUrl);
 };
+
+onMounted(async () => {
+  await handleFetchAdoption();
+})
+
 </script>
 
 <style lang="css">

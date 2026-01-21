@@ -1,4 +1,5 @@
 <template>
+  <LoadingOverlay v-if="loading"></LoadingOverlay>
   <div class="filter-container">
     <div class="filter">
       <!-- <div class="filter-row">
@@ -50,6 +51,9 @@
       <div v-if="card.imageUrl">
         <img :src="card.imageUrl" alt="대표이미지" />
       </div>
+      <div v-if="card.title" class="info">
+        <p>{{ card.title }}</p>
+      </div>
       <div v-if="card.species" class="info">
         <!-- <label>종</label> -->
         <p>{{ SpeciesLabels[card.species] }}</p>
@@ -75,12 +79,8 @@
 
   <div class="pagination">
     <button @click="safeCurrentPage -= 1">전</button>
-    <button
-      v-for="page in visiblePages"
-      :key="page"
-      :class="{ active: safeCurrentPage === page }"
-      @click="safeCurrentPage = page"
-    >
+    <button v-for="page in visiblePages" :key="page" :class="{ active: safeCurrentPage === page }"
+      @click="safeCurrentPage = page">
       {{ page }}
     </button>
     <button @click="safeCurrentPage += 1">후</button>
@@ -90,12 +90,18 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import api from "@/api/api";
-import router from "@/router";
+import { useRouter } from "vue-router";
 import { Species, SpeciesLabels, SpeciesOptions } from "@/enums/Species";
 import { Sex, SexLabels, SexOptions } from "@/enums/Sex";
+import { cleanParams } from "@/utils/objectUtils";
 
-// 상수 및 변수
-const apiAdoptionInfos = import.meta.env.VITE_API_ADOPTION;
+import { getAdoptionList } from "@/api/adoption";
+
+// ==========================================
+// 데이터 호출 및 상태 관리
+// ==========================================
+
+const router = useRouter();
 
 const searchResult = ref([]);
 const searchFilters = ref({
@@ -103,28 +109,30 @@ const searchFilters = ref({
   sex: undefined, // undefined이면 전체검색
 });
 
-// 검색 함수
+const loading = ref(false);
+
 const handleSearch = async () => {
   searchResult.value = []; // 기존 결과 초기화
   currentPage.value = 1; // 페이지를 1로 초기화
 
-  const params = Object.fromEntries(
-    // null or undefined 제외
-      Object.entries(searchFilters.value).filter(([_, v]) => v != null)
-    );
+  loading.value = true;
+
   try {
-    const res = await api.get(apiAdoptionInfos, {
-      params: params,
-    });    
-    if (res.data.content) searchResult.value.push(...res.data.content);
+    const params = cleanParams(searchFilters.value);
+    const data = await getAdoptionList(params)
+    if (data.content) searchResult.value.push(...data.content);
   } catch (error) {
     console.error("검색 중 오류 발생:", error);
+    alert("검색 중 오류가 발생했습니다.");
+    throw error;
+  }finally{
+    loading.value = false;
   }
 };
 
-onMounted(async () => {
-  await handleSearch(); // 초기 로드 시 검색 실행
-});
+// ==========================================
+// 페이지네이션 바 로직
+// ==========================================
 
 // 한 페이지 당 보여줄 카드 수
 const cardsPerPage = ref(4);
@@ -142,11 +150,12 @@ const safeCurrentPage = computed({
     return currentPage.value;
   },
   set(value) {
-    currentPage.value = Math.min(Math.max(1, value), totalPages.value);
+    currentPage.value = Math.min(Math.max(1, value), totalPages.value); // 1 ~ totalPages
   },
 });
 
 // 페이지네이션 바 로직
+// 현재 페이지 앞뒤로 다른 페이지 보여줌
 const visiblePages = computed(() => {
   const chunk = Math.floor(visiblePageCount / 2);
   const startPage = Math.max(1, safeCurrentPage.value - chunk);
@@ -165,6 +174,10 @@ const visibleCards = computed(() => {
   return searchResult.value.slice(start, end);
 });
 
+// ==========================================
+// 기타 이벤트 핸들러
+// ==========================================
+
 const handleWrite = () => {
   router.push({ name: "Adoption_write" });
 };
@@ -173,9 +186,14 @@ const handleWrite = () => {
 const handleCardClick = (card) => {
   router.push({ name: "Adoption_detail", params: { id: String(card.id) } });
 };
+
+onMounted(async () => {
+  await handleSearch(); // 초기 로드 시 검색 실행
+});
 </script>
 
 <style lang="css" scoped>
+
 /* search filter */
 
 div.filter-container {
@@ -215,16 +233,30 @@ select {
 
 .search-btn {
   width: 100px;
-  align-self: center; /* 버튼 가운데 정렬 */
+  align-self: center;
+  /* 버튼 가운데 정렬 */
   padding: 0.5rem;
   border-radius: 6px;
   border: 1px solid #ccc;
   background-color: #ffffff;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.search-btn:hover {
+.search-btn:hover:not(:disabled) {
   background-color: #e0e0e0;
+}
+
+.search-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: #f5f5f5;
+}
+
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: #f5f5f5;
 }
 
 /* card */
@@ -269,7 +301,8 @@ select {
 
 .info {
   display: flex;
-  justify-content: space-between; /* 라벨과 값 양 끝 정렬 */
+  justify-content: space-between;
+  /* 라벨과 값 양 끝 정렬 */
   width: 100%;
   margin-bottom: 8px;
   font-family: "Arial", sans-serif;
@@ -278,7 +311,8 @@ select {
 .info label {
   font-weight: 600;
   color: #555;
-  flex-shrink: 0; /* 라벨 크기 유지 */
+  flex-shrink: 0;
+  /* 라벨 크기 유지 */
 }
 
 .info h3,
@@ -286,7 +320,8 @@ select {
   margin: 0;
   color: #333;
   text-align: right;
-  flex-grow: 1; /* 값이 남은 공간 차지 */
+  flex-grow: 1;
+  /* 값이 남은 공간 차지 */
 }
 
 .btn-container {
@@ -302,11 +337,13 @@ select {
   font-size: 16px;
   font-weight: bold;
   color: white;
-  background-color: #eaa221; /* 파란색 */
+  background-color: #eaa221;
+  /* 파란색 */
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  text-decoration: none; /* a 태그일 경우 */
+  text-decoration: none;
+  /* a 태그일 경우 */
   transition: background-color 0.3s, transform 0.2s;
 }
 
@@ -319,6 +356,7 @@ select {
 .write-btn:active {
   transform: scale(0.95);
 }
+
 /* pagination */
 
 .pagination {

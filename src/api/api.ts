@@ -7,9 +7,6 @@ const apiBase = import.meta.env.VITE_APP_API_BASE;
 const api : AxiosInstance = axios.create({
   baseURL: apiBase,
   withCredentials: true, // 쿠키/세션 포함
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // 응답 Interceptor

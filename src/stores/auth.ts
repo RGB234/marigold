@@ -1,7 +1,7 @@
-// stores/auth.js
 import { defineStore } from "pinia";
-import api from "@/api/api.js";
-import router from "@/router/index.ts";
+import { isValidUUID } from "@/utils/validators";
+import api from "@/api/api";
+
 
 export enum EnumProviderCode {
   KAKAO = "KAKAO",
@@ -15,13 +15,14 @@ export enum EnumProviderCode {
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    authenticated: false,
+    id: null,
     authorities: [] as string[],
   }),
   
   getters: {
     // 로그인 여부 확인
-    isLoggedIn: (state) => state.authenticated,
+    isLoggedIn: (state) => isValidUUID(state.id || ""),
+    userId: (state) => state.id,
     // 권한 목록
     userAuthorities: (state) => state.authorities,
     // 특정 권한 보유 여부 확인
@@ -37,13 +38,13 @@ export const useAuthStore = defineStore("auth", {
   
   actions: {
     // 로그인 상태 초기화 (앱 시작 시 호출)
-    async initializeAuth() {  
+    async initializeAuth() : Promise<boolean> {  
       try {
         const response = await api.get(import.meta.env.VITE_API_AUTH_STATUS);
-        console.log("AUTH STATUS response", response.data);
+        console.log("AUTH STATUS", response.data);
 
         // 전역 상태 업데이트
-        this.authenticated = response.data.authenticated || false;
+        this.id = response.data.userId || null;
         this.authorities = response.data.authorities || [];
         
         return true;
@@ -77,23 +78,30 @@ export const useAuthStore = defineStore("auth", {
       }
     },    
 
-    async logout() {
-      await this.reoveToken();
-      this.resetAuthState();
-      router.push({ name: "Home" });
+    async logout() : Promise<boolean> {
+      try{
+        await this.reoveToken();
+        return true;
+      } catch (err) {
+        console.error("서버 로그아웃 요청 실패. : ", err);
+        return false;
+      } finally {
+        console.log("클라이언트 로그아웃 수행.");
+        this.resetAuthState();
+      }
     },
 
-    async reoveToken(): Promise<void> {
+    async reoveToken(): Promise<boolean> {
       try {
-        const response = await api.post(import.meta.env.VITE_API_AUTH_LOGOUT);
-        console.log("Logout response", response.data);
+        await api.post(import.meta.env.VITE_API_AUTH_LOGOUT);
+        return true;
       } catch (err) {
-        console.error("로그아웃 실패: ", err);
+        return false;
       }
     },
 
     resetAuthState(): void {
-      this.authenticated = false;
+      this.id = null;
       this.authorities = [];
     },
   },

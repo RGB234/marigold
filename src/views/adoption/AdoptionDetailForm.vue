@@ -1,29 +1,30 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import router from '@/router';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-import { Species, SpeciesLabels, SpeciesOptions } from "@/enums/Species";
-import { Sex, SexLabels, SexOptions } from "@/enums/Sex";
-import { Neutering, NeuteringLabels, NeuteringOptions } from "@/enums/Neutering";
-import { getAdoptionDetail } from '@/api/adoption';
+import { SpeciesLabels } from "@/enums/Species";
+import { SexLabels } from "@/enums/Sex";
+import { NeuteringLabels } from "@/enums/Neutering";
+import { getAdoptionDetail, deleteAdoption } from '@/api/adoption';
+
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
-const loading = ref(true);
+const loading = ref(false);
 const detail = ref(null);
 
-// Enum 한글 변환용 맵 (필요에 따라 수정)
-const enumMap = {
-    DOG: '강아지',
-    CAT: '고양이',
-    MALE: '수컷',
-    FEMALE: '암컷',
-    UNKNOWN: '미상',
-    DONE: '완료',
-    NOT_DONE: '미완료',
-    // ... 기타 필요한 값
-};
+// 로그인 상태 확인
+const isLoggedIn = computed(() => authStore.isLoggedIn);
+const currentUserId = computed(() => authStore.userId);
+
+// 작성자 본인인지 확인
+const isAuthor = computed(() => {
+    if (!detail.value || !currentUserId.value) return false;
+    return detail.value.writer?.id === currentUserId.value;
+});
 
 const translate = (labels, key) => labels[key] || key;
 
@@ -43,41 +44,48 @@ const formatDate = (dateString) => {
 const fetchDetail = async (id) => {
     try {
         loading.value = true;
-        const responseData = await getAdoptionDetail(id); // 실제 API 호출
+        const responseData = await getAdoptionDetail(id);
         detail.value = responseData;
         loading.value = false;
-
-        // // [테스트용 더미 데이터] - 실제 연동 시 삭제하세요
-        // setTimeout(() => {
-        //     detail.value = {
-        //         id: 'uuid-1234',
-        //         writer: { nickname: '멍냥지킴이', email: 'test@test.com' },
-        //         createdAt: '2026-01-05T10:00:00',
-        //         modifiedAt: '2026-01-06T14:30:00',
-        //         species: 'DOG',
-        //         name: '초코',
-        //         age: 2,
-        //         sex: 'MALE',
-        //         area: '서울시 강남구',
-        //         weight: 5.4,
-        //         neutering: 'DONE',
-        //         features: '사람을 너무 좋아하고 활발한 성격입니다. 산책을 하루에 2번 시켜주셔야 해요. 배변 훈련 완료되었습니다.',
-        //         // imageUrl: '...' // 이미지가 있다면 여기에
-        //     };
-        //     loading.value = false;
-        // }, 500);
     } catch (error) {
-        router.push({ name: 'Adoption' }); // 목록으로 이동
+        router.push({ name: 'Adoption' });
     }
 };
 
-onMounted(() => {
+// 게시글 수정
+const editPost = () => {
+    router.push({ name: 'Adoption_edit', params: { id: route.params.id } });
+};
+
+// 게시글 삭제 확인
+const confirmDelete = () => {
+    if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+        deletePost();
+    }
+};
+
+// 게시글 삭제
+const deletePost = async () => {
+    try {
+        loading.value = true;
+        await deleteAdoption(route.params.id);
+        alert('게시글이 삭제되었습니다.');
+        router.push({ name: 'Adoption' });
+    } catch (error) {
+        console.error("게시글 삭제 중 오류 발생:", error);
+        alert("게시글 삭제 중 오류가 발생했습니다.");
+        loading.value = false;
+    }
+};
+
+onMounted(async () => {
     const id = route.params.id;
-    fetchDetail(id);
+    await fetchDetail(id);
 });
 </script>
 
 <template>
+    <LoadingOverlay v-if="loading"></LoadingOverlay>
     <div class="detail-container">
         <div v-if="loading" class="loading">
             데이터를 불러오는 중입니다...
@@ -86,20 +94,33 @@ onMounted(() => {
         <div v-else-if="detail" class="content-wrapper">
 
             <div class="header-section">
-                <div class="title-row">
-                    <span class="badge species">{{ translate(SpeciesLabels, detail.species) }}</span>
-                    <h1 class="name">{{ detail.name }}</h1>
+                <div class="header-top">
+                    <div class="title-row">
+                        <span class="badge species">{{ translate(SpeciesLabels, detail.species) }}</span>
+                        <h1 class="name">{{ detail.name }}</h1>
+                    </div>
+                    <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
+                    <div v-if="isLoggedIn && isAuthor" class="action-buttons">
+                        <button class="btn-small edit" @click="editPost">수정</button>
+                        <button class="btn-small delete" @click="confirmDelete">삭제</button>
+                    </div>
                 </div>
                 <div class="meta-info">
                     <span>작성자: {{ detail.writer?.nickname || '알 수 없음' }}</span>
                     <span class="divider">|</span>
                     <span>등록일: {{ formatDate(detail.createdAt) }}</span>
+                    <span class="divider">|</span>
+                    <span>수정일: {{ formatDate(detail.modifiedAt) }}</span>
                 </div>
             </div>
 
             <hr class="separator" />
 
             <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">제목</span>
+                    <span class="value">{{ detail.title }}</span>
+                </div>
                 <div class="image-container">
                     <div v-for="imageUrl in detail.imageUrls" :key="imageUrl">
                         <img :src="imageUrl" alt="이미지" />
@@ -145,7 +166,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 컨테이너 스타일 */
+/* 컨테이너 */
 .detail-container {
     max-width: 800px;
     margin: 0 auto;
@@ -161,21 +182,28 @@ onMounted(() => {
     color: #888;
 }
 
-/* 헤더 섹션 */
+/* 헤더 */
 .header-section {
     margin-bottom: 20px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 10px;
 }
 
 .title-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 10px;
+    flex: 1;
 }
 
 .badge {
     background-color: #ffe082;
-    /* 포인트 컬러 */
     color: #333;
     padding: 4px 12px;
     border-radius: 20px;
@@ -199,6 +227,41 @@ onMounted(() => {
     color: #ddd;
 }
 
+/* 상단 액션 버튼 */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-small {
+    padding: 6px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.btn-small.edit {
+    background-color: #2196f3;
+    color: white;
+}
+
+.btn-small.edit:hover {
+    background-color: #1976d2;
+}
+
+.btn-small.delete {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-small.delete:hover {
+    background-color: #d32f2f;
+}
+
 /* 구분선 */
 .separator {
     border: 0;
@@ -211,7 +274,6 @@ onMounted(() => {
 .info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    /* 2열 배치 */
     gap: 20px;
     background-color: #f9f9f9;
     padding: 24px;
@@ -226,43 +288,6 @@ onMounted(() => {
 
 .info-item.full-width {
     grid-column: span 2;
-    /* 꽉 차게 */
-}
-
-/* 이미지 컨테이너 */
-.image-container {
-    grid-column: span 2;
-    /* 전체 너비 사용 */
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 16px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.image-container > div {
-    flex: 0 0 auto;
-    max-width: 200px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.image-container > div:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.image-container img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    display: block;
-    cursor: pointer;
 }
 
 .label {
@@ -277,6 +302,41 @@ onMounted(() => {
     font-weight: 600;
 }
 
+/* 이미지 */
+.image-container {
+    grid-column: span 2;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 16px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.image-container>div {
+    flex: 0 0 auto;
+    max-width: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.image-container>div:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-container img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+
 /* 특징 섹션 */
 .features-section h3 {
     font-size: 18px;
@@ -288,10 +348,9 @@ onMounted(() => {
     line-height: 1.6;
     color: #444;
     white-space: pre-wrap;
-    /* 줄바꿈 유지 */
 }
 
-/* 버튼 그룹 */
+/* 하단 버튼 그룹 */
 .button-group {
     margin-top: 40px;
     display: flex;
@@ -311,7 +370,6 @@ onMounted(() => {
 
 .btn.primary {
     background-color: #ff9800;
-    /* 메인 테마 컬러 */
     color: white;
 }
 
@@ -328,11 +386,20 @@ onMounted(() => {
     background-color: #e0e0e0;
 }
 
-/* 모바일 대응 */
+/* 반응형 */
 @media (max-width: 600px) {
+    .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .action-buttons {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
     .info-grid {
         grid-template-columns: 1fr;
-        /* 모바일은 1열 */
     }
 
     .info-item.full-width {
@@ -343,14 +410,12 @@ onMounted(() => {
         grid-column: span 1;
     }
 
-    .image-container > div {
+    .image-container>div {
         max-width: 100%;
-        /* 모바일에서는 전체 너비 */
     }
 
     .image-container img {
         height: 250px;
-        /* 모바일에서 이미지 높이 증가 */
     }
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="main-container">
     <!-- 로고 -->
     <div class="logo">
-      <img src="@/assets/logo.png" alt="Marigold" />
+      <img src="@/assets/images/logo.png" alt="Marigold" />
       <h1>Marigold</h1>
     </div>
 
@@ -29,8 +29,8 @@ import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { EnumProviderCode } from "@/stores/auth";
 
-import naverIcon from '@/assets/naver-icon.png';
-import kakaoIcon from '@/assets/kakaotalk-icon.png';
+import naverIcon from '@/assets/images/naver-icon.png';
+import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/router';
 
 const route = useRoute();
