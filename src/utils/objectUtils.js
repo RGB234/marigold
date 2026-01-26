@@ -38,9 +38,11 @@ export const convertToFormData = (params) => {
     if (value === null || value === undefined) return;
 
     // 이미지
-    if (key === 'images') {
+    if (key === 'images' || key === 'image') {
       if (Array.isArray(value) && value.length > 0) {
         value.forEach(file => formData.append(key, file));
+      }else if (value){
+        formData.append(key, value);
       }
       return;
     }

@@ -1,54 +1,58 @@
-/* Bold */
+/* SUIT 폰트 패밀리 - 통합 설정 */
 
 @font-face {
-    font-family: Suit-Bold;
-    src: url('./assets/fonts/SUIT-Bold.ttf') format('truetype');
+    font-family: 'Nanum Square';
+    src: url('/src/assets/fonts/NanumSquare/NanumSquareL.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
 }
 
 @font-face {
-    font-family: Suit-SemiBold;
-    src: url('./assets/fonts/SUIT-SemiBold.ttf') format('truetype');
+    font-family: 'Nanum Square';
+    src: url('/src/assets/fonts/NanumSquare/NanumSquareR.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
 }
 
 @font-face {
-    font-family: Suit-ExtraBold;
-    src: url('./assets/fonts/SUIT-ExtraBold.ttf') format('truetype');
-}
-
-/* Light */
-
-@font-face {
-    font-family: Suit-Light;
-    src: url('./assets/fonts/SUIT-Light.ttf') format('truetype');
+    font-family: 'Nanum Square';
+    src: url('/src/assets/fonts/NanumSquare/NanumSquareB.ttf') format('truetype');
+    font-weight: 800;
+    font-style: normal;
 }
 
 @font-face {
-    font-family: Suit-ExtraLight;
-    src: url('./assets/fonts/SUIT-ExtraLight.ttf') format('truetype');
+    font-family: 'Nanum Square';
+    src: url('/src/assets/fonts/NanumSquare/NanumSquareEB.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
 }
 
-/* Regular */
-
-@font-face {
-    font-family: Suit-Regular;
-    src: url('./assets/fonts/SUIT-Regular.ttf') format('truetype');
-}
-
-/* Medium */
-
-@font-face {
-    font-family: Suit-Medium;
-    src: url('./assets/fonts/SUIT-Medium.ttf') format('truetype');
-}
-
-/* TEST */
-
-@font-face {
-    font-family: DaeguJungguEubseong;
-    src: url('./assets/fonts/대구중구읍성 Regular.ttf') format('truetype');
-}
-
-body {
-    font-family: 'Suit-SemiBold', sans-serif;
+/* 전역 폰트 설정 */
+:root,
+html,
+body,
+#app,
+.v-application,
+.v-application .text-h1,
+.v-application .text-h2,
+.v-application .text-h3,
+.v-application .text-h4,
+.v-application .text-h5,
+.v-application .text-h6,
+.v-application .text-subtitle-1,
+.v-application .text-subtitle-2,
+.v-application .text-body-1,
+.v-application .text-body-2,
+.v-application .text-button,
+.v-application .text-caption,
+.v-application .text-overline,
+.v-card,
+.v-btn,
+*,
+*::before,
+*::after {
+    font-family: 'Nanum Square', 'Noto Sans KR', sans-serif !important;
+    font-weight: 700;
 }
 

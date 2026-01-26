@@ -38,7 +38,7 @@ export const getAdoptionList = async (params: { [key: string]: any }): Promise<A
 };
 
 // 작성글 목록 보기
-export const getUserAdoptions = async (userId: UUID) => {
-  const response = await api.get(`${apiAdoption}/writer/${userId}`);
+export const getUserAdoptions = async (userId: UUID) : Promise<AdoptionListResponse> => {
+  const response = await api.get<AdoptionListResponse>(`${apiAdoption}/writer/${userId}`);
   return response.data;
 };

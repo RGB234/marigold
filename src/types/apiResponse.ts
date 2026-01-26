@@ -30,6 +30,7 @@ export interface AdoptionListResponse {
         area: string;
         imageUrl: string;
         status: string;
+        createdAt: string;
     }
 }
 

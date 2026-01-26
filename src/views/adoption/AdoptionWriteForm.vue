@@ -9,12 +9,12 @@
         <div class="field">
           <label for="species">종</label>
           <select id="species" v-model="form.species">
-            <option :value="species.DOG">개</option>
-            <option :value="species.CAT">고양이</option>
-            <option :value="species.RODENTS">설치류</option>
-            <option :value="species.BIRDS">조류</option>
-            <option :value="species.REPTILES">파충류</option>
-            <option :value="species.OTHER">기타 외</option>
+            <option :value="Species.DOG">개</option>
+            <option :value="Species.CAT">고양이</option>
+            <option :value="Species.RODENTS">설치류</option>
+            <option :value="Species.BIRDS">조류</option>
+            <option :value="Species.REPTILES">파충류</option>
+            <option :value="Species.OTHER">기타 외</option>
           </select>
           <!-- 에러 메시지 표시 -->
           <div v-if="errors.species" class="error">{{ errors.species }}</div>
@@ -32,10 +32,10 @@
         <div class="field">
           <label for="sex">성별</label>
           <select id="sex" v-model="form.sex">
-            <option :value="sex.FEMALE">암</option>
-            <option :value="sex.MALE">수</option>
-            <option :value="sex.UNKNOWN">불명(모름)</option>
-            <option :value="sex.OTHER">기타</option>
+            <option :value="Sex.FEMALE">암</option>
+            <option :value="Sex.MALE">수</option>
+            <option :value="Sex.UNKNOWN">불명(모름)</option>
+            <option :value="Sex.OTHER">기타</option>
           </select>
           <div v-if="errors.sex" class="error">{{ errors.sex }}</div>
         </div>
@@ -52,9 +52,9 @@
         <div class="field">
           <label for="neutering">중성화 여부</label>
           <select id="neutering" v-model="form.neutering">
-            <option :value="neutering.YES">예</option>
-            <option :value="neutering.NO">아니오</option>
-            <option :value="neutering.UNKNOWN">불명</option>
+            <option :value="Neutering.YES">예</option>
+            <option :value="Neutering.NO">아니오</option>
+            <option :value="Neutering.UNKNOWN">불명</option>
           </select>
           <div v-if="errors.neutering" class="error">
             {{ errors.neutering }}
@@ -115,29 +115,10 @@ import api from "@/api/api";
 import { useRouter } from "vue-router";
 import { createAdoption } from "@/api/adoption";
 import { convertToFormData } from "@/utils/objectUtils";
+import { Species } from "@/enums/Species";
+import { Sex } from "@/enums/Sex";
+import { Neutering } from "@/enums/Neutering";
 
-const species = Object.freeze({
-  DOG: "DOG",
-  CAT: "CAT",
-  RODENTS: "RODENTS",
-  BIRDS: "BIRDS",
-  REPTILES: "REPTILES",
-  FISH: "FISH",
-  OTHER: "OTHER",
-});
-
-const sex = Object.freeze({
-  MALE: "MALE",
-  FEMALE: "FEMALE",
-  UNKNOWN: "UNKNOWN",
-  OTHER: "OTHER",
-});
-
-const neutering = Object.freeze({
-  YES: "YES",
-  NO: "NO",
-  UNKNOWN: "UNKNOWN",
-});
 
 const form = reactive({
   species: "DOG",
@@ -170,7 +151,7 @@ const loading = ref(false);
 const adoptionFormUrl = import.meta.env.VITE_APP_ADOPTION;
 
 // 이미지 파일 변경 핸들러
-const handleImageChange = (event) => {
+const handleImageChange = async (event) => {
   const files = Array.from(event.target.files);
   
   // 최대 5개 제한
@@ -189,17 +170,23 @@ const handleImageChange = (event) => {
   }
   
   errors.images = "";
-  form.images = files;
   
-  // 미리보기 생성
-  imagePreviews.value = [];
-  files.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      imagePreviews.value.push(e.target.result);
-    };
-    reader.readAsDataURL(file);
-  });
+  try {
+    form.images = files;
+    
+    // 미리보기 생성
+    imagePreviews.value = [];
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreviews.value.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  } catch (error) {
+    console.error("이미지 처리 중 오류 발생:", error);
+    errors.images = "이미지 처리 중 오류가 발생했습니다.";
+  }
 };
 
 // 이미지 제거
@@ -224,23 +211,6 @@ const handleSubmit = async () => {
   
   const formData = convertToFormData(form);
   
-  // // 텍스트 필드 추가
-  // formData.append("species", form.species);
-  // formData.append("title", form.title);
-  // formData.append("age", form.age);
-  // formData.append("sex", form.sex);
-  // formData.append("area", form.area);
-  // formData.append("weight", form.weight);
-  // formData.append("neutering", form.neutering);
-  // formData.append("features", form.features);
-  
-  // // 이미지 파일 추가
-  // if (form.images && form.images.length > 0) {
-  //   form.images.forEach((file) => {
-  //     formData.append("images", file);
-  //   });
-  // }
-
   try {
     const createdPostId = await createAdoption(formData);
     console.log("createdPostId", createdPostId);
@@ -288,8 +258,6 @@ const handleCancel = () => {
 section {
   padding: 28px 16px;
   background: linear-gradient(180deg, var(--bg), #f6f8fb);
-  font-family: Inter, "Noto Sans KR", system-ui, -apple-system, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial;
   color: #111827;
 }
 

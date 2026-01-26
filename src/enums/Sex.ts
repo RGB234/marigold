@@ -14,7 +14,7 @@ export enum Sex {
 export const SexLabels: Record<Sex, string> = {
   [Sex.MALE]: "수컷",
   [Sex.FEMALE]: "암컷",
-  [Sex.UNKNOWN]: "모름",
+  [Sex.UNKNOWN]: "불명",
   [Sex.OTHER]: "기타"
 };
 

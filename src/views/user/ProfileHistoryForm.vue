@@ -4,8 +4,11 @@ import { useRouter } from 'vue-router';
 import { getUserAdoptions } from '@/api/adoption';
 import { useAuthStore } from '@/stores/auth';
 import NoImage from '@/assets/images/no-image.jpeg';
+import { CompletedLabels } from '@/enums/Completed';
+import { SexLabels } from '@/enums/Sex';
+import { SpeciesLabels } from '@/enums/Species';
 
-const router = useRouter();
+const router = useRouter(); 
 
 // 상태 변수
 const myAdoptions = ref([]);
@@ -41,50 +44,6 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('ko-KR');
 };
 
-
-// Mapper function
-
-const getStatusLabel = (status) => {
-    const map = {
-        RECRUITING: '모집 중',
-        COMPLETED: '입양 완료',
-    };
-    return map[status] || '모집 중';
-};
-
-const getSpeciesLabel = (species) => {
-    const map = {
-        DOG: '강아지',
-        CAT: '고양이',
-        RODENTS: '설치류',
-        BIRDS: '조류',
-        REPTILES: '파충류',
-        FISH: '어류',
-        OTHER: '기타',
-    };
-    return map[species] || '기타';
-};
-
-const getSexLabel = (sex) => {
-    const map = {
-        MALE: '남아',
-        FEMALE: '여아',
-        UNKNOWN: '불명',
-        OTHER: '기타',
-    };
-    return map[sex] || '불명';
-};
-
-const getNeuteringLabel = (neutering) => {
-    const map = {
-        YES: '예',
-        NO: '아니오',
-        UNKNOWN: '불명',
-    };
-    return map[neutering] || '불명';
-};
-
-
 onMounted(() => {
     const uuid = getCurrentUserId();
     if (uuid) {
@@ -111,22 +70,27 @@ onMounted(() => {
             <div v-for="item in myAdoptions" :key="item.id" class="card" @click="goToDetail(item.id)">
                 <div class="card-image">
                     <img :src="item.imageUrl || NoImage" alt="" class="thumb" />
-                    <span class="status-badge" :class="{ done: item.status === 'DONE' }">
-                        {{ getStatusLabel(item.status) }}
-                    </span>
                 </div>
 
                 <div class="card-body">
+                    <span class="status-badge" :class="{ done: item.completed }">
+                        {{ CompletedLabels[item.completed] }}
+                    </span>
                     <div class="card-meta">
-                        <span class="species">{{ getSpeciesLabel(item.species) }}</span>
+                        <span class="species">{{ SpeciesLabels[item.species] }}</span>
                         <span class="divider">|</span>
                         <span class="date">{{ formatDate(item.createdAt) }}</span>
                     </div>
                     <h3 class="card-title">{{ item.title }}</h3>
                     <div class="card-info">
-                        <span>{{ item.age }}살</span> ·
-                        <span>{{ getSexLabel(item.sex) }}</span> ·
-                        <span>{{ getNeuteringLabel(item.neutering) }}</span> ·
+                        <span>{{ item.age }}살</span>
+                    </div>
+                    <div class="card-info">
+                        <span>성별</span>
+                        <span>{{ SexLabels[item.sex] }}</span>
+                    </div>
+                    <div class="card-info">
+                        <span>지역</span>
                         <span>{{ item.area }}</span>
                     </div>
                 </div>
@@ -164,10 +128,9 @@ onMounted(() => {
 
 /* 그리드 레이아웃 */
 .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    /* 반응형 그리드 */
-    gap: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 /* 카드 스타일 */
@@ -179,19 +142,28 @@ onMounted(() => {
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    /* 가로 배치 */
+    height: 200px;
+    /* 고정 높이 */
 }
 
 .card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .card-image {
     position: relative;
-    width: 100%;
-    height: 180px;
-    background-color: #eee;
+    width: 200px;
+    /* 정사각형 이미지 */
+    min-width: 200px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
 }
 
 .thumb {
@@ -202,9 +174,8 @@ onMounted(() => {
 
 /* 상태 배지 */
 .status-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+    display: inline-block;
+    width: fit-content;
     background-color: #ff9800;
     /* 모집중 컬러 */
     color: white;
@@ -212,6 +183,7 @@ onMounted(() => {
     border-radius: 20px;
     font-size: 12px;
     font-weight: bold;
+    margin-bottom: 8px;
 }
 
 .status-badge.done {
@@ -221,23 +193,34 @@ onMounted(() => {
 
 /* 카드 내용 */
 .card-body {
-    padding: 16px;
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
 .card-meta {
-    font-size: 12px;
+    font-size: 13px;
     color: #888;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.card-meta .species {
+    font-weight: 600;
+    color: #666;
+}
+
+.card-meta .divider {
+    margin: 0 8px;
+    color: #ddd;
 }
 
 .card-title {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: bold;
     color: #333;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     line-height: 1.4;
 
     /* 긴 제목 말줄임표 처리 */
@@ -248,10 +231,15 @@ onMounted(() => {
 }
 
 .card-info {
-    font-size: 13px;
+    font-size: 14px;
     color: #666;
-    margin-top: auto;
-    /* 하단 고정 */
+    display: flex;
+    gap: 8px;
+}
+
+.card-info span:first-child {
+    color: #999;
+    font-weight: 500;
 }
 
 /* 로딩 & 빈 상태 */

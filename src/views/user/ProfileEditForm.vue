@@ -21,7 +21,7 @@
 
             <div class="input-group">
                 <label for="nickname">닉네임</label>
-                <input id="nickname" v-model="nickname" type="text" placeholder="사용할 닉네임을 입력하세요" required />
+                <input id="nickname" v-model="form.nickname" type="text" placeholder="사용할 닉네임을 입력하세요" required />
             </div>
 
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
@@ -33,37 +33,53 @@
 
 <script setup>
 import api from '@/api/api';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
 import { updateUserProfile, getUserProfile } from '@/api/user'; // 조회 API 추가 가정
+import { convertToFormData } from '@/utils/objectUtils';
 import { useAuthStore } from '@/stores/auth';
 import defaultProfileImageURL from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
 
 // 상태 관리
-const nickname = ref('');
-const selectedFile = ref(null); // 새로 선택된 파일 객체
+const form = reactive({
+    nickname: '',
+    image: null,
+    removeImage: false,
+});
+
+const errors = reactive({
+    nickname: '',
+    image: '',
+    removeImage: '',
+});
+
 const previewUrl = ref(null);   // 화면에 보여줄 이미지 URL (Blob 또는 서버 URL)
 
-const fileInput = ref(null);
+const fileInput = ref(null); // 파일입력 DOM 요소에 대한 참조
 const isSubmitting = ref(false);
 
 const authStore = useAuthStore();
 const userId = computed(() => authStore.userId);
+const router = useRouter();
 
-const formData = new FormData();
-// 1. 초기 데이터 로딩
-onMounted(async () => {
+const handleFetchUserProfile = async () => {
     try {
         // 유저 정보 조회 API 호출 (가정)
         const data = await getUserProfile(userId.value); 
-        nickname.value = data.nickname;
-        
+        form.nickname = data.nickname;
+        // form은 채우지 않으며 변경하지 않는 이상 null로 유지
+        // 삭제하는 경우 removeImage를 true로 설정하여 요청에 포함
         if (data.imageUrl) {
-            previewUrl.value = data.imageUrl; // 초기 이미지는 서버 URL
+            previewUrl.value = data.imageUrl;
         }
     } catch (error) {
         console.error('사용자 정보를 불러오는데 실패했습니다.', error);
     }
+}
+
+
+onMounted(async () => {
+    await handleFetchUserProfile();
 });
 
 // 2. 메모리 누수 방지: 컴포넌트 해제 시 Blob URL 해제
@@ -91,10 +107,10 @@ const handleFileChange = (event) => {
             URL.revokeObjectURL(previewUrl.value);
         }
 
-        selectedFile.value = file;
+        form.image = file;
         previewUrl.value = URL.createObjectURL(file); // 새 이미지 미리보기
 
-        formData.append('removeImage', false);
+        form.removeImage = false;
     }
 };
 
@@ -105,31 +121,23 @@ const resetImageToDefault = () => {
         URL.revokeObjectURL(previewUrl.value);
     }
 
-    selectedFile.value = null;
-    fileInput.value = null; 
+    form.image = null;
+    fileInput.value.value = ''; // 파일 입력 초기화
     
     previewUrl.value = defaultProfileImageURL;
 
-    formData.append('removeImage', true);
+    form.removeImage = true;
 };
 
 const submitForm = async () => {
-    if (!nickname.value.trim()) return alert('닉네임을 입력해주세요.');
+    if (!form.nickname.trim()) return alert('닉네임을 입력해주세요.');
 
     isSubmitting.value = true;
 
     try {
-        // const formData = new FormData();
-        formData.append('nickname', nickname.value);
-
-        // 이미지가 "새로 선택되었을 때만" 보냄
-        if (selectedFile.value) {
-            formData.append('image', selectedFile.value);
-        }
+        const formData = convertToFormData(form);
 
         await updateUserProfile(formData);
-        alert('프로필이 저장되었습니다!');
-        
         // location.reload();
         router.push({name: 'Profile'});
         

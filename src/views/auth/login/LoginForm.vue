@@ -132,7 +132,6 @@ button {
   width: 16rem;
   padding: 0.75rem 0;
   border-radius: 0.5rem;
-  font-family: Suit-ExtraBold, sans-serif;
   font-size: 0.875rem;
 
   display: flex;

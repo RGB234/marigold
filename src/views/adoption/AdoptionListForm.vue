@@ -46,29 +46,35 @@
       <button class="search-btn" @click="handleSearch">검색</button>
     </div>
   </div>
+
   <div class="card-container">
     <div v-for="(card, index) in visibleCards" :key="index" class="card" @click="handleCardClick(card)">
-      <div v-if="card.imageUrl">
-        <img :src="card.imageUrl" alt="대표이미지" />
+      <div class="card-image">
+        <img :src="card.imageUrl" alt="대표이미지" class="thumb" />
       </div>
-      <div v-if="card.title" class="info">
-        <p>{{ card.title }}</p>
-      </div>
-      <div v-if="card.species" class="info">
-        <!-- <label>종</label> -->
-        <p>{{ SpeciesLabels[card.species] }}</p>
-      </div>
-      <div v-if="card.age !== null" class="info">
-        <!-- <label>나이</label> -->
-        <p>{{ card.age }} 살</p>
-      </div>
-      <div v-if="card.sex" class="info">
-        <!-- <label>성별</label> -->
-        <p>{{ SexLabels[card.sex] }}</p>
-      </div>
-      <div v-if="card.area" class="info">
-        <!-- <label>지역</label> -->
-        <p>{{ card.area }}</p>
+
+      <div class="card-body">
+        <span class="status-badge" :class="{ completed: card.completed }">
+          <!-- {{ getStatusLabel(card.completed) }} -->
+            {{ CompletedLabels[card.completed] }}
+        </span>
+        <div class="card-meta">
+          <span class="species">{{ SpeciesLabels[card.species] }}</span>
+          <span class="divider">|</span>
+          <span class="date">{{ card.createdAt ? new Date(card.createdAt).toLocaleDateString('ko-KR') : '' }}</span>
+        </div>
+        <h3 class="card-title">{{ card.title }}</h3>
+        <div class="card-info">
+          <span>{{ card.age }}살</span>
+        </div>
+        <div class="card-info">
+          <span>성별</span>
+          <span>{{ SexLabels[card.sex] }}</span>
+        </div>
+        <div class="card-info">
+          <span>지역</span>
+          <span>{{ card.area }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -93,6 +99,7 @@ import api from "@/api/api";
 import { useRouter } from "vue-router";
 import { Species, SpeciesLabels, SpeciesOptions } from "@/enums/Species";
 import { Sex, SexLabels, SexOptions } from "@/enums/Sex";
+import { CompletedLabels } from "@/enums/Completed";
 import { cleanParams } from "@/utils/objectUtils";
 
 import { getAdoptionList } from "@/api/adoption";
@@ -125,7 +132,7 @@ const handleSearch = async () => {
     console.error("검색 중 오류 발생:", error);
     alert("검색 중 오류가 발생했습니다.");
     throw error;
-  }finally{
+  } finally {
     loading.value = false;
   }
 };
@@ -193,7 +200,6 @@ onMounted(async () => {
 </script>
 
 <style lang="css" scoped>
-
 /* search filter */
 
 div.filter-container {
@@ -262,66 +268,120 @@ select:disabled {
 /* card */
 
 .card-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 16px;
 }
 
 .card {
-  width: 180px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-
-  h3 {
-    margin: 4px;
-  }
-
-  p {
-    margin: 4px;
-  }
-
-  img {
-    width: 100%;
-    border-radius: 10px;
-  }
+  display: flex;
+  flex-direction: row;
+  /* 가로 배치 */
+  height: 200px;
+  /* 고정 높이 */
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-.info {
+.card-image {
+  position: relative;
+  width: 200px;
+  /* 정사각형 이미지 */
+  min-width: 200px;
+  height: 200px;
   display: flex;
-  justify-content: space-between;
-  /* 라벨과 값 양 끝 정렬 */
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.thumb {
   width: 100%;
-  margin-bottom: 8px;
-  font-family: "Arial", sans-serif;
+  height: 100%;
+  object-fit: cover;
 }
 
-.info label {
+/* 상태 배지 */
+.status-badge {
+    display: inline-block;
+    width: fit-content;
+    background-color: #ff9800;
+    /* 모집중 컬러 */
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.status-badge.completed {
+    background-color: #888;
+    /* 완료 컬러 */
+}
+
+/* 카드 내용 */
+.card-body {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-meta {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.card-meta .species {
   font-weight: 600;
-  color: #555;
-  flex-shrink: 0;
-  /* 라벨 크기 유지 */
+  color: #666;
 }
 
-.info h3,
-.info p {
-  margin: 0;
+.card-meta .divider {
+  margin: 0 8px;
+  color: #ddd;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
   color: #333;
-  text-align: right;
-  flex-grow: 1;
-  /* 값이 남은 공간 차지 */
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+
+  /* 긴 제목 말줄임표 처리 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-info {
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  gap: 8px;
+}
+
+.card-info span:first-child {
+  color: #999;
+  font-weight: 500;
 }
 
 .btn-container {

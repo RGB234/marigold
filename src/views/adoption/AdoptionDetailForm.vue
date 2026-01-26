@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { SpeciesLabels } from "@/enums/Species";
 import { SexLabels } from "@/enums/Sex";
 import { NeuteringLabels } from "@/enums/Neutering";
+import { CompletedLabels } from "@/enums/Completed";
 import { getAdoptionDetail, deleteAdoption } from '@/api/adoption';
 
 import { useAuthStore } from '@/stores/auth';
@@ -25,8 +26,6 @@ const isAuthor = computed(() => {
     if (!detail.value || !currentUserId.value) return false;
     return detail.value.writer?.id === currentUserId.value;
 });
-
-const translate = (labels, key) => labels[key] || key;
 
 // 날짜 포맷팅 함수 (YYYY-MM-DD HH:mm)
 const formatDate = (dateString) => {
@@ -70,7 +69,7 @@ const deletePost = async () => {
         loading.value = true;
         await deleteAdoption(route.params.id);
         alert('게시글이 삭제되었습니다.');
-        router.push({ name: 'Adoption' });
+        router.push({ name: 'Adoption_list' });
     } catch (error) {
         console.error("게시글 삭제 중 오류 발생:", error);
         alert("게시글 삭제 중 오류가 발생했습니다.");
@@ -96,11 +95,12 @@ onMounted(async () => {
             <div class="header-section">
                 <div class="header-top">
                     <div class="title-row">
-                        <span class="badge species">{{ translate(SpeciesLabels, detail.species) }}</span>
+                        <span class="badge species">{{ SpeciesLabels[detail.species] }}</span>
+                        <span class="badge" :class="{ completed: detail.completed }">{{ CompletedLabels[detail.completed] }}</span>
                         <h1 class="name">{{ detail.name }}</h1>
                     </div>
                     <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
-                    <div v-if="isLoggedIn && isAuthor" class="action-buttons">
+                    <div v-if="isLoggedIn && isAuthor && detail.completed === false" class="action-buttons">
                         <button class="btn-small edit" @click="editPost">수정</button>
                         <button class="btn-small delete" @click="confirmDelete">삭제</button>
                     </div>
@@ -132,7 +132,7 @@ onMounted(async () => {
                 </div>
                 <div class="info-item">
                     <span class="label">성별</span>
-                    <span class="value">{{ translate(SexLabels, detail.sex) }}</span>
+                    <span class="value">{{ SexLabels[detail.sex] }}</span>
                 </div>
                 <div class="info-item">
                     <span class="label">몸무게</span>
@@ -140,7 +140,7 @@ onMounted(async () => {
                 </div>
                 <div class="info-item">
                     <span class="label">중성화</span>
-                    <span class="value">{{ translate(NeuteringLabels, detail.neutering) }}</span>
+                    <span class="value">{{ NeuteringLabels[detail.neutering] }}</span>
                 </div>
                 <div class="info-item full-width">
                     <span class="label">보호 지역</span>
@@ -203,12 +203,17 @@ onMounted(async () => {
 }
 
 .badge {
-    background-color: #ffe082;
-    color: #333;
+    background-color: #ff9800;
+    color: #fff;
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 14px;
     font-weight: bold;
+}
+
+.badge.completed {
+    background-color: #888;
+    color: #fff;
 }
 
 .name {

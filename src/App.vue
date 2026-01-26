@@ -6,7 +6,7 @@
       <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }">회원가입</router-link>
       <router-link v-if="isLoggedIn" :to="{ name: 'Home' }" @click="authStore.logout()">로그아웃</router-link>
-      <router-link v-if="isLoggedIn && userId" :to="{ name: 'Profile' }">마이페이지</router-link>
+      <router-link v-if="isLoggedIn && userId" :to="{ name: 'Profile' }">내 계정</router-link>
     </nav>
 
     <router-view />
@@ -44,7 +44,8 @@ nav {
   align-items: center;
   /* 세로 중앙 정렬 */
   padding-right: 2rem;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  font-weight: 700;
 }
 
 a {
