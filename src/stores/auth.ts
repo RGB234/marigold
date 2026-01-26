@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { isValidUUID } from "@/utils/validators";
+import { isValidTsid } from "@/utils/validators";
 import api from "@/api/api";
 
 
@@ -15,13 +15,13 @@ export enum EnumProviderCode {
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    id: null,
+    id: null as string | null,
     authorities: [] as string[],
   }),
   
   getters: {
     // 로그인 여부 확인
-    isLoggedIn: (state) => isValidUUID(state.id || ""),
+    isLoggedIn: (state) => isValidTsid(state.id || ""),
     userId: (state) => state.id,
     // 권한 목록
     userAuthorities: (state) => state.authorities,
