@@ -1,8 +1,8 @@
 // 응답받을 데이터의 형태를 정의
 export interface AdoptionDetailResponse {
-    id: number;        // UUID가 문자열이라면 string
-    writer: {          // 중첩된 객체가 있다면 이렇게 정의
-        id: string; // UUID
+    id: number;
+    writer: {
+        id: bigint; // Tsid
         nickname: string;
         imageUrl: string;
     };
@@ -21,7 +21,7 @@ export interface AdoptionDetailResponse {
 }
 
 export interface AdoptionListResponse {
-    content: {
+    content: Array<{
         id: number;
         title: string;
         species: string;
@@ -31,7 +31,7 @@ export interface AdoptionListResponse {
         imageUrl: string;
         status: string;
         createdAt: string;
-    }
+    }>;
 }
 
 export interface UserProfileResponse {

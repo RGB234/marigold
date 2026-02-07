@@ -129,8 +129,15 @@ const resetImageToDefault = () => {
     form.removeImage = true;
 };
 
+const isValidNickname = (nickname) => {
+    if (!nickname || typeof nickname !== 'string') return false;
+    const pattern = /^[가-힣a-zA-Z0-9]{2,12}$/;
+    return pattern.test(nickname);
+}
+
 const submitForm = async () => {
     if (!form.nickname.trim()) return alert('닉네임을 입력해주세요.');
+    if (!isValidNickname(form.nickname)) return alert('닉네임은 2자 이상 12자 이하의 한글, 영문, 숫자만 사용할 수 있습니다.');
 
     isSubmitting.value = true;
 

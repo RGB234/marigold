@@ -9,6 +9,7 @@ import { CompletedLabels } from "@/enums/Completed";
 import { getAdoptionDetail, deleteAdoption } from '@/api/adoption';
 
 import { useAuthStore } from '@/stores/auth';
+import { tsidToLong } from '@/utils/tsid';
 
 const route = useRoute();
 const router = useRouter();
@@ -24,7 +25,9 @@ const currentUserId = computed(() => authStore.userId);
 // 작성자 본인인지 확인
 const isAuthor = computed(() => {
     if (!detail.value || !currentUserId.value) return false;
-    return detail.value.writer?.id === currentUserId.value;
+    // console.log(detail.value.writer?.id);
+    // console.log(tsidToLong(currentUserId.value));
+    return detail.value.writer?.id === tsidToLong(currentUserId.value);
 });
 
 // 날짜 포맷팅 함수 (YYYY-MM-DD HH:mm)

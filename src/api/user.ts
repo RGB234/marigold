@@ -4,11 +4,17 @@ const apiUserProfile = import.meta.env.VITE_API_USER_PROFILE;
 const apiUserUpdate = import.meta.env.VITE_API_USER_UPDATE;
 const apiUserDelete = import.meta.env.VITE_API_USER_DELETE;
 
+
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { UserProfileResponse } from "@/types/apiResponse";
+import { getPresignedUrl } from "./storage";
 
 export const getUserProfile = async (UUID: UUID): Promise<UserProfileResponse> => {
     const response = await api.get<UserProfileResponse>(`${apiUserProfile}/${UUID}`);
+    if (response.data.imageUrl != null) {
+        const presignedUrl = await getPresignedUrl(response.data.imageUrl);
+        response.data.imageUrl = presignedUrl;
+    }
     if (response.data.imageUrl === null) {
         response.data.imageUrl = defaultProfileImage;
     }
