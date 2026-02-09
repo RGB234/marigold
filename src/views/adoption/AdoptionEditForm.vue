@@ -193,7 +193,7 @@ const removeImage = (index) => {
   // 파일 input 초기화
   const fileInput = document.getElementById("images");
   if (fileInput && newImages.length === 0) {
-    fileInput.value = "";
+    fileInput.value = null;
   }
 };
 
@@ -207,13 +207,14 @@ const handleFetchAdoption = async () => {
   form.weight = data.weight;
   form.neutering = data.neutering;
   form.features = data.features;
+  // 이미지의 경우 화면에 띄우기만 하고 form은 채우지 않음
   if (data.imageUrls && data.imageUrls.length > 0) {
     data.imageUrls.forEach((imageUrl) => {
-      // 화면에 띄우기만 하고 form은 채우지 않음
+      
       imagePreviews.value.push(imageUrl);
     });
-    form.images = [];
   }
+  form.images = null;
 }
 
 const handleSubmit = async () => {
