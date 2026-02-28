@@ -7,7 +7,7 @@
       </div>
       <div class="writing-content">
         <div class="field">
-          <label for="species">종</label>
+          <label for="species" class="required">종</label>
           <select id="species" v-model="form.species">
             <option :value="Species.DOG">개</option>
             <option :value="Species.CAT">고양이</option>
@@ -20,17 +20,17 @@
           <div v-if="errors.species" class="error">{{ errors.species }}</div>
         </div>
         <div class="field">
-          <label for="title">제목</label>
+          <label for="title" class="required">제목</label>
           <input type="text" id="title" v-model="form.title" />
           <div v-if="errors.title" class="error">{{ errors.title }}</div>
         </div>
         <div class="field">
-          <label for="age">나이</label>
+          <label for="age" class="required">나이</label>
           <input type="number" id="age" v-model="form.age" />
           <div v-if="errors.age" class="error">{{ errors.age }}</div>
         </div>
         <div class="field">
-          <label for="sex">성별</label>
+          <label for="sex" class="required">성별</label>
           <select id="sex" v-model="form.sex">
             <option :value="Sex.FEMALE">암</option>
             <option :value="Sex.MALE">수</option>
@@ -40,17 +40,17 @@
           <div v-if="errors.sex" class="error">{{ errors.sex }}</div>
         </div>
         <div class="field">
-          <label for="area">위치</label>
+          <label for="area" class="required">위치</label>
           <input type="text" id="area" v-model="form.area" />
           <div v-if="errors.area" class="error">{{ errors.area }}</div>
         </div>
         <div class="field">
-          <label for="weight">체중</label>
+          <label for="weight" class="required">체중</label>
           <input type="number" id="weight" v-model="form.weight" />
           <div v-if="errors.weight" class="error">{{ errors.weight }}</div>
         </div>
         <div class="field">
-          <label for="neutering">중성화 여부</label>
+          <label for="neutering" class="required">중성화 여부</label>
           <select id="neutering" v-model="form.neutering">
             <option :value="Neutering.YES">예</option>
             <option :value="Neutering.NO">아니오</option>
@@ -60,43 +60,40 @@
             {{ errors.neutering }}
           </div>
         </div>
-        <div class="field">
-          <label for="features">특징</label>
-          <input type="text" id="features" v-model="form.features" />
+        <div class="field full">
+          <label for="features" class="required">특징</label>
+          <textarea id="features" v-model="form.features" rows="4"></textarea>
           <div v-if="errors.features" class="error">{{ errors.features }}</div>
         </div>
         <!-- 이미지 업로드 필드 -->
         <div class="field full">
-          <label for="images">이미지 (최대 5개)</label>
-          <input
-            type="file"
-            id="images"
-            accept="image/*"
-            multiple
-            @change="handleImageChange"
-            class="file-input"
-          />
-          <div v-if="errors.images" class="error">{{ errors.images }}</div>
-          
-          <!-- 이미지 미리보기 -->
-          <div v-if="imagePreviews.length > 0" class="image-preview-container">
-            <div
-              v-for="(preview, index) in imagePreviews"
-              :key="index"
-              class="image-preview"
-            >
-              <img :src="preview" :alt="`미리보기 ${index + 1}`" />
-              <button
-                type="button"
-                class="remove-image"
-                @click="removeImage(index)"
-                title="이미지 제거"
-              >
-                ×
-              </button>
+          <span class="field-label required">이미지 (최대 {{ MAX_IMAGE_COUNT }}개)</span>
+          <input type="file" id="images" accept="image/*" multiple @change="handleImageChange" class="file-input-hidden"
+            ref="fileInputRef" />
+          <div class="image-upload-area">
+            <div class="image-preview-container">
+              <!-- 이미지 미리보기 -->
+              <div v-for="(preview, index) in imagePreviews" :key="index" class="image-preview">
+                <img :src="preview" :alt="`미리보기 ${index + 1}`" @click="openLightbox(index)" />
+                <button type="button" class="remove-image" @click="removeImage(index)" title="이미지 제거">×</button>
+              </div>
+              <!-- 추가 버튼 -->
+              <label v-if="imagePreviews.length < MAX_IMAGE_COUNT" for="images" class="image-add-btn" title="이미지 추가">
+                <span class="image-add-icon">+</span>
+                <span class="image-add-text">{{ imagePreviews.length === 0 ? '이미지 추가' : '' }}</span>
+              </label>
             </div>
           </div>
+          <div v-if="errors.images" class="error">{{ errors.images }}</div>
         </div>
+
+        <!-- 이미지 팝업 뷰어 -->
+        <Teleport to="body">
+          <div v-if="lightboxIndex !== null" class="lightbox-overlay" @click.self="closeLightbox">
+            <button type="button" class="lightbox-close" @click="closeLightbox">×</button>
+            <img :src="imagePreviews[lightboxIndex]" class="lightbox-img" :alt="`이미지 ${lightboxIndex + 1}`" />
+          </div>
+        </Teleport>
       </div>
       <!-- ✅ 버튼 영역 -->
       <div class="btn-row">
@@ -109,17 +106,34 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref, onMounted } from "vue";
-import api from "@/api/api";
 import { useRouter, useRoute } from "vue-router";
 import { editAdoption, getAdoptionDetail } from "@/api/adoption";
 import { convertToFormData } from "@/utils/objectUtils";
 import { Species } from "@/enums/Species";
 import { Sex } from "@/enums/Sex";
 import { Neutering } from "@/enums/Neutering";
+import { AdoptionDetailResponse } from "@/types/apiResponse";
 
-const form = reactive({
+const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
+const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
+const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE);
+
+interface AdoptionForm {
+  species: Species | string;
+  title: string;
+  age: number;
+  sex: Sex | string;
+  area: string;
+  weight: number;
+  neutering: Neutering | string;
+  features: string;
+  images: File[];
+  imagesToKeep: {url: string, fileName: string}[];
+}
+
+const form = reactive<AdoptionForm>({
   species: "DOG",
   title: "",
   age: 0,
@@ -128,10 +142,11 @@ const form = reactive({
   weight: 0,
   neutering: "NO",
   features: "",
-  images: [],
+  images: [] as File[],
+  imagesToKeep: [] as {url: string, fileName: string}[],
 });
 
-const errors = reactive({
+const errors = reactive<Record<keyof AdoptionForm | string, string>>({
   species: "",
   title: "",
   age: "",
@@ -143,106 +158,145 @@ const errors = reactive({
   images: "",
 });
 
+
 const route = useRoute();
 const router = useRouter();
-const imagePreviews = ref([]);
-const loading = ref(false);
 
-const adoptionFormUrl = import.meta.env.VITE_APP_ADOPTION;
+const imagePreviews = ref<string[]>([]);
+const loading = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const lightboxIndex = ref<number | null>(null);
+
+const openLightbox = (index: number) => { lightboxIndex.value = index; };
+const closeLightbox = () => { lightboxIndex.value = null; };
+
+const handleFetchAdoption = async () => {
+  const data : AdoptionDetailResponse = await getAdoptionDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
+
+  Object.assign(form, {
+    species: data.species,
+    title: data.title,
+    age: data.age,
+    sex: data.sex,
+    area: data.area,
+    weight: data.weight,
+    neutering: data.neutering,
+    features: data.features,
+  });
+
+  // 수정 전 이미지 목록 저장
+  if(data.imageFileNames?.length > 0) {
+    form.imagesToKeep = data.imageFileNames.map((fileName, index) => ({
+      fileName: fileName,
+      url: data.imageUrls[index],
+    }));
+  }
+  // 이미지 Presigned URL (렌더링용)
+  if (data.imageUrls?.length > 0) {
+    imagePreviews.value = [...data.imageUrls];
+  }
+}
 
 // 이미지 파일 변경 핸들러
-const handleImageChange = (event) => {
-  const files = Array.from(event.target.files);
+const handleImageChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!target.files) return;
   
-  // 최대 5개 제한
-  if (files.length > 5) {
-    errors.images = "이미지는 최대 5개까지 업로드 가능합니다.";
-    return;
-  }
+  // 기존 form.images에 있는 파일들
+  const currentNewImages = (form.images || []).map((file) => ({
+    url: URL.createObjectURL(file),
+    file: file,
+  }));
   
+  // 새로 선택된 파일들
+  const selectedFiles = Array.from(target.files);
+  const addedImages = selectedFiles.map((file) => ({
+    url: URL.createObjectURL(file),
+    file: file,
+  }));
+
+  const allNewImages = [...currentNewImages, ...addedImages];
+
   // 각 파일 크기 체크 (5MB 제한)
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  for (const file of files) {
-    if (file.size > maxSize) {
-      errors.images = `파일 크기는 최대 5MB까지 가능합니다. (${file.name})`;
+  for (const image of addedImages) {
+    if (image.file.size > MAX_FILE_SIZE) {
+      errors.images = `각 파일 크기는 최대 ${MAX_FILE_SIZE}MB까지 가능합니다. (${image.file.name})`;
+      if (fileInputRef.value) fileInputRef.value.value = "";
       return;
     }
   }
-  
+
+  // 최대 5개 제한 (기존(stored) + 신규(current + added))
+  const merged = [...form.imagesToKeep, ...allNewImages];
+
+  if (merged.length < MIN_IMAGE_COUNT || merged.length > MAX_IMAGE_COUNT) {
+    errors.images = `이미지는 최소 ${MIN_IMAGE_COUNT}개, 최대 ${MAX_IMAGE_COUNT}개까지 업로드 가능합니다.`;
+    if (fileInputRef.value) fileInputRef.value.value = "";
+    return;
+  }
+
   errors.images = "";
-  form.images = files;
-  
-  // 미리보기 생성
-  imagePreviews.value = [];
-  files.forEach((file) => {
+  form.images = allNewImages.map((image) => image.file); // File[]
+
+  // 신규 파일 미리보기 추가 (addedImages만 추가)
+  addedImages.forEach((image) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      imagePreviews.value.push(e.target.result);
+      if (e.target?.result && typeof e.target.result === 'string') {
+        imagePreviews.value.push(e.target.result);
+      }
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(image.file);
   });
+
+  if (fileInputRef.value) fileInputRef.value.value = "";
 };
 
 // 이미지 제거
-const removeImage = (index) => {
-  const newImages = Array.from(form.images);
-  newImages.splice(index, 1);
-  form.images = newImages;
+const removeImage = (index: number) => {
+  const newImages = (form.images || []).map((file) => ({
+    url: URL.createObjectURL(file), // 브라우저 미리보기용 임시 URL
+    file: file,
+  }));
+
+  const newImagesStartIndex = form.imagesToKeep.length;
+  const merged = [...form.imagesToKeep, ...newImages];
+
+  merged.splice(index, 1);
   imagePreviews.value.splice(index, 1);
-  
-  // 파일 input 초기화
-  const fileInput = document.getElementById("images");
-  if (fileInput && newImages.length === 0) {
-    fileInput.value = null;
+
+  if (index < newImagesStartIndex) {
+    form.imagesToKeep.splice(index, 1);
+  } else {
+    form.images.splice(index - newImagesStartIndex, 1);
   }
+
+  if (lightboxIndex.value !== null) closeLightbox();
 };
 
-const handleFetchAdoption = async () => {
-  const data = await getAdoptionDetail(route.params.id);
-  form.species = data.species;
-  form.title = data.title;
-  form.age = data.age;
-  form.sex = data.sex;
-  form.area = data.area;
-  form.weight = data.weight;
-  form.neutering = data.neutering;
-  form.features = data.features;
-  // 이미지의 경우 화면에 띄우기만 하고 form은 채우지 않음
-  if (data.imageUrls && data.imageUrls.length > 0) {
-    data.imageUrls.forEach((imageUrl) => {
-      
-      imagePreviews.value.push(imageUrl);
-    });
-  }
-  form.images = null;
-}
+
 
 const handleSubmit = async () => {
   loading.value = true;
   // 에러 초기화
   Object.keys(errors).forEach((key) => (errors[key] = ""));
-  
-  console.log("form.images", form.images);
-  
-  const formData = convertToFormData(form);
-  
-  try {
-    const response = await editAdoption(route.params.id, formData);
-    alert("입양글 수정이 완료되었습니다.");
-    router.push({ name: 'Adoption_detail', params: { id: response.id } });
-  } catch (err) {
-    console.error("입양글 수정 중 오류 발생:", err);
-    const msg = err.response.data;
 
-    if (msg.species) errors.species = msg.species;
-    if (msg.title) errors.title = msg.title;
-    if (msg.age) errors.age = msg.age;
-    if (msg.sex) errors.sex = msg.sex;
-    if (msg.area) errors.area = msg.area;
-    if (msg.weight) errors.weight = msg.weight;
-    if (msg.neutering) errors.neutering = msg.neutering;
-    if (msg.features) errors.features = msg.features;
-    if (msg.images) errors.images = msg.images;
+  const formData = convertToFormData(form);
+
+  try {
+    const routeId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
+
+    await editAdoption(routeId, formData);
+
+    alert("입양글 수정이 완료되었습니다.");
+
+    router.push({ name: 'Adoption_detail', params: { id: routeId } });
+  } catch (err: any) {
+    if (err.errors && Array.isArray(err.errors)) {
+      err.errors.forEach((error: any) => {
+        errors[error.field as keyof AdoptionForm] = error.message;
+      });
+    }
   }
   finally {
     loading.value = false;
@@ -250,7 +304,7 @@ const handleSubmit = async () => {
 };
 
 const handleCancel = () => {
-  router.push(adoptionFormUrl);
+  router.push({ name: 'Adoption_detail', params: { id: route.params.id } });
 };
 
 onMounted(async () => {
@@ -314,17 +368,27 @@ section {
 }
 
 /* 라벨 */
-.field label {
+.field label,
+.field .field-label {
   font-size: 13px;
   color: var(--muted);
   margin-bottom: 8px;
   font-weight: 600;
 }
 
+/* 필수 입력 필드 라벨 */
+.field label.required::after,
+.field .field-label.required::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: 700;
+}
+
 /* 공통 입력/셀렉트 스타일 */
 .field input[type="text"],
 .field input[type="number"],
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
@@ -342,9 +406,18 @@ section {
   color: #9aa3b2;
 }
 
+/* textarea 세로 크기 조절만 허용 */
+.field textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
 /* 포커스 상태 */
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 6px 18px rgba(234, 162, 33, 0.12);
   transform: translateY(-1px);
@@ -370,6 +443,7 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type="number"] {
   appearance: textfield;
   -moz-appearance: textfield;
@@ -385,6 +459,7 @@ input[type="number"] {
   .writing-wrap {
     padding: 18px;
   }
+
   .writing-content {
     grid-template-columns: 1fr;
   }
@@ -398,6 +473,7 @@ input[type="number"] {
   margin-top: 18px;
   grid-column: 1 / -1;
 }
+
 .button {
   padding: 10px 16px;
   border-radius: 10px;
@@ -409,15 +485,18 @@ input[type="number"] {
   box-shadow: 0 6px 12px rgba(208, 138, 17, 0.12);
   transition: transform 0.08s ease, filter 0.12s ease;
 }
+
 .button.secondary {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--border);
   box-shadow: none;
 }
+
 .button:active {
   transform: translateY(1px) scale(0.998);
 }
+
 .button:hover {
   filter: brightness(0.98);
 }
@@ -428,6 +507,7 @@ input[type="number"] {
   font-size: 12px;
   color: #8b949e;
 }
+
 .field .error {
   margin-top: 6px;
   font-size: 12px;
@@ -435,35 +515,21 @@ input[type="number"] {
   font-weight: 600;
 }
 
-/* 파일 입력 스타일 */
-.file-input {
-  width: 100%;
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  background: #fafbfc;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+/* 숨겨진 파일 input */
+.file-input-hidden {
+  display: none;
 }
 
-.file-input:hover {
-  border-color: var(--accent);
-  background: #fff9f0;
+/* 이미지 업로드 영역 */
+.image-upload-area {
+  margin-top: 4px;
 }
 
-.file-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(234, 162, 33, 0.1);
-}
-
-/* 이미지 미리보기 컨테이너 */
+/* 이미지 미리보기 + 추가 버튼 컨테이너 */
 .image-preview-container {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 12px;
 }
 
 /* 개별 이미지 미리보기 */
@@ -476,6 +542,7 @@ input[type="number"] {
   border: 2px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.15s ease;
+  flex-shrink: 0;
 }
 
 .image-preview:hover {
@@ -486,6 +553,8 @@ input[type="number"] {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: zoom-in;
+  display: block;
 }
 
 /* 이미지 제거 버튼 */
@@ -493,13 +562,13 @@ input[type="number"] {
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: none;
   background: rgba(220, 38, 38, 0.9);
   color: white;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   line-height: 1;
   cursor: pointer;
@@ -507,6 +576,7 @@ input[type="number"] {
   align-items: center;
   justify-content: center;
   transition: background 0.15s ease, transform 0.1s ease;
+  z-index: 1;
 }
 
 .remove-image:hover {
@@ -516,5 +586,82 @@ input[type="number"] {
 
 .remove-image:active {
   transform: scale(0.95);
+}
+
+/* 이미지 추가 버튼 */
+.image-add-btn {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  border: 2px dashed var(--border);
+  background: #fafbfc;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.image-add-btn:hover {
+  border-color: var(--accent);
+  background: #fff9f0;
+}
+
+.image-add-icon {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.image-add-text {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 라이트박스 오버레이 */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  z-index: 10000;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

@@ -5,11 +5,7 @@
         <form @submit.prevent="submitForm">
             <div class="image-upload-section">
                 <div class="image-preview" @click="triggerFileInput" :class="{ 'has-image': previewUrl }">
-                    <img v-if="previewUrl" :src="previewUrl" alt="Profile Preview" />
-                    <div v-else class="placeholder">
-                        <span>📷</span>
-                        <p>이미지 업로드</p>
-                    </div>
+                    <img :src="previewUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img" @error="handleImageError" />
                 </div>
 
                 <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none" />
@@ -31,31 +27,36 @@
     </div>
 </template>
 
-<script setup>
-import api from '@/api/api';
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
 import { updateUserProfile, getUserProfile } from '@/api/user'; // 조회 API 추가 가정
 import { convertToFormData } from '@/utils/objectUtils';
 import { useAuthStore } from '@/stores/auth';
-import defaultProfileImageURL from '@/assets/images/default-profile.png';
+import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
 
+interface ProfileForm {
+    nickname: string;
+    image: File | null;
+    removeImage: boolean;
+}
+
 // 상태 관리
-const form = reactive({
+const form = reactive<ProfileForm>({
     nickname: '',
     image: null,
     removeImage: false,
 });
 
-const errors = reactive({
-    nickname: '',
-    image: '',
-    removeImage: '',
+const errors = reactive<Record<keyof ProfileForm, string>>({
+    nickname: "",
+    image: "",
+    removeImage: "",
 });
 
-const previewUrl = ref(null);   // 화면에 보여줄 이미지 URL (Blob 또는 서버 URL)
+const previewUrl = ref<string | null>(null);   // 화면에 보여줄 이미지 URL (Blob 또는 서버 URL)
 
-const fileInput = ref(null); // 파일입력 DOM 요소에 대한 참조
+const fileInput = ref<HTMLInputElement | null>(null); // 파일입력 DOM 요소에 대한 참조
 const isSubmitting = ref(false);
 
 const authStore = useAuthStore();
@@ -65,12 +66,14 @@ const router = useRouter();
 const handleFetchUserProfile = async () => {
     try {
         // 유저 정보 조회 API 호출 (가정)
-        const data = await getUserProfile(userId.value); 
-        form.nickname = data.nickname;
-        // form은 채우지 않으며 변경하지 않는 이상 null로 유지
-        // 삭제하는 경우 removeImage를 true로 설정하여 요청에 포함
-        if (data.imageUrl) {
-            previewUrl.value = data.imageUrl;
+        if (userId.value) {
+            const data = await getUserProfile(userId.value);
+            form.nickname = data.nickname;
+            
+            if (data.imageUrl) {
+                // form은 채우지 않으며 previewUrl만 설정
+                previewUrl.value = data.imageUrl;
+            }
         }
     } catch (error) {
         console.error('사용자 정보를 불러오는데 실패했습니다.', error);
@@ -90,11 +93,17 @@ onUnmounted(() => {
 });
 
 const triggerFileInput = () => {
-    fileInput.value.click();
+    fileInput.value?.click();
 };
 
-const handleFileChange = (event) => {
-    const file = event.target.files[0];
+const handleImageError = (event: Event) => {
+    const target = event.target as HTMLImageElement;
+    target.src = defaultProfileImage;
+};
+
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
 
     if (file) {
         if (file.size > 5 * 1024 * 1024) {
@@ -122,15 +131,15 @@ const resetImageToDefault = () => {
     }
 
     form.image = null;
-    fileInput.value.value = ''; // 파일 입력 초기화
+    if (fileInput.value) fileInput.value.value = ''; // 파일 입력 초기화
     
-    previewUrl.value = defaultProfileImageURL;
+    previewUrl.value = defaultProfileImage;
 
     form.removeImage = true;
 };
 
-const isValidNickname = (nickname) => {
-    if (!nickname || typeof nickname !== 'string') return false;
+const isValidNickname = (nickname: string) => {
+    if (!nickname) return false;
     const pattern = /^[가-힣a-zA-Z0-9]{2,12}$/;
     return pattern.test(nickname);
 }
@@ -146,7 +155,7 @@ const submitForm = async () => {
 
         await updateUserProfile(formData);
         // location.reload();
-        router.push({name: 'Profile'});
+        router.push({name: 'MyProfile'});
         
     } catch (error) {
         console.error('Upload failed:', error);

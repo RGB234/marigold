@@ -22,12 +22,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from "vue-router";
 
-import { useAuthStore } from "@/stores/auth";
-import { EnumProviderCode } from "@/stores/auth";
+import { ProviderInfo, useAuthStore } from "@/stores/auth";
 
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
@@ -35,9 +34,17 @@ import router from '@/router';
 
 const route = useRoute();
 const authStore = useAuthStore();
-const providers = ref([
-  { name: EnumProviderCode.NAVER, description: '네이버 계정으로 로그인', class: 'btn-naver', icon: naverIcon },
-  { name: EnumProviderCode.KAKAO, description: '카카오 계정으로 로그인', class: 'btn-kakao', icon: kakaoIcon },
+
+interface Provider {
+  name: ProviderInfo;
+  description: string;
+  class: string;
+  icon: string;
+}
+
+const providers = ref<Provider[]>([
+  { name: ProviderInfo.NAVER, description: '네이버 계정으로 로그인', class: 'btn-naver', icon: naverIcon },
+  { name: ProviderInfo.KAKAO, description: '카카오 계정으로 로그인', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
 onMounted(() => {
@@ -52,8 +59,8 @@ onMounted(() => {
   }
 });
 
-function loginWithSocial(providerName) {
-  authStore.login(providerName);
+function loginWithSocial(providerCode: ProviderInfo) {
+  authStore.login(providerCode);
 }
 
 // 회원가입 페이지 이동
@@ -61,9 +68,6 @@ function goToSignupForm() {
   router.push({ name: "Signup" });
 }
 
-function handleLoginError(errorCode){
-  alert(errorCode);
-}
 </script>
 
 <style scoped>
@@ -160,7 +164,7 @@ button>img {
 
 /* 네이버 로그인 */
 button.btn-naver {
-  background-color: #03c158;
+  background-color: #00bf18;
   color: #000000;
   margin-bottom: 1.5rem;
   /* mb-6 */

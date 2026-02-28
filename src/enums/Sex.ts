@@ -1,6 +1,3 @@
-/**
- * 성별 Enum
- */
 export enum Sex {
   MALE = "MALE",
   FEMALE = "FEMALE",

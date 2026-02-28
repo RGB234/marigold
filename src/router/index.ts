@@ -7,7 +7,15 @@ const routes: Array<RouteRecordRaw> = [
   {
     name: "Home",
     path: import.meta.env.VITE_APP_HOME as string,
-    component: () => import("@/views/HomepageForm.vue"),
+    component: () => import("@/views/adoption/AdoptionListForm.vue"),
+    meta:{
+      requiresAuth: false,
+    }
+  },
+  {
+    name: "Adoption_list",
+    path: import.meta.env.VITE_APP_ADOPTION as string,
+    component: () => import("@/views/adoption/AdoptionListForm.vue"),
     meta:{
       requiresAuth: false,
     }
@@ -24,14 +32,6 @@ const routes: Array<RouteRecordRaw> = [
     name: "Signup",
     path: import.meta.env.VITE_APP_AUTH_SIGNUP as string,
     component: () => import("@/views/auth/signup/SignupForm.vue"),
-    meta:{
-      requiresAuth: false,
-    }
-  },
-  {
-    name: "Adoption_list",
-    path: import.meta.env.VITE_APP_ADOPTION as string,
-    component: () => import("@/views/adoption/AdoptionListForm.vue"),
     meta:{
       requiresAuth: false,
     }
@@ -62,8 +62,16 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    name: "Profile",
+    name: "MyProfile",
     path: import.meta.env.VITE_APP_PROFILE as string,
+    component: () => import("@/views/user/ProfileForm.vue"),
+    meta:{
+      requiresAuth: true,
+    }
+  },
+  {
+    name: "Profile",
+    path: `${import.meta.env.VITE_APP_PROFILE}/:id`,
     component: () => import("@/views/user/ProfileForm.vue"),
     meta:{
       requiresAuth: true,
@@ -79,7 +87,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Profile_history",
-    path: `${import.meta.env.VITE_APP_PROFILE}/history` as string,
+    path: `${import.meta.env.VITE_APP_PROFILE}/history/:userId` as string,
     component: () => import("@/views/user/ProfileHistoryForm.vue"),
     meta:{
       requiresAuth: true,

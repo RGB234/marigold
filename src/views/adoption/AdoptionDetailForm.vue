@@ -1,22 +1,23 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { SpeciesLabels } from "@/enums/Species";
 import { SexLabels } from "@/enums/Sex";
 import { NeuteringLabels } from "@/enums/Neutering";
-import { CompletedLabels } from "@/enums/Completed";
+import { getCompletedLabel } from "@/enums/Completed";
 import { getAdoptionDetail, deleteAdoption } from '@/api/adoption';
 
 import { useAuthStore } from '@/stores/auth';
-import { tsidToLong } from '@/utils/tsid';
+import { tsidLongToString } from '@/utils/tsid';
+import { AdoptionDetailResponse } from '@/types/apiResponse';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
 const loading = ref(false);
-const detail = ref(null);
+const detail = ref<AdoptionDetailResponse | null>(null);
 
 // 로그인 상태 확인
 const isLoggedIn = computed(() => authStore.isLoggedIn);
@@ -27,11 +28,11 @@ const isAuthor = computed(() => {
     if (!detail.value || !currentUserId.value) return false;
     // console.log(detail.value.writer?.id);
     // console.log(tsidToLong(currentUserId.value));
-    return detail.value.writer?.id === tsidToLong(currentUserId.value);
+    return tsidLongToString(detail.value.writer?.id) === currentUserId.value;
 });
 
 // 날짜 포맷팅 함수 (YYYY-MM-DD HH:mm)
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleString('ko-KR', {
@@ -43,10 +44,10 @@ const formatDate = (dateString) => {
     });
 };
 
-const fetchDetail = async (id) => {
+const fetchDetail = async (id: string | string[]) => {
     try {
         loading.value = true;
-        const responseData = await getAdoptionDetail(id);
+        const responseData = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
         detail.value = responseData;
         loading.value = false;
     } catch (error) {
@@ -70,14 +71,20 @@ const confirmDelete = () => {
 const deletePost = async () => {
     try {
         loading.value = true;
-        await deleteAdoption(route.params.id);
+        await deleteAdoption(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
         alert('게시글이 삭제되었습니다.');
-        router.push({ name: 'Adoption_list' });
+        router.push({ name: 'Home' });
     } catch (error) {
         console.error("게시글 삭제 중 오류 발생:", error);
         alert("게시글 삭제 중 오류가 발생했습니다.");
         loading.value = false;
     }
+};
+
+const goToProfile = () => {
+    if (!detail.value) return;
+    const writerId = tsidLongToString(detail.value.writer?.id);
+    router.push({ name: 'Profile', params: { id: writerId } });
 };
 
 onMounted(async () => {
@@ -99,8 +106,8 @@ onMounted(async () => {
                 <div class="header-top">
                     <div class="title-row">
                         <span class="badge species">{{ SpeciesLabels[detail.species] }}</span>
-                        <span class="badge" :class="{ completed: detail.completed }">{{ CompletedLabels[detail.completed] }}</span>
-                        <h1 class="name">{{ detail.name }}</h1>
+                        <span class="badge" :class="{ completed: detail.completed }">{{ getCompletedLabel(detail.completed) }}</span>
+                        <h1 class="name">{{ detail.title }}</h1>
                     </div>
                     <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
                     <div v-if="isLoggedIn && isAuthor && detail.completed === false" class="action-buttons">
@@ -109,7 +116,7 @@ onMounted(async () => {
                     </div>
                 </div>
                 <div class="meta-info">
-                    <span>작성자: {{ detail.writer?.nickname || '알 수 없음' }}</span>
+                    <span @click="goToProfile()" class="clickable">작성자: {{ detail.writer?.nickname || '알 수 없음' }}</span>
                     <span class="divider">|</span>
                     <span>등록일: {{ formatDate(detail.createdAt) }}</span>
                     <span class="divider">|</span>
@@ -169,6 +176,11 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.clickable {
+    cursor: pointer;
+    color: #2196f3;
+}
+
 /* 컨테이너 */
 .detail-container {
     max-width: 800px;

@@ -23,18 +23,25 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from "vue-router";
-import { EnumProviderCode, useAuthStore } from '@/stores/auth';
+import {ProviderInfo, useAuthStore } from '@/stores/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/router';
 
+interface Provider {
+  name: ProviderInfo;
+  description: string;
+  class: string;
+  icon: string;
+}
+
 // 소셜 로그인 제공자 데이터
-const providers = ref([
-  { name: EnumProviderCode.NAVER, description: '네이버 계정으로 화원가입', class: 'btn-naver', icon: naverIcon },
-  { name: EnumProviderCode.KAKAO, description: '카카오 계정으로 회원가입', class: 'btn-kakao', icon: kakaoIcon },
+const providers = ref<Provider[]>([
+  { name: ProviderInfo.NAVER, description: '네이버 계정으로 화원가입', class: 'btn-naver', icon: naverIcon },
+  { name: ProviderInfo.KAKAO, description: '카카오 계정으로 회원가입', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
 const authStore = useAuthStore();
@@ -55,8 +62,8 @@ onMounted(() => {
 });
 
 // 소셜 계정으로 회원가입
-const handleSocialSignUp = (providerName) => {
-  authStore.signup(providerName);
+const handleSocialSignUp = (providerCode: ProviderInfo) => {
+  authStore.signup(providerCode);
 };
 
 // 회원가입 페이지 이동
@@ -169,7 +176,7 @@ button.btn-kakao {
 }
 
 button.btn-naver {
-  background-color: #03C75A;
+  background-color: #00bf18;
   color: white;
 }
 

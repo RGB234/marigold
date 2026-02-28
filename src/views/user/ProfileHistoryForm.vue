@@ -1,57 +1,48 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { getUserAdoptions } from '@/api/adoption';
-import { useAuthStore } from '@/stores/auth';
 import NoImage from '@/assets/images/no-image.jpeg';
-import { CompletedLabels } from '@/enums/Completed';
+import { getCompletedLabel } from '@/enums/Completed';
 import { SexLabels } from '@/enums/Sex';
 import { SpeciesLabels } from '@/enums/Species';
+import { AdoptionItemResponse } from '@/types/apiResponse';
 
 const router = useRouter(); 
+const route = useRoute();
 
 // 상태 변수
-const myAdoptions = ref([]);
+const myAdoptionInfoList = ref<AdoptionItemResponse[]>([]);
 const loading = ref(false);
 
-const getCurrentUserId = () => {
-    const authStore = useAuthStore();
-    return authStore.userId || '';
-};
-
 // 작성한 글 목록 불러오기
-const fetchMyAdoptions = async (UUID) => {
+const fetchMyAdoptions = async (userId: string) => {
     loading.value = true;
     try {
-        const data = await getUserAdoptions(UUID);
-        myAdoptions.value = data.content || [];
+        const data = await getUserAdoptions(userId);
+        myAdoptionInfoList.value = data.content || [];
     } catch (error) {
         console.error("작성한 글 목록 조회 중 오류 발생:", error);
-        myAdoptions.value = [];
+        myAdoptionInfoList.value = [];
     } finally {
         loading.value = false;
     }
 };
 
 // 상세 페이지로 이동
-const goToDetail = (id) => {
+const goToDetail = (id: number) => {
     router.push({ name: 'Adoption_detail', params: { id } });
 };
 
 // 날짜 포맷팅 (YYYY.MM.DD)
-const formatDate = (dateString) => {
+const formatDate = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('ko-KR');
 };
 
 onMounted(() => {
-    const uuid = getCurrentUserId();
-    if (uuid) {
-        fetchMyAdoptions(uuid);
-    } else {
-        alert("로그인이 필요한 서비스입니다.");
-        router.push({ name: 'Login' });
-    }
+    const uid = route.params.userId as string;
+    fetchMyAdoptions(uid);
 });
 </script>
 
@@ -66,15 +57,15 @@ onMounted(() => {
             <p>목록을 불러오는 중입니다...</p>
         </div>
 
-        <div v-else-if="myAdoptions.length > 0" class="card-grid">
-            <div v-for="item in myAdoptions" :key="item.id" class="card" @click="goToDetail(item.id)">
+        <div v-else-if="myAdoptionInfoList.length > 0" class="card-grid">
+            <div v-for="item in myAdoptionInfoList" :key="item.id" class="card" @click="goToDetail(item.id)">
                 <div class="card-image">
                     <img :src="item.imageUrl || NoImage" alt="" class="thumb" />
                 </div>
 
                 <div class="card-body">
                     <span class="status-badge" :class="{ done: item.completed }">
-                        {{ CompletedLabels[item.completed] }}
+                        {{ getCompletedLabel(item.completed) }}
                     </span>
                     <div class="card-meta">
                         <span class="species">{{ SpeciesLabels[item.species] }}</span>

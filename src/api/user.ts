@@ -1,33 +1,35 @@
 import api from "./api";
-import type { UUID } from "@/types/common";
+import type { ApiResponse, UserProfileResponse } from "@/types/apiResponse";
+import { getPresignedUrl } from "./storage";
+import defaultProfileImage from '@/assets/images/default-profile.png';
+
 const apiUserProfile = import.meta.env.VITE_API_USER_PROFILE;
 const apiUserUpdate = import.meta.env.VITE_API_USER_UPDATE;
 const apiUserDelete = import.meta.env.VITE_API_USER_DELETE;
 
+// 유저 프로필 조회
+export const getUserProfile = async (userId: string): Promise<UserProfileResponse> => {
+    const response: ApiResponse<UserProfileResponse> = await api.get(`${apiUserProfile}/${userId}`);
+    const profile = response.data;
 
-import defaultProfileImage from '@/assets/images/default-profile.png';
-import { UserProfileResponse } from "@/types/apiResponse";
-import { getPresignedUrl } from "./storage";
-
-export const getUserProfile = async (UUID: UUID): Promise<UserProfileResponse> => {
-    const response = await api.get<UserProfileResponse>(`${apiUserProfile}/${UUID}`);
-    if (response.data.imageUrl != null) {
-        const presignedUrl = await getPresignedUrl(response.data.imageUrl);
-        response.data.imageUrl = presignedUrl;
+    if (!profile) {
+        throw new Error('User profile not found');
     }
-    if (response.data.imageUrl === null) {
-        response.data.imageUrl = defaultProfileImage;
+
+    if (profile.imageUrl) {
+        profile.imageUrl = await getPresignedUrl(profile.imageUrl);
+    } else {
+        profile.imageUrl = defaultProfileImage;
     }
-    return response.data;
-}
+    return profile;
+};
 
-// export const updateUserProfile = async (UUID: UUID, formData: FormData) => {
-export const updateUserProfile = async (formData: FormData) => {
-    const response = await api.patch(`${apiUserUpdate}`, formData);
-    return response.data;
-}
+// 유저 프로필 수정
+export const updateUserProfile = async (formData: FormData): Promise<void> => {
+    await api.patch(`${apiUserUpdate}`, formData);
+};
 
-export const deleteUser = async(UUID : UUID) => {
-    const response = await api.delete(apiUserDelete);
-    return response.data;
-}
+// 유저 삭제
+export const deleteUser = async (): Promise<void> => {
+    await api.delete(apiUserDelete);
+};

@@ -3,7 +3,7 @@ import { isValidTsid } from "@/utils/validators";
 import api from "@/api/api";
 
 
-export enum EnumProviderCode {
+export enum ProviderInfo {
   KAKAO = "KAKAO",
   NAVER = "NAVER",
 }
@@ -22,7 +22,7 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     // 로그인 여부 확인
     isLoggedIn: (state) => isValidTsid(state.id || ""),
-    userId: (state) => state.id,
+    userId: (state) => state.id, // String format TSID
     // 권한 목록
     userAuthorities: (state) => state.authorities,
     // 특정 권한 보유 여부 확인
@@ -41,7 +41,7 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() : Promise<boolean> {  
       try {
         const response = await api.get(import.meta.env.VITE_API_AUTH_STATUS);
-        console.log("AUTH STATUS", response.data);
+        console.log("AUTH STATUS RESPONSE", response);
 
         // 전역 상태 업데이트
         this.id = response.data.userId || null;
@@ -56,23 +56,23 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     
-    login(providerCode : EnumProviderCode){
+    login(providerCode : ProviderInfo){
       switch(providerCode){
-        case EnumProviderCode.KAKAO:
+        case ProviderInfo.KAKAO:
           window.location.href =  import.meta.env.VITE_API_OAUTH2_LOGIN_KAKAO;
           break;
-        case EnumProviderCode.NAVER:
+        case ProviderInfo.NAVER:
           window.location.href = import.meta.env.VITE_API_OAUTH2_LOGIN_NAVER;
           break;
       }
     },
 
-    signup(providerCode : EnumProviderCode){
+    signup(providerCode : ProviderInfo){
       switch(providerCode){
-        case EnumProviderCode.KAKAO:
+        case ProviderInfo.KAKAO:
           window.location.href =  import.meta.env.VITE_API_OAUTH2_SIGNUP_KAKAO;
           break;
-        case EnumProviderCode.NAVER:
+        case ProviderInfo.NAVER:
           window.location.href = import.meta.env.VITE_API_OAUTH2_SIGNUP_NAVER;
           break;
       }

@@ -19,7 +19,7 @@ DECODE_MAP['L'] = BigInt(1);
  * @returns BigInt representation of the TSID
  * @throws Error if the string contains invalid characters
  */
-export const tsidToLong = (tsid: string): bigint => {
+export const tsidStringToLong = (tsid: string): bigint => {
     if (!tsid) return BigInt(0);
     
     let result = BigInt(0);
@@ -45,7 +45,7 @@ export const tsidToLong = (tsid: string): bigint => {
  * @param id BigInt, string, or number representation of the TSID
  * @returns TSID string (13 characters, padded with 0)
  */
-export const longToTsid = (id: bigint | string | number): string => {
+export const tsidLongToString = (id: bigint | string | number): string => {
     let value: bigint;
     try {
         value = BigInt(id);

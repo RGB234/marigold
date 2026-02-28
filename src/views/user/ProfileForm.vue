@@ -4,17 +4,17 @@
 
     <section class="profile-section">
       <div class="profile-image-wrapper">
-        <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-img" />
+        <img :src="userInfo.imageUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img" @error="handleImageError" />
       </div>
       <h2 class="nickname">{{ userInfo.nickname }}</h2>
-      <button class="edit-btn" @click="goToEditProfile">프로필 수정</button>
+      <button v-if="isMyProfile" class="edit-btn" @click="goToEditProfile">프로필 수정</button>
     </section>
 
     <!-- 작성한 글 목록 -->
     <section class="posts-section">
       <h3 class="section-title clickable" @click="goToProfileHistory">작성한 글 목록</h3>
     </section>
-    <section class="account-section">
+    <section v-if="isMyProfile" class="account-section">
       <h3 class="section-title">
         계정 관리
       </h3>
@@ -24,7 +24,7 @@
     </section>
 
     <!-- 계정 삭제 모달 -->
-    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
+    <div v-if="showDeleteModal && isMyProfile" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-content">
         <h3>계정 삭제</h3>
         <p class="warning-text">계정을 삭제하면 복구할 수 없습니다.</p>
@@ -54,14 +54,40 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { getUserProfile, deleteUser } from '@/api/user';
 import { useAuthStore } from '@/stores/auth';
+import defaultProfileImage from '@/assets/images/default-profile.png';
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
+const authStore = useAuthStore();
+
+// 대상 유저 ID (Path Variable이 있으면 사용, 없으면 내 로그인 ID 사용)
+const targetUserId = computed(() => {
+  const paramId = route.params.id;
+  // route.params.id는 string 또는 string[] 일 수 있음
+  const id = Array.isArray(paramId) ? paramId[0] : paramId;
+  return id || authStore.userId;
+});
+
+// 내 프로필인지 여부 판별
+const isMyProfile = computed(() => {
+  // 1. MyProfile 라우트인 경우
+  if (route.name === 'MyProfile') return true;
+  // 2. 현재 로그인한 사용자의 ID와 대상 ID가 일치하는 경우
+  if (authStore.userId && targetUserId.value === authStore.userId) return true;
+  
+  return false;
+});
+
+const handleImageError = (event: Event) => {
+    const target = event.target as HTMLImageElement;
+    target.src = defaultProfileImage;
+};
 
 // 모달 관련 상태
 const showDeleteModal = ref(false);
@@ -73,21 +99,25 @@ const isDeleteConfirmed = computed(() => {
 });
 
 // 유저 정보
-const userInfo = ref({
+interface UserInfo {
+  id: string;
+  nickname: string;
+  imageUrl: string;
+}
+
+const userInfo = ref<UserInfo>({
+  id: '',
   nickname: '',
   imageUrl: ''
 });
 
-const authStore = useAuthStore();
-const userId = computed(() => authStore.userId);
-
 // --- 메서드 (Methods) ---
 
 // 데이터 불러오기
-const fetchUserProfile = async (UUID) => {
+const fetchUserProfile = async (userId: string) => {
   try {
     loading.value = true;
-    const data = await getUserProfile(UUID); // nickname, imageUrl
+    const data = await getUserProfile(userId); // nickname, imageUrl
 
     userInfo.value = data;
     loading.value = false;
@@ -103,7 +133,7 @@ const goToEditProfile = () => {
 }
 
 const goToProfileHistory = () => {
-  router.push({ name: "Profile_history" });
+  router.push({ name: "Profile_history", params: { userId: targetUserId.value } });
 }
 
 const openDeleteModal = () => {
@@ -125,7 +155,7 @@ const confirmDelete = async () => {
 const deleteAccount = async () => {
   try {
     loading.value = true;
-    const response = await deleteUser(userId.value);
+    const response = await deleteUser();
     authStore.logout();
     router.push({name:"Home"})
   } catch (error) {
@@ -140,8 +170,23 @@ const deleteAccount = async () => {
 
 // --- 라이프사이클 ---
 onMounted(async () => {
-  await fetchUserProfile(userId.value);
+  if (targetUserId.value) {
+    await fetchUserProfile(targetUserId.value);
+  }
 });
+
+// 라우트 파라미터가 변경되거나(예: 다른 사람 프로필 클릭), 
+// MyProfile <-> Profile 이동 시 데이터 갱신
+watch(
+  () => route.params.id,
+  async (newId) => {
+    // 새 ID가 있으면 그 ID로, 없으면 내 ID로 조회
+    const idToFetch = Array.isArray(newId) ? newId[0] : newId || authStore.userId;
+    if (idToFetch) {
+      await fetchUserProfile(idToFetch);
+    }
+  }
+);
 </script>
 
 <style scoped>
