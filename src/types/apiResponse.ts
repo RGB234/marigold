@@ -5,6 +5,19 @@ import { ErrorDetail, Pageable } from "./common";
 import { Sex } from "@/enums/Sex";
 import { Species } from "@/enums/Species";
 
+export function isApiResponse<T = unknown>(response: any): response is ApiResponse<T> {
+    if (typeof response !== 'object' || response === null) {
+        return false;
+    }
+
+    return (
+        'success' in response && typeof response.success === 'boolean' &&
+        'timestamp' in response && typeof response.timestamp === 'string' &&
+        'status' in response && typeof response.status === 'number' &&
+        'message' in response && typeof response.message === 'string'
+    );
+}
+
 // 백엔드 공통 응답 래퍼 (ApiResponse<T>)
 export interface ApiResponse<T> {
     success: boolean;

@@ -4,7 +4,7 @@ export enum Sex {
   UNKNOWN = "UNKNOWN",
   OTHER = "OTHER"
 }
-
+8
 /**
  * 성별 한글 라벨
  */

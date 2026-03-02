@@ -1,28 +1,36 @@
 <template>
   <LoadingOverlay v-if="loading"></LoadingOverlay>
   <div class="filter-container">
-    <div class="filter">
-      <div class="filter-row">
-        <label for="species">품종</label>
-        <select id="species" v-model="searchFilters.species">
-          <option :value="undefined">전체</option>
-          <option v-for="option in SpeciesOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+    <div class="filter-card">
+      <div class="filter-group">
+        <div class="filter-item">
+          <label for="species">품종</label>
+          <div class="select-wrapper">
+            <select id="species" v-model="searchFilters.species">
+              <option :value="undefined">전체 품종</option>
+              <option v-for="option in SpeciesOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-item">
+          <label for="sex">성별</label>
+          <div class="select-wrapper">
+            <select id="sex" v-model="searchFilters.sex">
+              <option :value="undefined">모든 성별</option>
+              <option v-for="option in SexOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div class="filter-row">
-        <label for="sex">성별</label>
-        <select id="sex" v-model="searchFilters.sex">
-          <option :value="undefined">전체</option>
-          <option v-for="option in SexOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-
-      <button class="search-btn" @click="handleFilterSearch">검색</button>
+      <button class="search-btn" @click="handleFilterSearch">
+        <span class="icon">🔍</span> 검색하기
+      </button>
     </div>
   </div>
 
@@ -166,67 +174,100 @@ onMounted(async () => {
 <style lang="css" scoped>
 /* search filter */
 
-div.filter-container {
-  margin-top: 3rem;
-  margin-bottom: 3rem;
+.filter-container {
+  margin: 3rem auto;
   display: flex;
   justify-content: center;
+  padding: 0 1rem;
 }
 
-.filter {
-  border: 2px solid #eaa221;
-  padding: 1rem;
-  width: 500px;
+.filter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-end; /* 버튼과 하단 정렬 */
+  gap: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-width: 800px;
+  width: 100%;
+}
+
+.filter-group {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.filter-item {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  border-radius: 6px;
+  gap: 0.5rem;
+  flex: 1;
 }
 
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.filter-item label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-left: 2px;
+}
 
-  label {
-    width: 80px;
-    font-weight: 500;
-  }
+.select-wrapper {
+  position: relative;
 }
 
 select {
-  padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 0.9rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #2d3748;
+  appearance: none; /* 기본 화살표 숨김(필요시 커스텀 가능) */
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: #eaa221;
+  box-shadow: 0 0 0 3px rgba(234, 162, 33, 0.1);
 }
 
 .search-btn {
-  width: 100px;
-  align-self: center;
-  /* 버튼 가운데 정렬 */
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background-color: #ffffff;
+  background-color: #eaa221;
+  color: white;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.1s;
+  white-space: nowrap;
+  height: 42px; /* select 박스와 높이 맞춤 */
 }
 
-.search-btn:hover:not(:disabled) {
-  background-color: #e0e0e0;
+.search-btn:hover {
+  background-color: #d6921e;
 }
 
-.search-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  background-color: #f5f5f5;
+.search-btn:active {
+  transform: scale(0.98);
 }
 
-select:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  background-color: #f5f5f5;
+/* 반응형: 모바일에서는 세로로 나열 */
+@media (max-width: 640px) {
+  .filter-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    flex-direction: column;
+  }
 }
 
 /* card */

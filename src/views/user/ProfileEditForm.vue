@@ -15,11 +15,13 @@
                 </button>
             </div>
 
+            <div v-if="errors.nickname" class="error-message">{{ errors.nickname }}</div>
             <div class="input-group">
                 <label for="nickname">닉네임</label>
                 <input id="nickname" v-model="form.nickname" type="text" placeholder="사용할 닉네임을 입력하세요" required />
             </div>
 
+            <div v-if="errors.image" class="error-message">{{ errors.image }}</div>
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
                 {{ isSubmitting ? '저장 중...' : '저장하기' }}
             </button>
@@ -34,6 +36,8 @@ import { convertToFormData } from '@/utils/objectUtils';
 import { useAuthStore } from '@/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
+import { isApiResponse } from '@/types/apiResponse';
+import { ErrorDetail } from '@/types/common';
 
 interface ProfileForm {
     nickname: string;
@@ -85,7 +89,7 @@ onMounted(async () => {
     await handleFetchUserProfile();
 });
 
-// 2. 메모리 누수 방지: 컴포넌트 해제 시 Blob URL 해제
+// 메모리 누수 방지: 컴포넌트 해제 시 Blob URL 해제
 onUnmounted(() => {
     if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
         URL.revokeObjectURL(previewUrl.value);
@@ -105,9 +109,11 @@ const handleFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
 
+    errors.image = '';
+
     if (file) {
         if (file.size > 5 * 1024 * 1024) {
-            alert('파일 크기는 5MB 이하여야 합니다.');
+            errors.image = '파일 크기는 5MB 이하여야 합니다.';
             return;
         }
 
@@ -134,7 +140,7 @@ const resetImageToDefault = () => {
     if (fileInput.value) fileInput.value.value = ''; // 파일 입력 초기화
     
     previewUrl.value = defaultProfileImage;
-
+    errors.image = '';
     form.removeImage = true;
 };
 
@@ -145,21 +151,32 @@ const isValidNickname = (nickname: string) => {
 }
 
 const submitForm = async () => {
-    if (!form.nickname.trim()) return alert('닉네임을 입력해주세요.');
-    if (!isValidNickname(form.nickname)) return alert('닉네임은 2자 이상 12자 이하의 한글, 영문, 숫자만 사용할 수 있습니다.');
+    errors.nickname = '';
+    errors.image = '';
+    errors.removeImage = '';
 
-    isSubmitting.value = true;
+    if (!isValidNickname(form.nickname)) {
+        errors.nickname = '닉네임은 2자 이상 12자 이하의 한글, 영문, 숫자만 사용할 수 있습니다.';
+        return;
+    }
 
     try {
+        isSubmitting.value = true;
         const formData = convertToFormData(form);
 
         await updateUserProfile(formData);
         // location.reload();
-        router.push({name: 'MyProfile'});
-        
+        router.push({name: 'MyProfile'});        
     } catch (error) {
-        console.error('Upload failed:', error);
-        alert('저장에 실패했습니다.');
+        if(isApiResponse(error)){
+            if(error.errors && Array.isArray(error.errors)){
+                error.errors.forEach((error: ErrorDetail) => {
+                    errors[error.field as keyof ProfileForm] = error.message;
+                });
+            }
+        }else{
+            console.error("프로필 수정 중 오류 발생:", error);
+        }
     } finally {
         isSubmitting.value = false;
     }
@@ -254,5 +271,11 @@ const submitForm = async () => {
 .submit-btn:disabled {
     background-color: #a0dcc0;
     cursor: not-allowed;
+}
+
+.error-message {
+    color: #ff4d4d;
+    font-size: 13px;
+    margin-bottom: 10px;
 }
 </style>

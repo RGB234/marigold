@@ -133,13 +133,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { createAdoption } from "@/api/adoption";
 import { Species } from "@/enums/Species";
 import { Sex } from "@/enums/Sex";
 import { Neutering } from "@/enums/Neutering";
 import { convertToFormData } from "@/utils/objectUtils";
+import { isApiResponse } from "@/types/apiResponse";
+import { ErrorDetail } from "@/types/common";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -221,13 +223,7 @@ const handleImageChange = async (event: Event) => {
 
   // 신규 파일 미리보기 추가
   newFiles.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result && typeof e.target.result === 'string') {
-        imagePreviews.value.push(e.target.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    imagePreviews.value.push(URL.createObjectURL(file));
   });
 
   if (fileInputRef.value) fileInputRef.value.value = "";
@@ -235,12 +231,25 @@ const handleImageChange = async (event: Event) => {
 
 // 이미지 제거
 const removeImage = (index: number) => {
+  const urlToRemove = imagePreviews.value[index];
+  if (urlToRemove && urlToRemove.startsWith('blob:')) {
+    URL.revokeObjectURL(urlToRemove);
+  }
+
   const newImages = Array.from(form.images);
   newImages.splice(index, 1);
   form.images = newImages;
   imagePreviews.value.splice(index, 1);
   if (lightboxIndex.value !== null) closeLightbox();
 };
+
+onUnmounted(() => {
+  imagePreviews.value.forEach((url) => {
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
+});
 
 const handleSubmit = async () => {
   loading.value = true;
@@ -255,15 +264,15 @@ const handleSubmit = async () => {
     alert("입양글 작성이 완료되었습니다.");
     router.push({ name: 'Adoption_detail', params: { id: createdPostId } });
   } catch (err: any) {
-    // 에러 알림은 api.ts 인터셉터에서 처리됨
-    // err는 ApiResponse<ErrorDetail> { success, status, message, errorCode, errors } 형태
-    if(err.errors){
-      err.errors.forEach((error: any) => {
-        errors[error.field as keyof AdoptionForm] = error.message;
-      });
+    if(isApiResponse(err)){
+      if(err.errors && Array.isArray(err.errors)){
+        err.errors.forEach((error: ErrorDetail) => {
+          errors[error.field as keyof AdoptionForm] = error.message;
+        });
+      }
+    }else{
+      console.error("입양글 작성 중 오류 발생:", err);
     }
-
-    console.error("입양글 작성 중 오류 발생:", err);
   }
   finally {
     loading.value = false;

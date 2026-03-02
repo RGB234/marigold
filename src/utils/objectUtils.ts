@@ -43,11 +43,20 @@ export const convertToFormData = (params: Record<string, any>): FormData => {
       return;
     }
 
+    if (key === 'imagesToKeep') {
+      if (Array.isArray(value) && value.length > 0) {
+        // preview용 URL제거하고 파일명만 저장
+        value.forEach((item: {url: string, fileName: string}) => formData.append(key, item.fileName));
+        return;
+      }
+      return;
+    }
+
     // 이미지가 아닌 경우는 문자열로 저장 
     if (Array.isArray(value)) {
-      value.forEach((item) => formData.append(key, String(item)));
+      value.forEach((item) => formData.append(key, String(item).trim()));
     } else {
-      formData.append(key, String(value));
+      formData.append(key, String(value).trim());
     }
   });
   return formData;

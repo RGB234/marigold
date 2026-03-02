@@ -3,7 +3,7 @@ import type { ApiResponse, AdoptionDetailResponse, AdoptionListResponse } from "
 import { getPresignedUrl } from "./storage";
 import type { GetAdoptionListParams } from "@/types/apiRequest";
 
-type UUID = string;
+type TSID = string;
 
 const apiAdoption = import.meta.env.VITE_API_ADOPTION;
 
@@ -55,7 +55,7 @@ export const getAdoptionList = async (params: GetAdoptionListParams): Promise<Ad
 };
 
 // 작성글 목록 보기
-export const getUserAdoptions = async (userId: UUID): Promise<AdoptionListResponse> => {
+export const getUserAdoptions = async (userId: TSID): Promise<AdoptionListResponse> => {
   const response: ApiResponse<AdoptionListResponse> = await api.get(`${apiAdoption}/writer/${userId}`);
   const page = response.data;
 

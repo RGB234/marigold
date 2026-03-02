@@ -107,14 +107,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { editAdoption, getAdoptionDetail } from "@/api/adoption";
 import { convertToFormData } from "@/utils/objectUtils";
 import { Species } from "@/enums/Species";
 import { Sex } from "@/enums/Sex";
 import { Neutering } from "@/enums/Neutering";
-import { AdoptionDetailResponse } from "@/types/apiResponse";
+import { AdoptionDetailResponse, isApiResponse } from "@/types/apiResponse";
+import { ErrorDetail } from "@/types/common";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -203,24 +204,17 @@ const handleImageChange = (event: Event) => {
   if (!target.files) return;
   
   // 기존 form.images에 있는 파일들
-  const currentNewImages = (form.images || []).map((file) => ({
-    url: URL.createObjectURL(file),
-    file: file,
-  }));
+  const currentNewImages = form.images;
   
   // 새로 선택된 파일들
   const selectedFiles = Array.from(target.files);
-  const addedImages = selectedFiles.map((file) => ({
-    url: URL.createObjectURL(file),
-    file: file,
-  }));
 
-  const allNewImages = [...currentNewImages, ...addedImages];
+  const allNewImages = [...currentNewImages, ...selectedFiles];
 
   // 각 파일 크기 체크 (5MB 제한)
-  for (const image of addedImages) {
-    if (image.file.size > MAX_FILE_SIZE) {
-      errors.images = `각 파일 크기는 최대 ${MAX_FILE_SIZE}MB까지 가능합니다. (${image.file.name})`;
+  for (const image of selectedFiles) {
+    if (image.size > MAX_FILE_SIZE) {
+      errors.images = `각 파일 크기는 최대 ${MAX_FILE_SIZE}MB까지 가능합니다. (${image.name})`;
       if (fileInputRef.value) fileInputRef.value.value = "";
       return;
     }
@@ -236,17 +230,11 @@ const handleImageChange = (event: Event) => {
   }
 
   errors.images = "";
-  form.images = allNewImages.map((image) => image.file); // File[]
+  form.images = allNewImages; // File[]
 
   // 신규 파일 미리보기 추가 (addedImages만 추가)
-  addedImages.forEach((image) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result && typeof e.target.result === 'string') {
-        imagePreviews.value.push(e.target.result);
-      }
-    };
-    reader.readAsDataURL(image.file);
+  allNewImages.forEach((image) => {
+    imagePreviews.value.push(URL.createObjectURL(image));
   });
 
   if (fileInputRef.value) fileInputRef.value.value = "";
@@ -254,10 +242,12 @@ const handleImageChange = (event: Event) => {
 
 // 이미지 제거
 const removeImage = (index: number) => {
-  const newImages = (form.images || []).map((file) => ({
-    url: URL.createObjectURL(file), // 브라우저 미리보기용 임시 URL
-    file: file,
-  }));
+  const urlToRemove = imagePreviews.value[index];
+  if (urlToRemove && urlToRemove.startsWith('blob:')) {
+    URL.revokeObjectURL(urlToRemove);
+  }
+
+  const newImages = form.images;
 
   const newImagesStartIndex = form.imagesToKeep.length;
   const merged = [...form.imagesToKeep, ...newImages];
@@ -291,11 +281,15 @@ const handleSubmit = async () => {
     alert("입양글 수정이 완료되었습니다.");
 
     router.push({ name: 'Adoption_detail', params: { id: routeId } });
-  } catch (err: any) {
-    if (err.errors && Array.isArray(err.errors)) {
-      err.errors.forEach((error: any) => {
-        errors[error.field as keyof AdoptionForm] = error.message;
-      });
+  } catch (err) {
+    if (isApiResponse(err)) {
+      if (err.errors && Array.isArray(err.errors)) {
+        err.errors.forEach((error: ErrorDetail) => {
+          errors[error.field as keyof AdoptionForm] = error.message;
+        });
+      }
+    }else{
+      console.error("입양글 수정 중 오류 발생:", err);
     }
   }
   finally {
@@ -310,6 +304,14 @@ const handleCancel = () => {
 onMounted(async () => {
   await handleFetchAdoption();
 })
+
+onUnmounted(() => {
+  imagePreviews.value.forEach((url) => {
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
+    }
+  });
+});
 
 </script>
 
