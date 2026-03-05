@@ -462,11 +462,6 @@ input[type="number"] {
 }
 
 /* 입력 설명 / 오류 텍스트 (있을 경우) */
-.field .help {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #8b949e;
-}
 .field .error {
   margin-top: 6px;
   font-size: 12px;
