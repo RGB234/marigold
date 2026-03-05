@@ -6,7 +6,7 @@ import { SpeciesLabels } from "@/global/enums/Species";
 import { SexLabels } from "@/global/enums/Sex";
 import { NeuteringLabels } from "@/global/enums/Neutering";
 import { getCompletedLabel } from "@/global/enums/Completed";
-import { getAdoptionDetail, deleteAdoption } from '@/adoption/api/adoption';
+import { getAdoptionDetail, deleteAdoption } from '@/adoption/api/adoption.api';
 
 import { useAuthStore } from '@/auth/stores/auth';
 import { tsidLongToString } from '@/global/utils/tsid';

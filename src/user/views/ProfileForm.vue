@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserProfile, deleteUser } from '@/user/api/user';
+import { getUserProfile, deleteUser } from '@/user/api/user.api';
 import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useAlert } from '@/global/composables/useAlert';

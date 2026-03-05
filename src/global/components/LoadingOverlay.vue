@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// 별도의 로직이 없다면 script 부분은 비워두거나 생략해도 됩니다.
 </script>
 
 <template>

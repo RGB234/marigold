@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
-import { updateUserProfile, getUserProfile } from '@/user/api/user'; // 조회 API 추가 가정
+import { updateUserProfile, getUserProfile } from '@/user/api/user.api'; // 조회 API 추가 가정
 import { convertToFormData } from '@/global/utils/objectUtils';
 import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';

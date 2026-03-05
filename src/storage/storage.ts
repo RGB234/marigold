@@ -1,4 +1,4 @@
-import api from "../../global/api";
+import api from "../global/api";
 
 const apiStorageGet = import.meta.env.VITE_API_STORAGE_GET;
 

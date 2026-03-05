@@ -1,6 +1,6 @@
 import api from "../../global/api";
 import type { ApiResponse, UserProfileResponse } from "@/global/types/apiResponse";
-import { getPresignedUrl } from "../../storage/api/storage";
+import { getPresignedUrl } from "../../storage/storage";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 const apiUserProfile = import.meta.env.VITE_API_USER_PROFILE;

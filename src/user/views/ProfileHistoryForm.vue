@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserAdoptions } from '@/adoption/api/adoption';
+import { getUserAdoptions } from '@/adoption/api/adoption.api';
 import NoImage from '@/assets/images/no-image.jpeg';
 import { getCompletedLabel } from '@/global/enums/Completed';
 import { SexLabels } from '@/global/enums/Sex';

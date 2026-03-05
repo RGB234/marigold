@@ -108,7 +108,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoption";
+import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoption.api";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { Species } from "@/global/enums/Species";
 import { Sex } from "@/global/enums/Sex";

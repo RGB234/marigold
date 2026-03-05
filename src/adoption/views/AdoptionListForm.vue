@@ -89,7 +89,7 @@ import { SpeciesLabels, SpeciesOptions } from "@/global/enums/Species";
 import { SexLabels, SexOptions } from "@/global/enums/Sex";
 import { getCompletedLabel } from "@/global/enums/Completed";
 import { cleanParams } from "@/global/utils/objectUtils";
-import { getAdoptionList } from "@/adoption/api/adoption";
+import { getAdoptionList } from "@/adoption/api/adoption.api";
 import { AdoptionItemResponse, AdoptionListResponse } from "@/global/types/apiResponse";
 
 // ==========================================

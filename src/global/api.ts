@@ -13,6 +13,10 @@ const api: AxiosInstance = axios.create({
   withCredentials: true, // 쿠키/세션 포함
 });
 
+/**
+ * 요청 Interceptor
+ */
+
 api.interceptors.request.use(
   (config) => {
     const loadingStore = useLoadingStore();
@@ -52,24 +56,28 @@ api.interceptors.response.use(
     loadingStore.stop();
 
     const { alert } = useAlert();
-    const errorResponse = error.response?.data as ApiResponse<unknown>;
+    const errorResponse = error.response?.data;
 
     if (errorResponse) {
       console.error(
         `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
       );
-      if (errorResponse.status === 400) {
-        alert("Error", errorResponse.message);
-
-      }
-      else if (errorResponse.status === 401) {
-        alert("Error", errorResponse.message);
-      } else if (errorResponse.status === 404) {
-        alert("Error", errorResponse.message);
-      } else if (errorResponse.status === 500) {
-        alert("Error", errorResponse.message);
-      } else {
-        alert("Error", errorResponse.message);
+      switch (errorResponse.status) {
+        case 400:
+          alert("Bad Request", errorResponse.message);
+          break;
+        case 401:
+          alert("Unauthorized", errorResponse.message);
+          break;
+        case 404:
+          alert("Not Found", errorResponse.message);
+          break;
+        case 500:
+          alert("Internal Server Error", errorResponse.message);
+          break;
+        default:
+          alert("Error", errorResponse.message);
+          break;
       }
     } else {
       alert("Unexpected error", error.message);

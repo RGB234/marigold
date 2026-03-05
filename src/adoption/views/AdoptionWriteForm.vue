@@ -134,7 +134,7 @@
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { createAdoption } from "@/adoption/api/adoption";
+import { createAdoption } from "@/adoption/api/adoption.api";
 import { Species } from "@/global/enums/Species";
 import { Sex } from "@/global/enums/Sex";
 import { Neutering } from "@/global/enums/Neutering";
