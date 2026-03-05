@@ -23,17 +23,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from "vue-router";
+import { ref } from 'vue';
+import { useAlert } from "@/global/composables/useAlert";
 
-import { ProviderInfo, useAuthStore } from "@/stores/auth";
+import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
 
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
-import router from '@/router';
+import router from '@/global/router';
 
-const route = useRoute();
 const authStore = useAuthStore();
+const { toast } = useAlert();
 
 interface Provider {
   name: ProviderInfo;
@@ -47,17 +47,6 @@ const providers = ref<Provider[]>([
   { name: ProviderInfo.KAKAO, description: '카카오 계정으로 로그인', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
-onMounted(() => {
-  const responseCode = route.query.code;
-  if (responseCode) {
-    // 1. 에러 핸들링 (알림창 등)
-    alert(responseCode);
-
-    // 2. URL 파라미터 제거 (중요!)
-    // 현재 페이지는 유지하되, 주소창에서 쿼리만 지웁니다.
-    router.replace({ query: {} });
-  }
-});
 
 function loginWithSocial(providerCode: ProviderInfo) {
   authStore.login(providerCode);

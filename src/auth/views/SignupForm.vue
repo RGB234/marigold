@@ -24,12 +24,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute } from "vue-router";
-import {ProviderInfo, useAuthStore } from '@/stores/auth';
+import { ref } from 'vue';
+import {ProviderInfo, useAuthStore } from '@/auth/stores/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
-import router from '@/router';
+import router from '@/global/router';
 
 interface Provider {
   name: ProviderInfo;
@@ -45,21 +44,7 @@ const providers = ref<Provider[]>([
 ]);
 
 const authStore = useAuthStore();
-const route = useRoute();
 
-onMounted(() => {
-  const responseCode = route.query.code;
-
-  if (responseCode) {
-    // 1. 에러 핸들링 (알림창 등)
-    // handleLoginError(errorCode);
-    alert(responseCode);
-
-    // 2. URL 파라미터 제거 (중요!)
-    // 현재 페이지는 유지하되, 주소창에서 쿼리만 지웁니다.
-    router.replace({ query: {} });
-  }
-});
 
 // 소셜 계정으로 회원가입
 const handleSocialSignUp = (providerCode: ProviderInfo) => {

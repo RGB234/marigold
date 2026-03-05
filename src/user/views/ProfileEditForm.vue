@@ -31,13 +31,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
-import { updateUserProfile, getUserProfile } from '@/api/user'; // 조회 API 추가 가정
-import { convertToFormData } from '@/utils/objectUtils';
-import { useAuthStore } from '@/stores/auth';
+import { updateUserProfile, getUserProfile } from '@/user/api/user'; // 조회 API 추가 가정
+import { convertToFormData } from '@/global/utils/objectUtils';
+import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
-import { isApiResponse } from '@/types/apiResponse';
-import { ErrorDetail } from '@/types/common';
+import { isApiResponse } from '@/global/types/apiResponse';
+import { ErrorDetail } from '@/global/types/common';
 
 interface ProfileForm {
     nickname: string;

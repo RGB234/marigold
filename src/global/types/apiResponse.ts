@@ -1,9 +1,9 @@
 // 응답받을 데이터의 형태를 정의
 
-import { Neutering } from "@/enums/Neutering";
+import { Neutering } from "@/global/enums/Neutering";
 import { ErrorDetail, Pageable } from "./common";
-import { Sex } from "@/enums/Sex";
-import { Species } from "@/enums/Species";
+import { Sex } from "@/global/enums/Sex";
+import { Species } from "@/global/enums/Species";
 
 export function isApiResponse<T = unknown>(response: any): response is ApiResponse<T> {
     if (typeof response !== 'object' || response === null) {

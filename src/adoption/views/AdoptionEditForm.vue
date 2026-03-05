@@ -1,6 +1,5 @@
 <template>
   <section>
-    <LoadingOverlay v-if="loading"></LoadingOverlay>
     <div class="writing-wrap">
       <div class="writing-header">
         <h1>입양글 수정</h1>
@@ -109,13 +108,14 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { editAdoption, getAdoptionDetail } from "@/api/adoption";
-import { convertToFormData } from "@/utils/objectUtils";
-import { Species } from "@/enums/Species";
-import { Sex } from "@/enums/Sex";
-import { Neutering } from "@/enums/Neutering";
-import { AdoptionDetailResponse, isApiResponse } from "@/types/apiResponse";
-import { ErrorDetail } from "@/types/common";
+import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoption";
+import { convertToFormData } from "@/global/utils/objectUtils";
+import { Species } from "@/global/enums/Species";
+import { Sex } from "@/global/enums/Sex";
+import { Neutering } from "@/global/enums/Neutering";
+import { AdoptionDetailResponse, isApiResponse } from "@/global/types/apiResponse";
+import { ErrorDetail } from "@/global/types/common";
+import { useAlert } from "@/global/composables/useAlert";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -162,9 +162,9 @@ const errors = reactive<Record<keyof AdoptionForm | string, string>>({
 
 const route = useRoute();
 const router = useRouter();
-
+const { toast } = useAlert();
 const imagePreviews = ref<string[]>([]);
-const loading = ref(false);
+
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
 
@@ -267,7 +267,6 @@ const removeImage = (index: number) => {
 
 
 const handleSubmit = async () => {
-  loading.value = true;
   // 에러 초기화
   Object.keys(errors).forEach((key) => (errors[key] = ""));
 
@@ -278,7 +277,7 @@ const handleSubmit = async () => {
 
     await editAdoption(routeId, formData);
 
-    alert("입양글 수정이 완료되었습니다.");
+    toast.success("입양글 수정이 완료되었습니다.");
 
     router.push({ name: 'Adoption_detail', params: { id: routeId } });
   } catch (err) {
@@ -291,9 +290,6 @@ const handleSubmit = async () => {
     }else{
       console.error("입양글 수정 중 오류 발생:", err);
     }
-  }
-  finally {
-    loading.value = false;
   }
 };
 

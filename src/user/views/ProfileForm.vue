@@ -1,10 +1,9 @@
 <template>
-  <LoadingOverlay v-if="loading"></LoadingOverlay>
   <div class="my-page-container">
-
     <section class="profile-section">
       <div class="profile-image-wrapper">
-        <img :src="userInfo.imageUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img" @error="handleImageError" />
+        <img :src="userInfo.imageUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img"
+          @error="handleImageError" />
       </div>
       <h2 class="nickname">{{ userInfo.nickname }}</h2>
       <button v-if="isMyProfile" class="edit-btn" @click="goToEditProfile">프로필 수정</button>
@@ -18,7 +17,7 @@
       <h3 class="section-title">
         계정 관리
       </h3>
-      <div class=" account-delete-btn clickable" @click="openDeleteModal">
+      <div class="account-delete-btn clickable" @click="openDeleteModal">
         계정 삭제
       </div>
     </section>
@@ -32,20 +31,11 @@
           삭제하시려면 아래 문구를 똑같이 입력해 주세요.<br>
           <strong>"계정을 삭제하겠습니다"</strong>
         </p>
-        <input 
-          v-model="deleteConfirmationInput" 
-          type="text" 
-          placeholder="계정을 삭제하겠습니다"
-          class="confirm-input"
-          @keyup.enter="confirmDelete"
-        />
+        <input v-model="deleteConfirmationInput" type="text" placeholder="계정을 삭제하겠습니다" class="confirm-input"
+          @keyup.enter="confirmDelete" />
         <div class="modal-actions">
           <button class="cancel-btn" @click="closeDeleteModal">취소</button>
-          <button 
-            class="confirm-delete-btn" 
-            :disabled="!isDeleteConfirmed"
-            @click="confirmDelete"
-          >
+          <button class="confirm-delete-btn" :disabled="!isDeleteConfirmed" @click="confirmDelete">
             삭제하기
           </button>
         </div>
@@ -57,14 +47,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserProfile, deleteUser } from '@/api/user';
-import { useAuthStore } from '@/stores/auth';
+import { getUserProfile, deleteUser } from '@/user/api/user';
+import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
+import { useAlert } from '@/global/composables/useAlert';
 
 const router = useRouter();
 const route = useRoute();
-const loading = ref(false);
 const authStore = useAuthStore();
+const { toast } = useAlert();
 
 // 대상 유저 ID (Path Variable이 있으면 사용, 없으면 내 로그인 ID 사용)
 const targetUserId = computed(() => {
@@ -80,13 +71,13 @@ const isMyProfile = computed(() => {
   if (route.name === 'MyProfile') return true;
   // 2. 현재 로그인한 사용자의 ID와 대상 ID가 일치하는 경우
   if (authStore.userId && targetUserId.value === authStore.userId) return true;
-  
+
   return false;
 });
 
 const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement;
-    target.src = defaultProfileImage;
+  const target = event.target as HTMLImageElement;
+  target.src = defaultProfileImage;
 };
 
 // 모달 관련 상태
@@ -116,14 +107,11 @@ const userInfo = ref<UserInfo>({
 // 데이터 불러오기
 const fetchUserProfile = async (userId: string) => {
   try {
-    loading.value = true;
     const data = await getUserProfile(userId); // nickname, imageUrl
-
     userInfo.value = data;
-    loading.value = false;
   } catch (error) {
     console.error("프로필 조회 중 오류 발생:", error);
-    alert("프로필 조회 중 오류가 발생했습니다.");
+    toast.error("프로필 조회 중 오류가 발생했습니다.");
     throw error;
   }
 }
@@ -148,22 +136,19 @@ const closeDeleteModal = () => {
 
 const confirmDelete = async () => {
   if (!isDeleteConfirmed.value) return;
-  
+
   await deleteAccount();
 }
 
 const deleteAccount = async () => {
   try {
-    loading.value = true;
-    const response = await deleteUser();
+    await deleteUser();
     authStore.logout();
-    router.push({name:"Home"})
+    router.push({ name: "Home" })
   } catch (error) {
     console.error("계정 삭제 중 오류 발생:", error);
-    // console.log(response); // response is not defined here if error occurs
-    alert("계정 삭제 중 오류가 발생했습니다.");
+    toast.error("계정 삭제 중 오류가 발생했습니다.");
   } finally {
-    loading.value = false;
     closeDeleteModal();
   }
 }

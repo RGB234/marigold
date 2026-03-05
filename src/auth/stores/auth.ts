@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { isValidTsid } from "@/utils/validators";
-import api from "@/api/api";
+import { isValidTsid } from "@/global/utils/validators";
+import api from "@/global/api";
 
 
 export enum ProviderInfo {
@@ -52,12 +52,13 @@ export const useAuthStore = defineStore("auth", {
         console.error("❌ 인증 상태 확인 실패:", error);
         // 에러 발생 시 인증되지 않은 것으로 처리
         this.resetAuthState();
-        return false;
+        throw error;
       }
     },
     
     login(providerCode : ProviderInfo){
       switch(providerCode){
+        // 오류 발생시 백엔드에서 콜백으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
         case ProviderInfo.KAKAO:
           window.location.href =  import.meta.env.VITE_API_OAUTH2_LOGIN_KAKAO;
           break;

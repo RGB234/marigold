@@ -1,6 +1,5 @@
 <template>
   <section>
-    <LoadingOverlay v-if="loading"></LoadingOverlay>
     <div class="writing-wrap">
       <div class="writing-header">
         <h1>입양글 작성</h1>
@@ -135,13 +134,14 @@
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { createAdoption } from "@/api/adoption";
-import { Species } from "@/enums/Species";
-import { Sex } from "@/enums/Sex";
-import { Neutering } from "@/enums/Neutering";
-import { convertToFormData } from "@/utils/objectUtils";
-import { isApiResponse } from "@/types/apiResponse";
-import { ErrorDetail } from "@/types/common";
+import { createAdoption } from "@/adoption/api/adoption";
+import { Species } from "@/global/enums/Species";
+import { Sex } from "@/global/enums/Sex";
+import { Neutering } from "@/global/enums/Neutering";
+import { convertToFormData } from "@/global/utils/objectUtils";
+import { isApiResponse } from "@/global/types/apiResponse";
+import { ErrorDetail } from "@/global/types/common";
+import { useAlert } from "@/global/composables/useAlert";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -186,9 +186,9 @@ const errors = reactive<Record<keyof AdoptionForm, string>>({
 
 const router = useRouter();
 const imagePreviews = ref<string[]>([]);
-const loading = ref(false);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
+const { toast } = useAlert();
 
 const openLightbox = (index: number) => { lightboxIndex.value = index; };
 const closeLightbox = () => { lightboxIndex.value = null; };
@@ -252,7 +252,6 @@ onUnmounted(() => {
 });
 
 const handleSubmit = async () => {
-  loading.value = true;
   // 에러 초기화
   Object.keys(errors).forEach((key) => (errors[key as keyof AdoptionForm] = ""));
   
@@ -261,7 +260,7 @@ const handleSubmit = async () => {
   try {
     const response = await createAdoption(formData);
     const createdPostId = response.data?.id;
-    alert("입양글 작성이 완료되었습니다.");
+    toast.success("입양글 작성이 완료되었습니다.");
     router.push({ name: 'Adoption_detail', params: { id: createdPostId } });
   } catch (err: any) {
     if(isApiResponse(err)){
@@ -273,9 +272,6 @@ const handleSubmit = async () => {
     }else{
       console.error("입양글 작성 중 오류 발생:", err);
     }
-  }
-  finally {
-    loading.value = false;
   }
 };
 

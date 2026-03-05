@@ -1,5 +1,8 @@
-import type { ApiResponse } from "@/types/apiResponse";
+import type { ApiResponse } from "@/global/types/apiResponse";
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
+import { useAlert } from "@/global/composables/useAlert";
+import { useLoadingStore } from "@/global/stores/loading";
+
 
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_APP_API_BASE;
@@ -9,6 +12,19 @@ const api: AxiosInstance = axios.create({
   baseURL: apiBase,
   withCredentials: true, // 쿠키/세션 포함
 });
+
+api.interceptors.request.use(
+  (config) => {
+    const loadingStore = useLoadingStore();
+    loadingStore.start();
+    return config;
+  },
+  (error) => {
+    const loadingStore = useLoadingStore();
+    loadingStore.stop();
+    return Promise.reject(error);
+  }
+);
 
 /**
  * 응답 Interceptor
@@ -26,8 +42,16 @@ const api: AxiosInstance = axios.create({
  *   // response.data → Foo
  */
 api.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse<unknown>>) => response.data as any,
+  (response: AxiosResponse<ApiResponse<unknown>>) => {
+    const loadingStore = useLoadingStore();
+    loadingStore.stop();
+    return response.data as any;
+  },
   (error: AxiosError<ApiResponse<unknown>>) => {
+    const loadingStore = useLoadingStore();
+    loadingStore.stop();
+
+    const { alert } = useAlert();
     const errorResponse = error.response?.data as ApiResponse<unknown>;
 
     if (errorResponse) {
@@ -35,19 +59,20 @@ api.interceptors.response.use(
         `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
       );
       if (errorResponse.status === 400) {
-        alert(errorResponse.message);
+        alert("Error", errorResponse.message);
+
       }
       else if (errorResponse.status === 401) {
-        alert(errorResponse.message);
+        alert("Error", errorResponse.message);
       } else if (errorResponse.status === 404) {
-        alert(errorResponse.message);
+        alert("Error", errorResponse.message);
       } else if (errorResponse.status === 500) {
-        alert(errorResponse.message);
+        alert("Error", errorResponse.message);
       } else {
-        alert(errorResponse.message);
+        alert("Error", errorResponse.message);
       }
     } else {
-      alert("Upexpected error : " + error.message);
+      alert("Unexpected error", error.message);
     }
 
     return Promise.reject(errorResponse);

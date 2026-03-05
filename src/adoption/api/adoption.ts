@@ -1,7 +1,7 @@
-import api from "@/api/api";
-import type { ApiResponse, AdoptionDetailResponse, AdoptionListResponse } from "@/types/apiResponse";
-import { getPresignedUrl } from "./storage";
-import type { GetAdoptionListParams } from "@/types/apiRequest";
+import api from "@/global/api";
+import type { ApiResponse, AdoptionDetailResponse, AdoptionListResponse } from "@/global/types/apiResponse";
+import { getPresignedUrl } from "../../storage/api/storage";
+import type { GetAdoptionListParams } from "@/global/types/apiRequest";
 
 type TSID = string;
 

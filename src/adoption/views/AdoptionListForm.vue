@@ -1,5 +1,4 @@
 <template>
-  <LoadingOverlay v-if="loading"></LoadingOverlay>
   <div class="filter-container">
     <div class="filter-card">
       <div class="filter-group">
@@ -86,12 +85,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { SpeciesLabels, SpeciesOptions } from "@/enums/Species";
-import { SexLabels, SexOptions } from "@/enums/Sex";
-import { getCompletedLabel } from "@/enums/Completed";
-import { cleanParams } from "@/utils/objectUtils";
-import { getAdoptionList } from "@/api/adoption";
-import { AdoptionItemResponse, AdoptionListResponse } from "@/types/apiResponse";
+import { SpeciesLabels, SpeciesOptions } from "@/global/enums/Species";
+import { SexLabels, SexOptions } from "@/global/enums/Sex";
+import { getCompletedLabel } from "@/global/enums/Completed";
+import { cleanParams } from "@/global/utils/objectUtils";
+import { getAdoptionList } from "@/adoption/api/adoption";
+import { AdoptionItemResponse, AdoptionListResponse } from "@/global/types/apiResponse";
 
 // ==========================================
 // 데이터 호출 및 상태 관리
@@ -104,8 +103,6 @@ const searchFilters = ref<{ species?: string; sex?: string }>({
   species: undefined, // undefined이면 전체검색
   sex: undefined,     // undefined이면 전체검색
 });
-
-const loading = ref(false);
 
 // ==========================================
 // 서버 사이드 페이지네이션
@@ -120,8 +117,6 @@ const visiblePageCount = 10;     // 페이지네이션 바에 표시할 페이�
 const handleSearch = async (page = 0) => {
   currentPage.value = page;
   searchResult.value = [];
-  loading.value = true;
-
   try {
     const params = { ...cleanParams(searchFilters.value), page };
     const data: AdoptionListResponse = await getAdoptionList(params);
@@ -132,8 +127,6 @@ const handleSearch = async (page = 0) => {
     totalElements.value = data.page.totalElements ?? 0;
   } catch (error) {
     console.error("검색 중 오류 발생:", error);
-  } finally {
-    loading.value = false;
   }
 };
 

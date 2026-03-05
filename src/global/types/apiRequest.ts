@@ -1,6 +1,6 @@
-import { Neutering } from "@/enums/Neutering";
-import { Sex } from "@/enums/Sex";
-import { Species } from "@/enums/Species";
+import { Neutering } from "@/global/enums/Neutering";
+import { Sex } from "@/global/enums/Sex";
+import { Species } from "@/global/enums/Species";
 
 export interface AdoptionCreateRequest {
   species: Species;

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserAdoptions } from '@/api/adoption';
+import { getUserAdoptions } from '@/adoption/api/adoption';
 import NoImage from '@/assets/images/no-image.jpeg';
-import { getCompletedLabel } from '@/enums/Completed';
-import { SexLabels } from '@/enums/Sex';
-import { SpeciesLabels } from '@/enums/Species';
-import { AdoptionItemResponse } from '@/types/apiResponse';
+import { getCompletedLabel } from '@/global/enums/Completed';
+import { SexLabels } from '@/global/enums/Sex';
+import { SpeciesLabels } from '@/global/enums/Species';
+import { AdoptionItemResponse } from '@/global/types/apiResponse';
 
 const router = useRouter(); 
 const route = useRoute();

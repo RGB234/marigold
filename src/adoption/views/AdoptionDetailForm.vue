@@ -2,21 +2,23 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { SpeciesLabels } from "@/enums/Species";
-import { SexLabels } from "@/enums/Sex";
-import { NeuteringLabels } from "@/enums/Neutering";
-import { getCompletedLabel } from "@/enums/Completed";
-import { getAdoptionDetail, deleteAdoption } from '@/api/adoption';
+import { SpeciesLabels } from "@/global/enums/Species";
+import { SexLabels } from "@/global/enums/Sex";
+import { NeuteringLabels } from "@/global/enums/Neutering";
+import { getCompletedLabel } from "@/global/enums/Completed";
+import { getAdoptionDetail, deleteAdoption } from '@/adoption/api/adoption';
 
-import { useAuthStore } from '@/stores/auth';
-import { tsidLongToString } from '@/utils/tsid';
-import { AdoptionDetailResponse } from '@/types/apiResponse';
+import { useAuthStore } from '@/auth/stores/auth';
+import { tsidLongToString } from '@/global/utils/tsid';
+import { AdoptionDetailResponse } from '@/global/types/apiResponse';
+
+import { useAlert } from '@/global/composables/useAlert';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const { toast } = useAlert();
 
-const loading = ref(false);
 const detail = ref<AdoptionDetailResponse | null>(null);
 
 // 로그인 상태 확인
@@ -46,10 +48,8 @@ const formatDate = (dateString: string) => {
 
 const fetchDetail = async (id: string | string[]) => {
     try {
-        loading.value = true;
         const responseData = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
         detail.value = responseData;
-        loading.value = false;
     } catch (error) {
         router.push({ name: 'Adoption' });
     }
@@ -70,14 +70,12 @@ const confirmDelete = () => {
 // 게시글 삭제
 const deletePost = async () => {
     try {
-        loading.value = true;
         await deleteAdoption(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
-        alert('게시글이 삭제되었습니다.');
+        toast.success('게시글이 삭제되었습니다.');
         router.push({ name: 'Home' });
     } catch (error) {
         console.error("게시글 삭제 중 오류 발생:", error);
-        alert("게시글 삭제 중 오류가 발생했습니다.");
-        loading.value = false;
+        toast.error("게시글 삭제 중 오류가 발생했습니다.");
     }
 };
 
@@ -94,14 +92,8 @@ onMounted(async () => {
 </script>
 
 <template>
-    <LoadingOverlay v-if="loading"></LoadingOverlay>
     <div class="detail-container">
-        <div v-if="loading" class="loading">
-            데이터를 불러오는 중입니다...
-        </div>
-
-        <div v-else-if="detail" class="content-wrapper">
-
+        <div v-if="detail" class="content-wrapper">
             <div class="header-section">
                 <div class="header-top">
                     <div class="title-row">
@@ -191,11 +183,6 @@ onMounted(async () => {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
-.loading {
-    text-align: center;
-    padding: 50px;
-    color: #888;
-}
 
 /* 헤더 */
 .header-section {
