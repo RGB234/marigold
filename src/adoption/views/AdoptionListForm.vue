@@ -168,6 +168,10 @@ onMounted(async () => {
 /* search filter */
 
 .filter-container {
+  max-width: 800px;
+  min-width: max-content;
+  width: 100%;
+  box-sizing: border-box;
   margin: 3rem auto;
   display: flex;
   justify-content: center;
@@ -266,7 +270,10 @@ select:focus {
 /* card */
 
 .card-container {
-  max-width: 1000px;
+  max-width: 800px;
+  min-width: max-content;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 0 20px;
   display: flex;

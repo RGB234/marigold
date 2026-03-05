@@ -177,7 +177,10 @@ watch(
 <style scoped>
 /* 전체 컨테이너 */
 .my-page-container {
-  max-width: 600px;
+  max-width: 800px;
+  min-width: max-content;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 20px;
   background-color: #f9f9f9;
@@ -272,7 +275,8 @@ section {
   padding: 30px;
   border-radius: 12px;
   width: 90%;
-  max-width: 400px;
+  max-width: 600px;
+  box-sizing: border-box;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

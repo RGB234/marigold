@@ -185,7 +185,10 @@ const submitForm = async () => {
 
 <style scoped>
 .profile-form-container {
-    max-width: 400px;
+    max-width: 800px;
+    min-width: max-content;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 20px;
     border: 1px solid #ddd;

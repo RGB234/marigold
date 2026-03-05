@@ -97,7 +97,10 @@ onMounted(() => {
 
 <style scoped>
 .list-container {
-    max-width: 1000px;
+    max-width: 800px;
+    min-width: max-content;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 40px 20px;
 }

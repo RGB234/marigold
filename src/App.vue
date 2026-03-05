@@ -57,6 +57,9 @@ nav {
   padding-right: 2rem;
   font-size: 1.3rem;
   font-weight: 700;
+  width: 100%;
+  min-width: max-content;
+  box-sizing: border-box;
 }
 
 a {
