@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-app>
     <nav>
       <router-link :to="{ name: 'Home' }">홈</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
@@ -10,20 +10,32 @@
 
     <router-view />
     <!-- 여기서 URL에 맞는 화면이 바뀜 -->
-  </div>
+
+    <LoadingOverlay v-if="loadingStore.isLoading" />
+    <GlobalAlert />
+  </v-app>
 </template>
 
 <script setup lang="ts">
 import { onMounted, computed } from "vue";
-import { useAuthStore } from "./stores/auth";
+import { useAuthStore } from "./auth/stores/auth";
+import { useAlert } from "@/global/composables/useAlert";
+import { useLoadingStore } from "@/global/stores/loading";
+import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
 
+const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const userId = computed(() => authStore.userId);
+const { alert } = useAlert();
 
 onMounted(async () => {
   // 앱 시작 시 로그인 상태 초기화 (전역 상태 업데이트)
-  await authStore.initializeAuth();
+  try{
+    await authStore.initializeAuth();
+  }catch(error){
+    alert("Error", "앱 시작 시 로그인 상태 초기화 실패");
+  }
 });
 
 </script>
