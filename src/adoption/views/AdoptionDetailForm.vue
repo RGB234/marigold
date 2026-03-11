@@ -5,8 +5,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { SpeciesLabels } from "@/global/enums/Species";
 import { SexLabels } from "@/global/enums/Sex";
 import { NeuteringLabels } from "@/global/enums/Neutering";
-import { getCompletedLabel } from "@/global/enums/Completed";
-import { getAdoptionDetail, deleteAdoption } from '@/adoption/api/adoption.api';
+import { getAdoptionStatusLabel, AdoptionStatus } from "@/global/enums/AdoptionStatus";
+import { getAdoptionDetail, deleteAdoption, updateAdoptionStatus } from '@/adoption/api/adoption.api';
+import { createChatRoom } from '@/chat/api/chat.api';
 
 import { useAuthStore } from '@/auth/stores/auth';
 import { tsidLongToString } from '@/global/utils/tsid';
@@ -17,7 +18,7 @@ import { useAlert } from '@/global/composables/useAlert';
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const { toast } = useAlert();
+const { confirm, toast } = useAlert();
 
 const detail = ref<AdoptionDetailResponse | null>(null);
 
@@ -28,8 +29,8 @@ const currentUserId = computed(() => authStore.userId);
 // 작성자 본인인지 확인
 const isAuthor = computed(() => {
     if (!detail.value || !currentUserId.value) return false;
-    // console.log(detail.value.writer?.id);
-    // console.log(tsidToLong(currentUserId.value));
+    // console.log(tsidLongToString(detail.value.writer?.id)); // bigint format of userId
+    // console.log(currentUserId.value); // string format
     return tsidLongToString(detail.value.writer?.id) === currentUserId.value;
 });
 
@@ -51,7 +52,7 @@ const fetchDetail = async (id: string | string[]) => {
         const responseData = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
         detail.value = responseData;
     } catch (error) {
-        router.push({ name: 'Adoption' });
+        router.push({ name: 'Adoption_list' });
     }
 };
 
@@ -61,8 +62,8 @@ const editPost = () => {
 };
 
 // 게시글 삭제 확인
-const confirmDelete = () => {
-    if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+const confirmDelete = async () => {
+    if (await confirm("경고", "정말로 이 게시글을 삭제하시겠습니까?")) {
         deletePost();
     }
 };
@@ -79,10 +80,49 @@ const deletePost = async () => {
     }
 };
 
+const handleStatusChange = async (status: AdoptionStatus) => {
+    if (!detail.value) return;
+    try {
+        await updateAdoptionStatus(detail.value.id, status);
+        detail.value.status = status;
+        toast.success(`상태가 '${getAdoptionStatusLabel(status)}'(으)로 변경되었습니다.`);
+    } catch (error) {
+        console.error("상태 변경 오류:", error);
+        toast.error("상태 변경 중 오류가 발생했습니다.");
+    }
+};
+
+const handleChatRequest = async () => {
+    if (!detail.value || !detail.value.writer) return;
+
+    if (await confirm("확인", "입양 문의를 하시겠습니까?")) {
+        try {
+            // 채팅방 생성 (이미 있으면 기존 방 반환)
+            const writerId = tsidLongToString(detail.value.writer.id);
+            const chatRoom = await createChatRoom(writerId);
+            
+            // 상태 변경 (예약중으로)
+            // await handleStatusChange(AdoptionStatus.RESERVED);
+            
+            toast.success("채팅방이 개설되었습니다.");
+            
+            // 채팅방으로 이동
+            router.push({ name: 'Chat_room', params: { roomId: chatRoom.id.toString() } });
+        } catch (error) {
+            console.error("채팅방 생성 중 오류 발생:", error);
+            toast.error("채팅방 생성 중 오류가 발생했습니다.");
+        }
+    }
+};
+
 const goToProfile = () => {
     if (!detail.value) return;
     const writerId = tsidLongToString(detail.value.writer?.id);
     router.push({ name: 'Profile', params: { id: writerId } });
+};
+
+const goToAdoptionList = () => {
+    router.push({ name: 'Adoption_list' });
 };
 
 onMounted(async () => {
@@ -98,11 +138,12 @@ onMounted(async () => {
                 <div class="header-top">
                     <div class="title-row">
                         <span class="badge species">{{ SpeciesLabels[detail.species] }}</span>
-                        <span class="badge" :class="{ completed: detail.completed }">{{ getCompletedLabel(detail.completed) }}</span>
+                        <span class="badge" :class="detail.status">{{ getAdoptionStatusLabel(detail.status) }}</span>
                         <h1 class="name">{{ detail.title }}</h1>
                     </div>
                     <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
-                    <div v-if="isLoggedIn && isAuthor && detail.completed === false" class="action-buttons">
+                    <div v-if="isLoggedIn && isAuthor" class="action-buttons">
+                        <!-- <button class="btn-small edit" @click="editPost" v-if="detail.status !== AdoptionStatus.COMPLETED">수정</button> -->
                         <button class="btn-small edit" @click="editPost">수정</button>
                         <button class="btn-small delete" @click="confirmDelete">삭제</button>
                     </div>
@@ -160,8 +201,29 @@ onMounted(async () => {
             </div>
 
             <div class="button-group">
-                <button class="btn secondary" @click="router.back()">목록으로</button>
-                <button class="btn primary">입양 신청하기</button>
+                <button class="btn secondary" @click="goToAdoptionList()">목록으로</button>
+                
+                <!-- 작성자가 아닌 경우: 입양 문의하기 -->
+                <button v-if="isLoggedIn && !isAuthor && detail.status === AdoptionStatus.PROCEEDING" 
+                        class="btn primary" @click="handleChatRequest">
+                    입양 문의하기 (채팅)
+                </button>
+
+                <!-- 작성자일 경우: 상태 변경 버튼들 -->
+                <div v-if="isLoggedIn && isAuthor && detail.status" class="status-actions">
+                    <button v-if="detail.status !== AdoptionStatus.PROCEEDING" 
+                            class="btn reserved" @click="handleStatusChange(AdoptionStatus.PROCEEDING)">
+                        모집중으로 변경
+                    </button>
+                    <button v-if="detail.status !== AdoptionStatus.RESERVED" 
+                            class="btn proceeding" @click="handleStatusChange(AdoptionStatus.RESERVED)">
+                        예약중으로 변경
+                    </button>
+                    <button v-if="detail.status !== AdoptionStatus.COMPLETED" 
+                            class="btn completed" @click="handleStatusChange(AdoptionStatus.COMPLETED)">
+                        입양 완료 처리
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -213,9 +275,12 @@ onMounted(async () => {
     font-weight: bold;
 }
 
-.badge.completed {
+.badge.COMPLETED {
     background-color: #888;
-    color: #fff;
+}
+
+.badge.RESERVED {
+    background-color: #2196f3;
 }
 
 .name {
@@ -267,6 +332,7 @@ onMounted(async () => {
 
 .btn-small.delete:hover {
     background-color: #d32f2f;
+    color: white;
 }
 
 /* 구분선 */
@@ -391,6 +457,35 @@ onMounted(async () => {
 
 .btn.secondary:hover {
     background-color: #e0e0e0;
+}
+
+.status-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn.reserved {
+    background-color: #ff9800;
+    color: white;
+}
+.btn.reserved:hover {
+    background-color: #f57c00;
+}
+
+.btn.proceeding {
+    background-color: #2196f3;
+    color: white;
+}
+.btn.proceeding:hover {
+    background-color: #1976d2;
+}
+
+.btn.completed {
+    background-color: #f44336;
+    color: white;
+}
+.btn.completed:hover {
+    background-color: #d32f2f;
 }
 
 /* 반응형 */

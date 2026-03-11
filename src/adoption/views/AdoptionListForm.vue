@@ -40,8 +40,8 @@
       </div>
 
       <div class="card-body">
-        <span class="status-badge" :class="{ completed: card.completed }">
-            {{ getCompletedLabel(card.completed) }}
+        <span class="status-badge" :class="card.status">
+            {{ getAdoptionStatusLabel(card.status) }}
         </span>
         <div class="card-meta">
           <span class="species">{{ SpeciesLabels[card.species] }}</span>
@@ -87,7 +87,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { SpeciesLabels, SpeciesOptions } from "@/global/enums/Species";
 import { SexLabels, SexOptions } from "@/global/enums/Sex";
-import { getCompletedLabel } from "@/global/enums/Completed";
+import { getAdoptionStatusLabel } from "@/global/enums/AdoptionStatus";
 import { cleanParams } from "@/global/utils/objectUtils";
 import { getAdoptionList } from "@/adoption/api/adoption.api";
 import { AdoptionItemResponse, AdoptionListResponse } from "@/global/types/apiResponse";
@@ -333,9 +333,14 @@ select:focus {
     margin-bottom: 8px;
 }
 
-.status-badge.completed {
+.status-badge.COMPLETED {
     background-color: #888;
     /* 완료 컬러 */
+}
+
+.status-badge.RESERVED {
+    background-color: #2196f3;
+    /* 예약중 컬러 (파랑) */
 }
 
 /* 카드 내용 */
