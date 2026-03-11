@@ -20,7 +20,7 @@ DECODE_MAP['L'] = BigInt(1);
  * @throws Error if the string contains invalid characters
  */
 export const tsidStringToLong = (tsid: string): bigint => {
-    if (!tsid) return BigInt(0);
+    if (!tsid) throw new Error('TSID string cannot be empty');
     
     let result = BigInt(0);
     const chars = tsid.toUpperCase();

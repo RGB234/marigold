@@ -5,6 +5,9 @@
  */
 export type UUID = string;
 
+export type TSID_String = string;
+export type TSID_Long = bigint;
+
 export interface Pageable {
     totalElements: number;
     totalPages: number;

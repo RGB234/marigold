@@ -7,7 +7,7 @@ import { useAlert } from "@/global/composables/useAlert";
 const routes: Array<RouteRecordRaw> = [
   {
     name: "Home",
-    path: import.meta.env.VITE_APP_HOME as string,
+    path: "/",
     component: () => import("@/adoption/views/AdoptionListForm.vue"),
     meta:{
       requiresAuth: false,
@@ -15,7 +15,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "AuthCallback",
-    path: import.meta.env.VITE_APP_AUTH_CALLBACK as string,
+    path: "/auth/callback",
     component: () => import("@/auth/views/AuthCallbackForm.vue"),
     meta:{
       requiresAuth: false,
@@ -23,7 +23,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Adoption_list",
-    path: import.meta.env.VITE_APP_ADOPTION as string,
+    path: "/adoption",
     component: () => import("@/adoption/views/AdoptionListForm.vue"),
     meta:{
       requiresAuth: false,
@@ -31,7 +31,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Login",
-    path: import.meta.env.VITE_APP_AUTH_LOGIN as string,
+    path: "/auth/login",
     component: () => import("@/auth/views/LoginForm.vue"),
     meta:{
       requiresAuth: false,
@@ -39,7 +39,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Signup",
-    path: import.meta.env.VITE_APP_AUTH_SIGNUP as string,
+    path: "/auth/signup",
     component: () => import("@/auth/views/SignupForm.vue"),
     meta:{
       requiresAuth: false,
@@ -47,7 +47,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Adoption_write",
-    path: `${import.meta.env.VITE_APP_ADOPTION}/write`,
+    path: "/adoption/write",
     component: () => import("@/adoption/views/AdoptionWriteForm.vue"),
     meta: {
       requiresAuth: true,
@@ -56,7 +56,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Adoption_detail",
-    path: `${import.meta.env.VITE_APP_ADOPTION}/:id`,
+    path: "/adoption/:id",
     component: () => import("@/adoption/views/AdoptionDetailForm.vue"),
     meta:{
       requiresAuth: false,
@@ -64,7 +64,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Adoption_edit",
-    path: `${import.meta.env.VITE_APP_ADOPTION}/:id/edit`,
+    path: "/adoption/:id/edit",
     component: () => import("@/adoption/views/AdoptionEditForm.vue"),
     meta: {
       requiresAuth: true,
@@ -72,7 +72,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "MyProfile",
-    path: import.meta.env.VITE_APP_PROFILE as string,
+    path: "/profile",
     component: () => import("@/user/views/ProfileForm.vue"),
     meta:{
       requiresAuth: true,
@@ -80,7 +80,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Profile",
-    path: `${import.meta.env.VITE_APP_PROFILE}/:id`,
+    path: "/profile/:id",
     component: () => import("@/user/views/ProfileForm.vue"),
     meta:{
       requiresAuth: true,
@@ -88,7 +88,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Profile_edit",
-    path: `${import.meta.env.VITE_APP_PROFILE}/edit`,
+    path: "/profile/edit",
     component: () => import("@/user/views/ProfileEditForm.vue"),
     meta:{
       requiresAuth: true,
@@ -96,9 +96,25 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     name: "Profile_history",
-    path: `${import.meta.env.VITE_APP_PROFILE}/history/:userId` as string,
+    path: "/profile/history/:userId",
     component: () => import("@/user/views/ProfileHistoryForm.vue"),
     meta:{
+      requiresAuth: true,
+    }
+  },
+  {
+    name: "Chat_list",
+    path: "/chat",
+    component: () => import("@/chat/views/ChatList.vue"),
+    meta: {
+      requiresAuth: true,
+    }
+  },
+  {
+    name: "Chat_room",
+    path: "/chat/:roomId",
+    component: () => import("@/chat/views/ChatRoom.vue"),
+    meta: {
       requiresAuth: true,
     }
   }
@@ -119,8 +135,10 @@ router.beforeEach(async (to, _from, next) => {
     // 인증 X - 로그인 상태 확인
     await authStore.initializeAuth();
     if (!authStore.isLoggedIn) {
-      alert("Error", "로그인이 필요한 서비스입니다.");
-      return next({ name: "Login" });
+      // alert("Error", "로그인이 필요한 서비스입니다.");
+      if (await alert("Error", "로그인이 필요한 서비스입니다.")){
+        return next({ name: "Login" });
+      };
     }
 
     // 특정 역할(role) 필요
@@ -132,8 +150,10 @@ router.beforeEach(async (to, _from, next) => {
       const hasAuthority = authStore.hasAnyAuthority(roles);
       // 권한 부족
       if (!hasAuthority) {
-        alert("Error", "권한이 없습니다");
-        return next({ name: "Home" });
+        // alert("Error", "권한이 없습니다");
+        if (await alert("Error", "권한이 없습니다")){
+          return next({ name: "Home" });
+        };
       }
     }
   }

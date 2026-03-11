@@ -3,17 +3,13 @@ import type { ApiResponse, UserProfileResponse } from "@/global/types/apiRespons
 import { getPresignedUrl } from "../../storage/storage";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
-const apiUserProfile = import.meta.env.VITE_API_USER_PROFILE;
-const apiUserUpdate = import.meta.env.VITE_API_USER_UPDATE;
-const apiUserDelete = import.meta.env.VITE_API_USER_DELETE;
-
 // 유저 프로필 조회
 export const getUserProfile = async (userId: string): Promise<UserProfileResponse> => {
-    const response: ApiResponse<UserProfileResponse> = await api.get(`${apiUserProfile}/${userId}`);
-    const profile = response.data;
+    const {data: apiResponse} = await api.get<ApiResponse<UserProfileResponse>>(`/user/profile/${userId}`);
+    const profile = apiResponse.data;
 
     if (!profile) {
-        throw new Error('User profile not found');
+        throw new Error("유저 프로필 데이터를 불러오지 못했습니다.");
     }
 
     if (profile.imageUrl) {
@@ -26,10 +22,10 @@ export const getUserProfile = async (userId: string): Promise<UserProfileRespons
 
 // 유저 프로필 수정
 export const updateUserProfile = async (formData: FormData): Promise<void> => {
-    await api.patch(`${apiUserUpdate}`, formData);
+    await api.patch<ApiResponse<void>>("/user/update", formData);
 };
 
 // 유저 삭제
 export const deleteUser = async (): Promise<void> => {
-    await api.delete(apiUserDelete);
+    await api.delete<ApiResponse<void>>("/user/delete");
 };

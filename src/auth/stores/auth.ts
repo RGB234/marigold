@@ -1,6 +1,8 @@
 import { defineStore } from "pinia";
-import { isValidTsid } from "@/global/utils/validators";
+import { validBASE32 } from "@/global/utils/validators";
 import api from "@/global/api";
+import { ApiResponse } from "@/global/types/apiResponse";
+import {TSID_String} from "@/global/types/common.ts";
 
 
 export enum ProviderInfo {
@@ -15,13 +17,13 @@ export enum ProviderInfo {
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    id: null as string | null,
+    id: null as TSID_String | null,
     authorities: [] as string[],
   }),
   
   getters: {
     // 로그인 여부 확인
-    isLoggedIn: (state) => isValidTsid(state.id || ""),
+    isLoggedIn: (state) => validBASE32(state.id),
     userId: (state) => state.id, // String format TSID
     // 권한 목록
     userAuthorities: (state) => state.authorities,
@@ -40,12 +42,12 @@ export const useAuthStore = defineStore("auth", {
     // 로그인 상태 초기화 (앱 시작 시 호출)
     async initializeAuth() : Promise<boolean> {  
       try {
-        const response = await api.get(import.meta.env.VITE_API_AUTH_STATUS);
-        console.log("AUTH STATUS RESPONSE", response);
+        const {data: apiResponse} = await api.get<ApiResponse<{ userId: string, authorities: string[] }>>("/auth/status");
+        console.log("AUTH STATUS RESPONSE", apiResponse);
 
         // 전역 상태 업데이트
-        this.id = response.data.userId || null;
-        this.authorities = response.data.authorities || [];
+        this.id = apiResponse.data!.userId || null;
+        this.authorities = apiResponse.data!.authorities || [];
         
         return true;
       } catch (error) {
@@ -94,7 +96,7 @@ export const useAuthStore = defineStore("auth", {
 
     async reoveToken(): Promise<boolean> {
       try {
-        await api.post(import.meta.env.VITE_API_AUTH_LOGOUT);
+        await api.post<ApiResponse<void>>("/auth/logout");
         return true;
       } catch (err) {
         return false;

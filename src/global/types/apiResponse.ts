@@ -4,6 +4,7 @@ import { Neutering } from "@/global/enums/Neutering";
 import { ErrorDetail, Pageable } from "./common";
 import { Sex } from "@/global/enums/Sex";
 import { Species } from "@/global/enums/Species";
+import { AdoptionStatus } from "../enums/AdoptionStatus";
 
 export function isApiResponse<T = unknown>(response: any): response is ApiResponse<T> {
     if (typeof response !== 'object' || response === null) {
@@ -44,7 +45,7 @@ export interface AdoptionItemResponse {
     sex: Sex;
     area: string;
     imageUrl: string;
-    completed: boolean;
+    status: AdoptionStatus;
     createdAt: string;
 }
 
@@ -71,7 +72,7 @@ export interface AdoptionDetailResponse {
     features: string;
     imageFileNames: string[]; // original file names
     imageUrls: string[]; // presigned urls
-    completed: boolean;
+    status: AdoptionStatus;
 }
 
 // 유저 프로필 응답 (UserInfoDto)

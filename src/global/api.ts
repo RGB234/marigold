@@ -2,10 +2,11 @@ import type { ApiResponse } from "@/global/types/apiResponse";
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
+import router from "@/global/router";
 
 
 // 환경변수로 API 기본 URL 설정
-const apiBase = import.meta.env.VITE_APP_API_BASE;
+const apiBase = import.meta.env.VITE_API_V1_BASE;
 
 // Axios 인스턴스 생성
 const api: AxiosInstance = axios.create({
@@ -49,9 +50,9 @@ api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
-    return response.data as any;
+    return response;
   },
-  (error: AxiosError<ApiResponse<unknown>>) => {
+  async (error: AxiosError<ApiResponse<unknown>>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
 
@@ -64,23 +65,29 @@ api.interceptors.response.use(
       );
       switch (errorResponse.status) {
         case 400:
-          alert("Bad Request", errorResponse.message);
+          await alert("Bad Request", errorResponse.message);
           break;
         case 401:
-          alert("Unauthorized", errorResponse.message);
+          await alert("Unauthorized", errorResponse.message);
+          // 로그인 페이지로 이동하거나 로그아웃 처리
+          router.push({ name: "Login" });
           break;
         case 404:
-          alert("Not Found", errorResponse.message);
+          await alert("Not Found", errorResponse.message);
+          router.back();
           break;
         case 500:
-          alert("Internal Server Error", errorResponse.message);
+          await alert("Internal Server Error", errorResponse.message);
+          router.back();
           break;
         default:
-          alert("Error", errorResponse.message);
+          await alert("Error", errorResponse.message);
+          router.back();
           break;
       }
     } else {
-      alert("Unexpected error", error.message);
+      await alert("Unexpected error", error.message);
+      router.back();
     }
 
     return Promise.reject(errorResponse);

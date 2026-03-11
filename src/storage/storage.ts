@@ -1,14 +1,13 @@
+import { ApiResponse } from "@/global/types/apiResponse";
 import api from "../global/api";
 
-const apiStorageGet = import.meta.env.VITE_API_STORAGE_GET;
-
 export const getPresignedUrl = async (fileName: string) : Promise<string> => {
-    const response = await api.get(`${apiStorageGet}/`,
+    const {data: apiResponse} = await api.get<ApiResponse<string>>("/storage/",
         {
             params: {
                 name: fileName
             }
         }
     );
-    return response.data;
+    return apiResponse.data!;
 }
