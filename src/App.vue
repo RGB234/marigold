@@ -4,6 +4,7 @@
       <router-link :to="{ name: 'Home' }">홈</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }">회원가입</router-link>
+      <router-link v-if="isLoggedIn" :to="{ name: 'Chat_list' }">채팅</router-link>
       <router-link v-if="isLoggedIn" :to="{ name: 'Home' }" @click="authStore.logout()">로그아웃</router-link>
       <router-link v-if="isLoggedIn && userId" :to="{ name: 'MyProfile' }">내 계정</router-link>
     </nav>
