@@ -60,7 +60,7 @@ export const useAuthStore = defineStore("auth", {
     
     login(providerCode : ProviderInfo){
       switch(providerCode){
-        // 오류 발생시 백엔드에서 콜백으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
+        // 오류 발생시 백엔드에서 AuthCallbackForm으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
         case ProviderInfo.KAKAO:
           window.location.href =  import.meta.env.VITE_API_OAUTH2_LOGIN_KAKAO;
           break;
@@ -86,9 +86,11 @@ export const useAuthStore = defineStore("auth", {
         await this.reoveToken();
         return true;
       } catch (err) {
+        // 토큰이 만료되거나 하여 로그아웃 시 요구하는 인증이 실패한 경우
         console.error("서버 로그아웃 요청 실패. : ", err);
         return false;
       } finally {
+        // 백엔드 서버와 무관하게 클라이언트 로그아웃 보장
         console.log("클라이언트 로그아웃 수행.");
         this.resetAuthState();
       }

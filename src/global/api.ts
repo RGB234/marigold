@@ -78,16 +78,16 @@ api.interceptors.response.use(
           break;
         case 500:
           await alert("Internal Server Error", errorResponse.message);
-          router.back();
+          // router.back();
           break;
         default:
           await alert("Error", errorResponse.message);
-          router.back();
+          // router.back();
           break;
       }
     } else {
       await alert("Unexpected error", error.message);
-      router.back();
+      // router.back();
     }
 
     return Promise.reject(errorResponse);

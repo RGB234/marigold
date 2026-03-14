@@ -255,7 +255,7 @@ const handleSubmit = async () => {
   // 에러 초기화
   Object.keys(errors).forEach((key) => (errors[key as keyof AdoptionForm] = ""));
   
-  const formData = convertToFormData(form) as FormData;
+  const formData = convertToFormData({ ...form }) as FormData;
   
   try {
     const response = await createAdoption(formData);

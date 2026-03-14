@@ -1,7 +1,11 @@
 import api from "@/global/api";
-import type { ApiResponse, AdoptionDetailResponse, AdoptionListResponse } from "@/global/types/apiResponse";
+import {
+  ApiResponse,
+  AdoptionDetailResponse,
+  AdoptionPageResponse, AdoptionWithChatPageResponse
+} from "@/global/types/apiResponse";
 import { getPresignedUrl } from "../../storage/storage";
-import type { GetAdoptionListParams } from "@/global/types/apiRequest";
+import type {GetAdoptionListParams, PageableParams} from "@/global/types/apiRequest";
 type TSID = string;
 
 // 생성
@@ -21,7 +25,7 @@ export const deleteAdoption = async (id: number | string): Promise<void> => {
 };
 
 // 입양 상태 변경
-export const updateAdoptionStatus = async (id: number | string, status: string): Promise<void> => {
+export const updateAdoptionStatus = async (id: BigInt | string, status: string): Promise<void> => {
     const params = { status };
     await api.patch<ApiResponse<void>>(`/adoption/${id}/status`, null, { params });
 };
@@ -44,8 +48,8 @@ export const getAdoptionDetail = async (id: number | string): Promise<AdoptionDe
 };
 
 // 목록 보기
-export const getAdoptionList = async (params: GetAdoptionListParams): Promise<AdoptionListResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionListResponse>>("/adoption", { params });
+export const getAdoptionList = async (params: GetAdoptionListParams): Promise<AdoptionPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPageResponse>>("/adoption", { params });
   const page = apiResponse.data;
 
   if (!page) {
@@ -66,8 +70,8 @@ export const getAdoptionList = async (params: GetAdoptionListParams): Promise<Ad
 };
 
 // 작성글 목록 보기
-export const getUserAdoptions = async (userId: TSID): Promise<AdoptionListResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionListResponse>>(`/adoption/writer/${userId}`);
+export const getUserAdoptions = async (userId: TSID, params?: PageableParams): Promise<AdoptionPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPageResponse>>(`/adoption/writer/${userId}`, { params });
   const page = apiResponse.data;
 
   if (!page) {
@@ -84,4 +88,24 @@ export const getUserAdoptions = async (userId: TSID): Promise<AdoptionListRespon
     );
   }
   return page;
+};
+
+export const getUserAdoptionsByJoinedChat = async (params?: PageableParams): Promise<AdoptionWithChatPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionWithChatPageResponse>>(`/adoption/chat`, { params });
+  const response = apiResponse.data;
+
+  if (!response) {
+    throw new Error("참여 중인 입양 대화 목록을 불러오지 못했습니다.");
+  }
+
+  if (response.content?.length) {
+    await Promise.all(
+        response.content.map(async (item) => {
+        if (item.adoptionInfo.imageUrl) {
+          item.adoptionInfo.imageUrl = await getPresignedUrl(item.adoptionInfo.imageUrl);
+        }
+      })
+    );
+  }
+  return response;
 };

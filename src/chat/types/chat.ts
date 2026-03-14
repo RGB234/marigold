@@ -1,5 +1,7 @@
 export interface ChatRoomDto {
     id: number;
+    parentPostId: BigInt;
+    parentPostTitle: string;
     user1Id: string; // TSID
     user1Nickname: string;
     user2Id: string;

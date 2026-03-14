@@ -50,11 +50,23 @@ export interface AdoptionItemResponse {
 }
 
 // 입양 목록 응답 (Page<AdoptionInfoResponseDto>)
-export type AdoptionListResponse = PageResponse<AdoptionItemResponse>;
+export type AdoptionPageResponse = PageResponse<AdoptionItemResponse>;
+// export type AdoptionListResponse = AdoptionItemResponse[];
+
+// 입양 + 채팅 정보 결합 응답 (AdoptionWithChatDto)
+export interface AdoptionWithChatResponse {
+    adoptionInfo: AdoptionItemResponse;
+    chatRoomId: number;
+    receiverId: string;
+    receiverNickname: string;
+    chatCreatedAt: string;
+}
+
+export type AdoptionWithChatPageResponse = PageResponse<AdoptionWithChatResponse>;
 
 // 입양 상세 응답 (AdoptionDetailResponseDto)
 export interface AdoptionDetailResponse {
-    id: number;
+    id: BigInt;
     writer: {
         id: string;       // TSID: @JsonSerialize(using = ToStringSerializer.class) → String
         nickname: string;

@@ -75,7 +75,7 @@ const isMyProfile = computed(() => {
   return false;
 });
 
-const handleImageError = (event: Event) => {
+const handleImageError = (event : Event) => {
   const target = event.target as HTMLImageElement;
   target.src = defaultProfileImage;
 };

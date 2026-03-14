@@ -20,15 +20,18 @@ const messageContainer = ref<HTMLElement | null>(null);
 let stompClient: Client | null = null;
 
 const scrollToBottom = async () => {
+  // 1. DOM이 업데이트될 때까지 기다립니다.
     await nextTick();
+  // 2. 메시지 컨테이너(스크롤이 발생하는 박스)가 존재하는지 확인합니다.
     if (messageContainer.value) {
+      // 3. 컨테이너의 스크롤 위치를 전체 높이(scrollHeight)로 설정합니다.
         messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
     }
 };
 
 const connectWebSocket = () => {
     const apiBase = import.meta.env.VITE_BACKEND_URL;
-    // SockJS endpoint is usually /ws
+
     const socket = new SockJS(`${apiBase}/ws`, null, {});
     
     stompClient = new Client({
@@ -126,6 +129,7 @@ onUnmounted(() => {
     flex-direction: column;
     height: calc(100vh - 100px);
     max-width: 600px;
+    width: 100%;
     margin: 0 auto;
     background: #f5f5f5;
     border-radius: 12px;

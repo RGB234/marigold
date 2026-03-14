@@ -90,7 +90,10 @@ import { SexLabels, SexOptions } from "@/global/enums/Sex";
 import { getAdoptionStatusLabel } from "@/global/enums/AdoptionStatus";
 import { cleanParams } from "@/global/utils/objectUtils";
 import { getAdoptionList } from "@/adoption/api/adoption.api";
-import { AdoptionItemResponse, AdoptionListResponse } from "@/global/types/apiResponse";
+import {
+  AdoptionItemResponse,
+  AdoptionPageResponse
+} from "@/global/types/apiResponse";
 
 // ==========================================
 // 데이터 호출 및 상태 관리
@@ -119,7 +122,7 @@ const handleSearch = async (page = 0) => {
   searchResult.value = [];
   try {
     const params = { ...cleanParams(searchFilters.value), page };
-    const data: AdoptionListResponse = await getAdoptionList(params);
+    const data: AdoptionPageResponse = await getAdoptionList(params);
 
     searchResult.value = data.content ?? [];
 

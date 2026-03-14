@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getUserAdoptions } from '@/adoption/api/adoption.api';
 import NoImage from '@/assets/images/no-image.jpeg';
-import { getCompletedLabel } from '@/global/enums/Completed';
 import { SexLabels } from '@/global/enums/Sex';
 import { SpeciesLabels } from '@/global/enums/Species';
-import { AdoptionItemResponse } from '@/global/types/apiResponse';
+import { AdoptionItemResponse, AdoptionPageResponse } from '@/global/types/apiResponse';
+import {AdoptionStatus, getAdoptionStatusLabel} from "@/global/enums/AdoptionStatus";
 
 const router = useRouter(); 
 const route = useRoute();
@@ -15,12 +15,22 @@ const route = useRoute();
 const myAdoptionInfoList = ref<AdoptionItemResponse[]>([]);
 const loading = ref(false);
 
+// 서버 사이드 페이지네이션
+const currentPage = ref(0);      // 서버 페이지 번호 (0부터 시작)
+const totalServerPages = ref(1); // 서버에서 반환한 총 페이지 수
+const visiblePageCount = 10;     // 페이지네이션 바에 표시할 페이지 버튼 수
+
 // 작성한 글 목록 불러오기
-const fetchMyAdoptions = async (userId: string) => {
+const fetchMyAdoptions = async (page = 0) => {
+    const userId = route.params.userId as string;
+    if (!userId) return;
+
     loading.value = true;
+    currentPage.value = page;
     try {
-        const data = await getUserAdoptions(userId);
+        const data: AdoptionPageResponse = await getUserAdoptions(userId, { page, size: 10 });
         myAdoptionInfoList.value = data.content || [];
+        totalServerPages.value = data.page.totalPages ?? 1;
     } catch (error) {
         console.error("작성한 글 목록 조회 중 오류 발생:", error);
         myAdoptionInfoList.value = [];
@@ -40,9 +50,16 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR');
 };
 
+// 페이지네이션 바에 표시될 페이지 번호 목록 (0-indexed)
+const visiblePages = computed(() => {
+  const half = Math.floor(visiblePageCount / 2);
+  const start = Math.max(0, currentPage.value - half);
+  const end = Math.min(totalServerPages.value - 1, start + visiblePageCount - 1);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+
 onMounted(() => {
-    const uid = route.params.userId as string;
-    fetchMyAdoptions(uid);
+    fetchMyAdoptions(0);
 });
 </script>
 
@@ -57,34 +74,50 @@ onMounted(() => {
             <p>목록을 불러오는 중입니다...</p>
         </div>
 
-        <div v-else-if="myAdoptionInfoList.length > 0" class="card-grid">
-            <div v-for="item in myAdoptionInfoList" :key="item.id" class="card" @click="goToDetail(item.id)">
-                <div class="card-image">
-                    <img :src="item.imageUrl || NoImage" alt="" class="thumb" />
-                </div>
+        <div v-else-if="myAdoptionInfoList.length > 0">
+            <div class="card-grid">
+                <div v-for="item in myAdoptionInfoList" :key="item.id" class="card" @click="goToDetail(item.id)">
+                    <div class="card-image">
+                        <img :src="item.imageUrl || NoImage" alt="" class="thumb" />
+                    </div>
 
-                <div class="card-body">
-                    <span class="status-badge" :class="{ done: item.completed }">
-                        {{ getCompletedLabel(item.completed) }}
-                    </span>
-                    <div class="card-meta">
-                        <span class="species">{{ SpeciesLabels[item.species] }}</span>
-                        <span class="divider">|</span>
-                        <span class="date">{{ formatDate(item.createdAt) }}</span>
-                    </div>
-                    <h3 class="card-title">{{ item.title }}</h3>
-                    <div class="card-info">
-                        <span>{{ item.age }}살</span>
-                    </div>
-                    <div class="card-info">
-                        <span>성별</span>
-                        <span>{{ SexLabels[item.sex] }}</span>
-                    </div>
-                    <div class="card-info">
-                        <span>지역</span>
-                        <span>{{ item.area }}</span>
+                    <div class="card-body">
+                        <span class="status-badge" :class="{ done: item.status === AdoptionStatus.COMPLETED }">
+                            {{ getAdoptionStatusLabel(item.status) }}
+                        </span>
+                        <div class="card-meta">
+                            <span class="species">{{ SpeciesLabels[item.species] }}</span>
+                            <span class="divider">|</span>
+                            <span class="date">{{ formatDate(item.createdAt) }}</span>
+                        </div>
+                        <h3 class="card-title">{{ item.title }}</h3>
+                        <div class="card-info">
+                            <span>{{ item.age }}살</span>
+                        </div>
+                        <div class="card-info">
+                            <span>성별</span>
+                            <span>{{ SexLabels[item.sex] }}</span>
+                        </div>
+                        <div class="card-info">
+                            <span>지역</span>
+                            <span>{{ item.area }}</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 페이지네이션 추가 -->
+            <div class="pagination">
+                <button @click="fetchMyAdoptions(currentPage - 1)" :disabled="currentPage === 0">전</button>
+                <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    :class="{ active: currentPage === page }"
+                    @click="fetchMyAdoptions(page)"
+                >
+                    {{ page + 1 }}
+                </button>
+                <button @click="fetchMyAdoptions(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">후</button>
             </div>
         </div>
 
@@ -269,18 +302,30 @@ onMounted(() => {
     margin-bottom: 16px;
 }
 
-.btn-write {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #ff9800;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
+/* pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 30px;
 }
 
-.btn-write:hover {
-    background-color: #f57c00;
+.pagination button {
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: white;
+}
+
+.pagination button.active {
+  background-color: #ff9800;
+  color: white;
+  border-color: #ff9800;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 </style>

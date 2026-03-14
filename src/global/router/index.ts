@@ -105,7 +105,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     name: "Chat_list",
     path: "/chat",
-    component: () => import("@/chat/views/ChatList.vue"),
+    component: () => import("@/adoption/views/JoinedAdoptionListForm.vue"),
     meta: {
       requiresAuth: true,
     }
@@ -138,7 +138,7 @@ router.beforeEach(async (to, _from, next) => {
       // alert("Error", "로그인이 필요한 서비스입니다.");
       if (await alert("Error", "로그인이 필요한 서비스입니다.")){
         return next({ name: "Login" });
-      };
+      }
     }
 
     // 특정 역할(role) 필요
