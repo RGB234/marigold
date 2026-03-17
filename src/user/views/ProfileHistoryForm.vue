@@ -5,7 +5,7 @@ import { getUserAdoptions } from '@/adoption/api/adoption.api';
 import NoImage from '@/assets/images/no-image.jpeg';
 import { SexLabels } from '@/global/enums/Sex';
 import { SpeciesLabels } from '@/global/enums/Species';
-import { AdoptionItemResponse, AdoptionPageResponse } from '@/global/types/apiResponse';
+import { AdoptionItemResponse, AdoptionPageResponse } from '@/adoption/types/adoption';
 import {AdoptionStatus, getAdoptionStatusLabel} from "@/global/enums/AdoptionStatus";
 
 const router = useRouter(); 

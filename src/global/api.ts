@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/global/types/apiResponse";
+import type { ApiResponse } from "@/global/types/common";
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";

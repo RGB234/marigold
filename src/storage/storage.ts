@@ -1,4 +1,4 @@
-import { ApiResponse } from "@/global/types/apiResponse";
+import { ApiResponse } from "@/global/types/common";
 import api from "../global/api";
 
 export const getPresignedUrl = async (fileName: string) : Promise<string> => {

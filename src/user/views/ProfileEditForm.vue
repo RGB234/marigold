@@ -36,7 +36,7 @@ import { convertToFormData } from '@/global/utils/objectUtils';
 import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
-import { isApiResponse } from '@/global/types/apiResponse';
+import { isApiResponse } from '@/global/types/common';
 import { ErrorDetail } from '@/global/types/common';
 
 interface ProfileForm {

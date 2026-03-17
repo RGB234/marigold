@@ -139,7 +139,7 @@ import { Species } from "@/global/enums/Species";
 import { Sex } from "@/global/enums/Sex";
 import { Neutering } from "@/global/enums/Neutering";
 import { convertToFormData } from "@/global/utils/objectUtils";
-import { isApiResponse } from "@/global/types/apiResponse";
+import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";
 import { useAlert } from "@/global/composables/useAlert";
 

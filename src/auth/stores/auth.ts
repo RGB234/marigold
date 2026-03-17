@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { validBASE32 } from "@/global/utils/validators";
 import api from "@/global/api";
-import { ApiResponse } from "@/global/types/apiResponse";
+import { ApiResponse } from "@/global/types/common";
 import {TSID_String} from "@/global/types/common.ts";
 
 

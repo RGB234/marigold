@@ -1,11 +1,12 @@
 import api from "@/global/api";
+import { ApiResponse, PageableParams } from "@/global/types/common";
 import {
-  ApiResponse,
   AdoptionDetailResponse,
-  AdoptionPageResponse, AdoptionWithChatPageResponse
-} from "@/global/types/apiResponse";
+  AdoptionPageResponse,
+  AdoptionWithChatPageResponse,
+  GetAdoptionListParams
+} from "@/adoption/types/adoption";
 import { getPresignedUrl } from "../../storage/storage";
-import type {GetAdoptionListParams, PageableParams} from "@/global/types/apiRequest";
 type TSID = string;
 
 // 생성

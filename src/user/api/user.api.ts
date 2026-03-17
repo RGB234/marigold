@@ -1,5 +1,6 @@
 import api from "../../global/api";
-import type { ApiResponse, UserProfileResponse } from "@/global/types/apiResponse";
+import type { ApiResponse } from "@/global/types/common";
+import type { UserProfileResponse } from "@/user/types/user";
 import { getPresignedUrl } from "../../storage/storage";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 

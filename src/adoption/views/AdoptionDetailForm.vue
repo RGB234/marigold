@@ -10,7 +10,7 @@ import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus} from '@/adoptio
 import {createChatRoom} from '@/chat/api/chat.api';
 
 import {useAuthStore} from '@/auth/stores/auth';
-import {AdoptionDetailResponse} from '@/global/types/apiResponse';
+import {AdoptionDetailResponse} from '@/adoption/types/adoption';
 
 import {useAlert} from '@/global/composables/useAlert';
 

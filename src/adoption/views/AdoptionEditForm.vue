@@ -113,7 +113,8 @@ import { convertToFormData } from "@/global/utils/objectUtils";
 import { Species } from "@/global/enums/Species";
 import { Sex } from "@/global/enums/Sex";
 import { Neutering } from "@/global/enums/Neutering";
-import { AdoptionDetailResponse, isApiResponse } from "@/global/types/apiResponse";
+import { AdoptionDetailResponse } from "@/adoption/types/adoption";
+import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";
 import { useAlert } from "@/global/composables/useAlert";
 

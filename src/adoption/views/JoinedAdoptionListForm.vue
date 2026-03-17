@@ -72,7 +72,7 @@ import { useAlert } from "@/global/composables/useAlert.ts";
 import {
   AdoptionWithChatResponse,
   AdoptionWithChatPageResponse
-} from "@/global/types/apiResponse";
+} from "@/adoption/types/adoption";
 
 // ==========================================
 // 데이터 호출 및 상태 관리
