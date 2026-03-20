@@ -22,6 +22,13 @@ api.interceptors.request.use(
   (config) => {
     const loadingStore = useLoadingStore();
     loadingStore.start();
+
+    // // FormData가 아닌 일반 객체 데이터인 경우에만 json-bigint 적용
+    // if (config.data && !(config.data instanceof FormData)) {
+    //   config.data = JSONbig({ storeAsString: true }).stringify(config.data);
+    //   config.headers['Content-Type'] = 'application/json';
+    // }
+
     return config;
   },
   (error) => {
@@ -39,17 +46,21 @@ api.interceptors.request.use(
  *     └── .data  →  ApiResponse<T>  { success, status, message, data?: T, errorCode? }
  *                       └── .data  →  T  (실제 페이로드)
  *
- * 인터셉터에서 AxiosResponse를 벗겨 ApiResponse<T>를 반환하므로,
- * API 함수에서는 response.data 한 번만 접근하면 실제 페이로드 T를 얻을 수 있습니다.
- *
- *   const response = await api.get<ApiResponse<Foo>>(...)
- *   // response      → ApiResponse<Foo>
- *   // response.data → Foo
  */
 api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
+
+    // // 응답 데이터가 문자열인 경우(JSON 등) json-bigint로 파싱 시도
+    // if (response.data && typeof response.data === 'string') {
+    //   try {
+    //     response.data = JSONbig({ storeAsString: true }).parse(response.data);
+    //   } catch (e) {
+    //     // 파싱 실패 시 원본 데이터 유지
+    //   }
+    // }
+    
     return response;
   },
   async (error: AxiosError<ApiResponse<unknown>>) => {

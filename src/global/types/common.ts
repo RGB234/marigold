@@ -10,8 +10,10 @@ export type UUID = string;
 /**
  * TSID (Time-Sorted Unique Identifier) 문자열
  */
-export type TSID_String = string;
-export type TSID_Long = bigint;
+export type TSID_String = string; // crockford base32
+export type TSID_Long = string;
+
+export type Long_String = string;
 
 /**
  * ISO 8601 날짜 문자열 (예: "2024-01-01T12:00:00Z")

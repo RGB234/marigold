@@ -2,24 +2,26 @@
 import {computed, onMounted, ref} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 
-import {SpeciesLabels} from "@/global/enums/Species";
-import {SexLabels} from "@/global/enums/Sex";
-import {NeuteringLabels} from "@/global/enums/Neutering";
-import {AdoptionStatus, getAdoptionStatusLabel} from "@/global/enums/AdoptionStatus";
-import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus} from '@/adoption/api/adoption.api';
+import {SpeciesLabels} from "@/adoption/enums/Species";
+import {SexLabels} from "@/adoption/enums/Sex";
+import {NeuteringLabels} from "@/adoption/enums/Neutering";
+import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
+import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus} from '@/adoption/api/adoptionPost.api';
 import {createChatRoom} from '@/chat/api/chat.api';
 
 import {useAuthStore} from '@/auth/stores/auth';
-import {AdoptionDetailResponse} from '@/adoption/types/adoption';
+
 
 import {useAlert} from '@/global/composables/useAlert';
+import {AdoptionPostDetailResponse} from "@/adoption/types/adoptionPost.ts";
+import {Navigator} from "@/global/router/routeHelper.ts";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const {confirm, toast} = useAlert();
 
-const detail = ref<AdoptionDetailResponse | null>(null);
+const detail = ref<AdoptionPostDetailResponse | null>(null);
 
 // 로그인 상태 확인
 const isLoggedIn = computed(() => authStore.isLoggedIn);
@@ -46,16 +48,18 @@ const formatDate = (dateString: string) => {
 
 const fetchDetail = async (id: string | string[]) => {
   try {
-    const responseData = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
-    detail.value = responseData;
+    detail.value = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
   } catch (error) {
-    router.push({name: 'Adoption_list'});
+    // router.push({name: 'Adoption_list'});
+    router.push(Navigator.adoption.list());
   }
 };
 
 // 게시글 수정
 const editPost = () => {
-  router.push({name: 'Adoption_edit', params: {id: route.params.id}});
+  // router.push({name: 'Adoption_edit', params: {id: route.params.id}});
+  const postId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
+  router.push(Navigator.adoption.edit(postId));
 };
 
 // 게시글 삭제 확인
@@ -77,7 +81,7 @@ const deletePost = async () => {
   }
 };
 
-const handleStatusChange = async (status: AdoptionStatus) => {
+const handleStatusChange = async (status: AdoptionPostStatus) => {
   if (!detail.value) return;
   try {
     await updateAdoptionStatus(detail.value.id, status);
@@ -98,16 +102,17 @@ const handleChatRequest = async () => {
       const adoptionInfoId = detail.value.id;
       const writerId = detail.value.writer.id;
 
+      // 없으면 생성, 이미 있으면 GET
       const chatRoom = await createChatRoom(adoptionInfoId, writerId);
 
       // 상태 변경 (예약중으로)
-      // await handleStatusChange(AdoptionStatus.RESERVED);
+      // await handleStatusChange(AdoptionPostStatus.RESERVED);
 
-      toast.success("채팅방이 개설되었습니다.");
+      // toast.success("채팅방이 개설되었습니다.");
 
-      // 채팅방으로 이동
-      router.push({name: 'Chat_room', params: {roomId: chatRoom.id.toString()}});
+      router.push(Navigator.chat.room(chatRoom.id.toString()));
     } catch (error) {
+      console.log(error);
       toast.error("채팅방 생성 중 오류가 발생했습니다.");
     }
   }
@@ -143,7 +148,7 @@ onMounted(async () => {
           </div>
           <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
           <div v-if="isLoggedIn && isAuthor" class="action-buttons">
-            <!-- <button class="btn-small edit" @click="editPost" v-if="detail.status !== AdoptionStatus.COMPLETED">수정</button> -->
+            <!-- <button class="btn-small edit" @click="editPost" v-if="detail.status !== AdoptionPostStatus.COMPLETED">수정</button> -->
             <button class="btn-small edit" @click="editPost">수정</button>
             <button class="btn-small delete" @click="confirmDelete">삭제</button>
           </div>
@@ -206,23 +211,23 @@ onMounted(async () => {
         <button class="btn secondary" @click="goToAdoptionList()">목록으로</button>
 
         <!-- 작성자가 아닌 경우: 입양 문의하기 -->
-        <button v-if="isLoggedIn && !isAuthor && detail.status === AdoptionStatus.PROCEEDING"
+        <button v-if="isLoggedIn && !isAuthor && detail.status === AdoptionPostStatus.PROCEEDING"
                 class="btn primary" @click="handleChatRequest">
           입양 문의하기 (채팅)
         </button>
 
         <!-- 작성자일 경우: 상태 변경 버튼들 -->
         <div v-if="isLoggedIn && isAuthor && detail.status" class="status-actions">
-          <button v-if="detail.status !== AdoptionStatus.PROCEEDING"
-                  class="btn reserved" @click="handleStatusChange(AdoptionStatus.PROCEEDING)">
+          <button v-if="detail.status !== AdoptionPostStatus.PROCEEDING"
+                  class="btn reserved" @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
             모집중으로 변경
           </button>
-          <button v-if="detail.status !== AdoptionStatus.RESERVED"
-                  class="btn proceeding" @click="handleStatusChange(AdoptionStatus.RESERVED)">
+          <button v-if="detail.status !== AdoptionPostStatus.RESERVED"
+                  class="btn proceeding" @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
             예약중으로 변경
           </button>
-          <button v-if="detail.status !== AdoptionStatus.COMPLETED"
-                  class="btn completed" @click="handleStatusChange(AdoptionStatus.COMPLETED)">
+          <button v-if="detail.status !== AdoptionPostStatus.COMPLETED"
+                  class="btn completed" @click="handleStatusChange(AdoptionPostStatus.COMPLETED)">
             입양 완료 처리
           </button>
         </div>

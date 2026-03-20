@@ -134,10 +134,10 @@
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { createAdoption } from "@/adoption/api/adoption.api";
-import { Species } from "@/global/enums/Species";
-import { Sex } from "@/global/enums/Sex";
-import { Neutering } from "@/global/enums/Neutering";
+import { createAdoption } from "@/adoption/api/adoptionPost.api";
+import { Species } from "@/adoption/enums/Species";
+import { Sex } from "@/adoption/enums/Sex";
+import { Neutering } from "@/adoption/enums/Neutering";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";

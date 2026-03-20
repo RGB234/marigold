@@ -6,13 +6,9 @@
           @error="handleImageError" />
       </div>
       <h2 class="nickname">{{ userInfo.nickname }}</h2>
-      <button v-if="isMyProfile" class="edit-btn" @click="goToEditProfile">프로필 수정</button>
+      <button v-if="isMyProfile" class="edit-btn" @click="goToProfileEdit">프로필 수정</button>
     </section>
 
-    <!-- 작성한 글 목록 -->
-    <section class="posts-section">
-      <h3 class="section-title clickable" @click="goToProfileHistory">작성한 글 목록</h3>
-    </section>
     <section v-if="isMyProfile" class="account-section">
       <h3 class="section-title">
         계정 관리
@@ -116,12 +112,16 @@ const fetchUserProfile = async (userId: string) => {
   }
 }
 
-const goToEditProfile = () => {
+const goToProfileEdit = () => {
   router.push({ name: "Profile_edit" });
 }
 
-const goToProfileHistory = () => {
-  router.push({ name: "Profile_history", params: { userId: targetUserId.value } });
+const goToUserAdoptionPostList = () => {
+  router.push({ name: "UserAdoptionPost_list", params: { userId: targetUserId.value } });
+}
+
+const goToMyChatRoomList = () => {
+  router.push({ name: "MyChatRoom_list" });
 }
 
 const openDeleteModal = () => {

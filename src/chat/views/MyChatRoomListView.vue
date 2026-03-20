@@ -6,27 +6,29 @@
   <div class="card-container">
     <div v-for="(item, index) in visibleCards" :key="index" class="item-wrapper">
       <!-- 게시글 정보 영역 (왼쪽) -->
-      <div class="card adoption-card" @click="handleAdoptionClick(item.adoptionInfo)">
+      <div class="card adoption-card" @click="handleAdoptionClick(item.adoptionPost)">
         <div class="card-image">
-          <img :src="item.adoptionInfo.imageUrl" alt="대표이미지" class="thumb" />
+          <img :src="item.adoptionPost.imageUrl" alt="대표이미지" class="thumb"/>
         </div>
 
         <div class="card-body">
-          <span class="status-badge" :class="item.adoptionInfo.status">
-              {{ getAdoptionStatusLabel(item.adoptionInfo.status) }}
+          <span class="status-badge" :class="item.adoptionPost.status">
+              {{ getAdoptionStatusLabel(item.adoptionPost.status) }}
           </span>
           <div class="card-meta">
-            <span class="species">{{ SpeciesLabels[item.adoptionInfo.species] }}</span>
+            <span class="species">{{ SpeciesLabels[item.adoptionPost.species] }}</span>
             <span class="divider">|</span>
-            <span class="date">{{ item.adoptionInfo.createdAt ? new Date(item.adoptionInfo.createdAt).toLocaleDateString('ko-KR') : '' }}</span>
+            <span class="date">{{
+                item.adoptionPost.createdAt ? new Date(item.adoptionPost.createdAt).toLocaleDateString('ko-KR') : ''
+              }}</span>
           </div>
-          <h3 class="card-title">{{ item.adoptionInfo.title }}</h3>
+          <h3 class="card-title">{{ item.adoptionPost.title }}</h3>
           <div class="card-info">
-            <span>{{ item.adoptionInfo.age }}살</span>
+            <span>{{ item.adoptionPost.age }}살</span>
             <span>|</span>
-            <span>{{ SexLabels[item.adoptionInfo.sex] }}</span>
+            <span>{{ SexLabels[item.adoptionPost.sex] }}</span>
             <span>|</span>
-            <span>{{ item.adoptionInfo.area }}</span>
+            <span>{{ item.adoptionPost.area }}</span>
           </div>
         </div>
       </div>
@@ -35,13 +37,20 @@
       <div class="chat-info-area" @click="handleChatClick(item.chatRoomId)">
         <div class="chat-header">
           <span class="chat-label">채팅방</span>
-          <span class="chat-date">{{ item.chatCreatedAt ? formatDate(item.chatCreatedAt) : '' }}</span>
+          <span class="chat-date">{{
+              item.chatCreatedAt ? formatDate(item.chatCreatedAt) : ''
+            }}</span>
         </div>
         <div class="chat-partner">
           <span class="partner-name">{{ item.receiverNickname }}</span> 님과의 대화
         </div>
-        <div class="chat-action">
-          채팅방으로 이동 >
+        <div class="chat-footer">
+          <button class="btn-delete" @click.stop="handleDeleteChat(item.chatRoomId)">
+            나가기
+          </button>
+          <div class="chat-action">
+            채팅방으로 이동 >
+          </div>
         </div>
       </div>
     </div>
@@ -56,23 +65,29 @@
     >
       {{ page + 1 }}
     </button>
-    <button @click="handleSearch(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">후</button>
+    <button @click="handleSearch(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">
+      후
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { SpeciesLabels } from "@/global/enums/Species";
-import { SexLabels } from "@/global/enums/Sex";
-import { getAdoptionStatusLabel } from "@/global/enums/AdoptionStatus";
-import { getUserAdoptionsByJoinedChat } from "@/adoption/api/adoption.api";
-import { useAuthStore } from "@/auth/stores/auth.ts";
-import { useAlert } from "@/global/composables/useAlert.ts";
+import {computed, onMounted, ref} from "vue";
+import {useRouter} from "vue-router";
+import {SpeciesLabels} from "@/adoption/enums/Species.ts";
+import {SexLabels} from "@/adoption/enums/Sex.ts";
+import {getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
+import {getUserAdoptionPostListByJoinedChat} from "@/adoption/api/adoptionPost.api";
+import {useAuthStore} from "@/auth/stores/auth.ts";
+import {deleteChatRoom} from "@/chat/api/chat.api";
+import {useAlert} from "@/global/composables/useAlert.ts";
 import {
-  AdoptionWithChatResponse,
-  AdoptionWithChatPageResponse
-} from "@/adoption/types/adoption";
+  AdoptionPostResponse,
+  AdoptionPostWithChatPageResponse,
+  AdoptionPostWithChatResponse
+} from "@/adoption/types/adoptionPost.ts";
+import {Navigator} from "@/global/router/routeHelper.ts";
+import {TSID_Long} from "@/global/types/common.ts";
 
 // ==========================================
 // 데이터 호출 및 상태 관리
@@ -80,9 +95,9 @@ import {
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { toast } = useAlert();
+const {toast, confirm} = useAlert();
 
-const searchResult = ref<AdoptionWithChatResponse[]>([]);
+const searchResult = ref<AdoptionPostWithChatResponse[]>([]);
 
 // ==========================================
 // 서버 사이드 페이지네이션
@@ -109,22 +124,24 @@ const handleSearch = async (page = 0) => {
   currentPage.value = page;
   searchResult.value = [];
 
-    const userId = authStore.userId;
-    if (userId){
-      try {
-        const data: AdoptionWithChatPageResponse = await getUserAdoptionsByJoinedChat({ page, size: 10 });
-        searchResult.value = data.content ?? [];
-        totalServerPages.value = data.page.totalPages ?? 1;
-        totalElements.value = data.page.totalElements ?? 0;
-      } catch (error) {
-        console.error("데이터 로드 실패:", error);
-        toast.error("데이터를 불러오는데 실패했습니다.");
-      }
-    }else{
-      toast.error("유효하지 않은 유저입니다");
+  const userId = authStore.userId;
+  if (userId) {
+    try {
+      const data: AdoptionPostWithChatPageResponse = await getUserAdoptionPostListByJoinedChat({
+        page,
+        size: 10
+      });
+      searchResult.value = data.content ?? [];
+      totalServerPages.value = data.page.totalPages ?? 1;
+      totalElements.value = data.page.totalElements ?? 0;
+    } catch (error) {
+      console.error("데이터 로드 실패:", error);
+      toast.error("데이터를 불러오는데 실패했습니다.");
     }
+  } else {
+    toast.error("유효하지 않은 유저입니다");
+  }
 };
-
 
 
 // 페이지네이션 바에 표시될 페이지 번호 목록 (0-indexed)
@@ -132,7 +149,7 @@ const visiblePages = computed(() => {
   const half = Math.floor(visiblePageCount / 2);
   const start = Math.max(0, currentPage.value - half);
   const end = Math.min(totalServerPages.value - 1, start + visiblePageCount - 1);
-  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  return Array.from({length: end - start + 1}, (_, i) => start + i);
 });
 
 // 현재 페이지에 표시되는 카드 (서버가 이미 페이지 단위로 반환)
@@ -143,13 +160,28 @@ const visibleCards = computed(() => searchResult.value);
 // ==========================================
 
 // 게시글 상세 페이지로 이동
-const handleAdoptionClick = (adoptionInfo: any) => {
-  router.push({ name: "Adoption_detail", params: { id: String(adoptionInfo.id) } });
+const handleAdoptionClick = (adoptionPost: AdoptionPostResponse) => {
+  router.push(Navigator.adoption.detail(adoptionPost.id));
 };
 
 // 채팅방으로 이동
-const handleChatClick = (chatRoomId: number) => {
-  router.push({ name: "Chat_room", params: { roomId: String(chatRoomId) } });
+const handleChatClick = (chatRoomId: TSID_Long) => {
+  router.push(Navigator.chat.room(chatRoomId));
+};
+
+// 채팅방 삭제
+const handleDeleteChat = async (chatRoomId: TSID_Long) => {
+  const confirmed = await confirm("확인", "채팅방을 나가시겠습니까?\n나간 채팅방은 새 메시지가 올 때까지 목록에서 사라집니다.");
+  if (confirmed) {
+    try {
+      await deleteChatRoom(String(chatRoomId));
+      toast.success("채팅방에서 나갔습니다.");
+      await handleSearch(currentPage.value);
+    } catch (error) {
+      console.error("채팅방 삭제 실패:", error);
+      toast.error("채팅방을 나가는데 실패했습니다.");
+    }
+  }
 };
 
 onMounted(async () => {
@@ -241,8 +273,13 @@ onMounted(async () => {
   margin-bottom: 6px;
 }
 
-.status-badge.COMPLETED { background-color: #888; }
-.status-badge.RESERVED { background-color: #2196f3; }
+.status-badge.COMPLETED {
+  background-color: #888;
+}
+
+.status-badge.RESERVED {
+  background-color: #2196f3;
+}
 
 .card-meta {
   font-size: 12px;
@@ -318,6 +355,29 @@ onMounted(async () => {
   color: #333;
 }
 
+.chat-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.btn-delete {
+  font-size: 12px;
+  color: #ff5252;
+  background: none;
+  border: 1px solid #ff5252;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  background-color: #ff5252;
+  color: white;
+}
+
 .chat-action {
   font-size: 12px;
   font-weight: 600;
@@ -350,10 +410,12 @@ onMounted(async () => {
     flex-direction: column;
     height: auto;
   }
+
   .card.adoption-card {
     border-right: none;
     border-bottom: 1px dashed #eee;
   }
+
   .chat-info-area {
     padding: 15px;
   }

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserAdoptions } from '@/adoption/api/adoption.api';
+import { getUserAdoptions } from '@/adoption/api/adoptionPost.api.ts';
 import NoImage from '@/assets/images/no-image.jpeg';
-import { SexLabels } from '@/global/enums/Sex';
-import { SpeciesLabels } from '@/global/enums/Species';
+import { SexLabels } from '@/adoption/enums/Sex.ts';
+import { SpeciesLabels } from '@/adoption/enums/Species.ts';
 import { AdoptionItemResponse, AdoptionPageResponse } from '@/adoption/types/adoption';
-import {AdoptionStatus, getAdoptionStatusLabel} from "@/global/enums/AdoptionStatus";
+import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
 
 const router = useRouter(); 
 const route = useRoute();
@@ -82,7 +82,7 @@ onMounted(() => {
                     </div>
 
                     <div class="card-body">
-                        <span class="status-badge" :class="{ done: item.status === AdoptionStatus.COMPLETED }">
+                        <span class="status-badge" :class="{ done: item.status === AdoptionPostStatus.COMPLETED }">
                             {{ getAdoptionStatusLabel(item.status) }}
                         </span>
                         <div class="card-meta">

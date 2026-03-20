@@ -85,11 +85,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { SpeciesLabels, SpeciesOptions } from "@/global/enums/Species";
-import { SexLabels, SexOptions } from "@/global/enums/Sex";
-import { getAdoptionStatusLabel } from "@/global/enums/AdoptionStatus";
+import { SpeciesLabels, SpeciesOptions } from "@/adoption/enums/Species";
+import { SexLabels, SexOptions } from "@/adoption/enums/Sex";
+import { getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
 import { cleanParams } from "@/global/utils/objectUtils";
-import { getAdoptionList } from "@/adoption/api/adoption.api";
+import { getAdoptionList } from "@/adoption/api/adoptionPost.api";
 import {
   AdoptionItemResponse,
   AdoptionPageResponse

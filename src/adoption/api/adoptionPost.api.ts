@@ -1,12 +1,11 @@
 import api from "@/global/api";
 import { ApiResponse, PageableParams } from "@/global/types/common";
 import {
-  AdoptionDetailResponse,
-  AdoptionPageResponse,
-  AdoptionWithChatPageResponse,
-  GetAdoptionListParams
-} from "@/adoption/types/adoption";
-import { getPresignedUrl } from "../../storage/storage";
+  AdoptionPostPageResponse, AdoptionPostDetailResponse,
+  AdoptionPostWithChatPageResponse,
+  AdoptionPostSearchParams,
+} from "@/adoption/types/adoptionPost";
+import { getPresignedUrl } from "@/storage/storage";
 type TSID = string;
 
 // 생성
@@ -32,8 +31,8 @@ export const updateAdoptionStatus = async (id: BigInt | string, status: string):
 };
 
 // 상세보기
-export const getAdoptionDetail = async (id: number | string): Promise<AdoptionDetailResponse> => {
-  const {data : apiResponse} = await api.get<ApiResponse<AdoptionDetailResponse>>(`/adoption/${id}`);
+export const getAdoptionDetail = async (id: number | string): Promise<AdoptionPostDetailResponse> => {
+  const {data : apiResponse} = await api.get<ApiResponse<AdoptionPostDetailResponse>>(`/adoption/${id}`);
   const detail = apiResponse.data;
 
   if (!detail) {
@@ -49,8 +48,8 @@ export const getAdoptionDetail = async (id: number | string): Promise<AdoptionDe
 };
 
 // 목록 보기
-export const getAdoptionList = async (params: GetAdoptionListParams): Promise<AdoptionPageResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPageResponse>>("/adoption", { params });
+export const getAdoptionList = async (params: AdoptionPostSearchParams): Promise<AdoptionPostPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostPageResponse>>("/adoption", { params });
   const page = apiResponse.data;
 
   if (!page) {
@@ -71,8 +70,8 @@ export const getAdoptionList = async (params: GetAdoptionListParams): Promise<Ad
 };
 
 // 작성글 목록 보기
-export const getUserAdoptions = async (userId: TSID, params?: PageableParams): Promise<AdoptionPageResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPageResponse>>(`/adoption/writer/${userId}`, { params });
+export const getUserAdoptions = async (userId: TSID, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostPageResponse>>(`/adoption/writer/${userId}`, { params });
   const page = apiResponse.data;
 
   if (!page) {
@@ -91,8 +90,8 @@ export const getUserAdoptions = async (userId: TSID, params?: PageableParams): P
   return page;
 };
 
-export const getUserAdoptionsByJoinedChat = async (params?: PageableParams): Promise<AdoptionWithChatPageResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionWithChatPageResponse>>(`/adoption/chat`, { params });
+export const getUserAdoptionPostListByJoinedChat = async (params?: PageableParams): Promise<AdoptionPostWithChatPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostWithChatPageResponse>>(`/adoption/chat`, { params });
   const response = apiResponse.data;
 
   if (!response) {
@@ -102,8 +101,8 @@ export const getUserAdoptionsByJoinedChat = async (params?: PageableParams): Pro
   if (response.content?.length) {
     await Promise.all(
         response.content.map(async (item) => {
-        if (item.adoptionInfo.imageUrl) {
-          item.adoptionInfo.imageUrl = await getPresignedUrl(item.adoptionInfo.imageUrl);
+        if (item.adoptionPost.imageUrl) {
+          item.adoptionPost.imageUrl = await getPresignedUrl(item.adoptionPost.imageUrl);
         }
       })
     );

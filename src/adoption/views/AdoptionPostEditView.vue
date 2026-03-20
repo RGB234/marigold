@@ -108,11 +108,11 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoption.api";
+import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoptionPost.api";
 import { convertToFormData } from "@/global/utils/objectUtils";
-import { Species } from "@/global/enums/Species";
-import { Sex } from "@/global/enums/Sex";
-import { Neutering } from "@/global/enums/Neutering";
+import { Species } from "@/adoption/enums/Species";
+import { Sex } from "@/adoption/enums/Sex";
+import { Neutering } from "@/adoption/enums/Neutering";
 import { AdoptionDetailResponse } from "@/adoption/types/adoption";
 import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";

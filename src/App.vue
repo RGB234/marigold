@@ -4,10 +4,24 @@
       <router-link :to="{ name: 'Home' }">홈</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }">회원가입</router-link>
-      <router-link v-if="isLoggedIn" :to="{ name: 'Chat_list' }">채팅</router-link>
       <router-link v-if="isLoggedIn" :to="{ name: 'Home' }" @click="authStore.logout()">로그아웃</router-link>
-      <router-link v-if="isLoggedIn && userId" :to="{ name: 'MyProfile' }">내 계정</router-link>
+      <a v-if="isLoggedIn && userId" @click="drawer = !drawer">내 계정</a>
     </nav>
+
+    <!-- 사이드바 -->
+    <v-navigation-drawer v-if="isLoggedIn && userId" v-model="drawer" temporary location="right">
+      <v-list>
+          <v-list-item @click="router.push(Navigator.adoption.history(userId))" link>
+          <v-list-item-title>내 작성글</v-list-item-title>
+        </v-list-item>
+          <v-list-item  @click="router.push(Navigator.chat.myList())" link>
+          <v-list-item-title>내 채팅</v-list-item-title>
+        </v-list-item>
+        <v-list-item @click="router.push(Navigator.user.myProfile())" link>
+          <v-list-item-title>설정</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
     <router-view />
     <!-- 여기서 URL에 맞는 화면이 바뀜 -->
@@ -18,17 +32,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
+import {Navigator, RouteNames} from "@/global/router/routeHelper.ts";
+import router from "@/global/router";
 
 const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const userId = computed(() => authStore.userId);
 const { alert } = useAlert();
+
+const drawer = ref(false);
 
 onMounted(async () => {
   // 앱 시작 시 로그인 상태 초기화 (전역 상태 업데이트)
