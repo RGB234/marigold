@@ -47,6 +47,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    name: RouteNames.AUTH.EMAIL_SIGNUP,
+    path: "/auth/signup/email",
+    component: () => import("@/auth/views/EmailSignupView.vue"),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
     name: RouteNames.ADOPTION.WRITE,
     path: "/adoption/write",
     component: () => import("@/adoption/views/AdoptionPostWriteView.vue"),

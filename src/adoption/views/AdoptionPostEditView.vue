@@ -113,7 +113,6 @@ import { convertToFormData } from "@/global/utils/objectUtils";
 import { Species } from "@/adoption/enums/Species";
 import { Sex } from "@/adoption/enums/Sex";
 import { Neutering } from "@/adoption/enums/Neutering";
-import { AdoptionDetailResponse } from "@/adoption/types/adoption";
 import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";
 import { useAlert } from "@/global/composables/useAlert";
@@ -173,7 +172,7 @@ const openLightbox = (index: number) => { lightboxIndex.value = index; };
 const closeLightbox = () => { lightboxIndex.value = null; };
 
 const handleFetchAdoption = async () => {
-  const data : AdoptionDetailResponse = await getAdoptionDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
+  const data = await getAdoptionDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
 
   Object.assign(form, {
     species: data.species,

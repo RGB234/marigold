@@ -6,9 +6,16 @@
       <h1>Marigold</h1>
     </div>
 
+    <!-- 로컬 로그인 폼 -->
+    <form @submit.prevent="handleLocalLogin" class="local-auth-form">
+      <input type="email" v-model="loginDto.email" placeholder="이메일" required />
+      <input type="password" v-model="loginDto.password" placeholder="비밀번호" required />
+      <button type="submit" class="btn-local-auth">이메일로 로그인</button>
+    </form>
+
     <!-- 구분선 -->
     <div class="divider">
-      <span class="divider-text">소셜 계정으로 로그인</span>
+      <span class="divider-text">또는 소셜 계정으로 로그인</span>
     </div>
 
     <button v-for="provider in providers" @click="loginWithSocial(provider.name)" :class="provider.class"
@@ -24,16 +31,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAlert } from "@/global/composables/useAlert";
 
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
+import { useAlert } from '@/global/composables/useAlert';
 
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
 
 const authStore = useAuthStore();
-const { toast } = useAlert();
+const { toast, alert } = useAlert();
+
+const loginDto = ref({ email: '', password: '' });
 
 interface Provider {
   name: ProviderInfo;
@@ -47,6 +56,15 @@ const providers = ref<Provider[]>([
   { name: ProviderInfo.KAKAO, description: '카카오 계정으로 로그인', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
+const handleLocalLogin = async () => {
+  try {
+    await authStore.localLogin(loginDto.value);
+    toast.info("로그인 성공");
+    router.push("/");
+  } catch (error: any) {
+    alert("로그인 실패", "이메일이나 비밀번호가 유효하지 않습니다.");
+  }
+};
 
 function loginWithSocial(providerCode: ProviderInfo) {
   authStore.login(providerCode);
@@ -66,6 +84,7 @@ div.main-container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 100vh;
   background-color: white;
 }
@@ -94,6 +113,44 @@ div.logo>h1 {
   font-weight: bold;
   color: #b45309;
   /* text-amber-800 */
+}
+
+/* 로컬 인증 폼 스타일 */
+.local-auth-form {
+  display: flex;
+  flex-direction: column;
+  width: 16rem;
+  margin-bottom: 1.5rem;
+}
+
+.local-auth-form input {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.local-auth-form input:focus {
+  outline: none;
+  border-color: #b45309;
+}
+
+.btn-local-auth {
+  background-color: #b45309;
+  color: white;
+  padding: 0.75rem 0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: none;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-local-auth:hover {
+  background-color: #92400e;
 }
 
 /* 1. 구분선 스타일 */

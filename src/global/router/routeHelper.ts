@@ -5,6 +5,7 @@ export const RouteNames = {
   AUTH: {
     LOGIN: "Login",
     SIGNUP: "Signup",
+    EMAIL_SIGNUP: "EmailSignup",
     CALLBACK: "AuthCallback",
   },
   ADOPTION: {
@@ -35,6 +36,7 @@ export const Navigator = {
   auth: {
     login: () => ({name: RouteNames.AUTH.LOGIN}),
     signup: () => ({name: RouteNames.AUTH.SIGNUP}),
+    emailSignup: () => ({name: RouteNames.AUTH.EMAIL_SIGNUP}),
     callback: () => ({name: RouteNames.AUTH.CALLBACK}),
   },
   adoption: {

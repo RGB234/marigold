@@ -81,6 +81,29 @@ export const useAuthStore = defineStore("auth", {
       }
     },    
 
+    async localLogin(dto: any): Promise<boolean> {
+      try {
+        // 로그인 에러는 컴포넌트에서 직접 표시하기 위해 skipAlert 사용
+        await api.post<ApiResponse<void>>("/auth/login", dto, { skipAlert: true });
+        await this.initializeAuth();
+        return true;
+      } catch (error) {
+        console.error("Local login failed:", error);
+        throw error;
+      }
+    },
+
+    async localSignup(dto: any): Promise<boolean> {
+      try {
+        // 회원가입 에러 역시 컴포넌트에서 직접 핸들링
+        await api.post<ApiResponse<void>>("/auth/signup", dto, { skipAlert: true });
+        return true;
+      } catch (error) {
+        console.error("Local signup failed:", error);
+        throw error;
+      }
+    },
+
     async logout() : Promise<boolean> {
       try{
         await this.reoveToken();

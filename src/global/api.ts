@@ -3,7 +3,14 @@ import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import router from "@/global/router";
+import {Navigator} from "@/global/router/routeHelper.ts";
 
+// Axios Request Config 확장을 통해 커스텀 속성(skipAlert) 추가
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipAlert?: boolean;
+  }
+}
 
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_API_V1_BASE;
@@ -17,18 +24,10 @@ const api: AxiosInstance = axios.create({
 /**
  * 요청 Interceptor
  */
-
 api.interceptors.request.use(
   (config) => {
     const loadingStore = useLoadingStore();
     loadingStore.start();
-
-    // // FormData가 아닌 일반 객체 데이터인 경우에만 json-bigint 적용
-    // if (config.data && !(config.data instanceof FormData)) {
-    //   config.data = JSONbig({ storeAsString: true }).stringify(config.data);
-    //   config.headers['Content-Type'] = 'application/json';
-    // }
-
     return config;
   },
   (error) => {
@@ -40,27 +39,11 @@ api.interceptors.request.use(
 
 /**
  * 응답 Interceptor
- *
- * 백엔드 응답 구조:
- *   AxiosResponse<ApiResponse<T>>
- *     └── .data  →  ApiResponse<T>  { success, status, message, data?: T, errorCode? }
- *                       └── .data  →  T  (실제 페이로드)
- *
  */
 api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
-
-    // // 응답 데이터가 문자열인 경우(JSON 등) json-bigint로 파싱 시도
-    // if (response.data && typeof response.data === 'string') {
-    //   try {
-    //     response.data = JSONbig({ storeAsString: true }).parse(response.data);
-    //   } catch (e) {
-    //     // 파싱 실패 시 원본 데이터 유지
-    //   }
-    // }
-    
     return response;
   },
   async (error: AxiosError<ApiResponse<unknown>>) => {
@@ -69,39 +52,52 @@ api.interceptors.response.use(
 
     const { alert } = useAlert();
     const errorResponse = error.response?.data;
+    const skipAlert = error.config?.skipAlert; // skipAlert 플래그 확인
 
     if (errorResponse) {
       console.error(
         `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
       );
-      switch (errorResponse.status) {
-        case 400:
-          await alert("Bad Request", errorResponse.message);
-          break;
-        case 401:
-          await alert("Unauthorized", errorResponse.message);
-          // 로그인 페이지로 이동하거나 로그아웃 처리
-          router.push({ name: "Login" });
-          break;
-        case 404:
-          await alert("Not Found", errorResponse.message);
-          router.back();
-          break;
-        case 500:
-          await alert("Internal Server Error", errorResponse.message);
-          // router.back();
-          break;
-        default:
-          await alert("Error", errorResponse.message);
-          // router.back();
-          break;
+      
+      // skipAlert가 true가 아닐 때만 전역 알림 표시
+      if (!skipAlert) {
+        switch (errorResponse.status) {
+          case 400:
+            await alert("요청 오류", errorResponse.message);
+            break;
+          case 401:
+            await alert("인증 필요", errorResponse.message);
+            router.push(Navigator.auth.login());
+            break;
+          case 404:
+            await alert("찾을 수 없음", errorResponse.message);
+            router.back();
+            break;
+          case 500:
+            await alert("서버 오류", errorResponse.message);
+            break;
+          default:
+            await alert("오류", errorResponse.message);
+            break;
+        }
+      } else {
+        // 인증 에러면서 skipAlert가 설정되어 있어도, 라우팅 처리는 필요한 경우
+        switch(errorResponse.status) {
+          case 401:
+            router.push(Navigator.auth.login());
+            break;
+          case 404:
+            router.back();
+        }
       }
     } else {
-      await alert("Unexpected error", error.message);
-      // router.back();
+      if (!skipAlert) {
+        await alert("네트워크 오류", error.message);
+      }
     }
 
-    return Promise.reject(errorResponse);
+    // 호출한 측에서 에러 객체를 그대로 활용할 수 있도록 수정 (error.response.data에 접근 가능)
+    return Promise.reject(error);
   }
 );
 
