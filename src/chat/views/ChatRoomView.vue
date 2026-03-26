@@ -17,14 +17,17 @@ const messages = ref<ChatMessageDto[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
 
+const isReconnecting = ref(false);
+const isConnectionFailed = ref(false);
+const retryCount = ref(0);
+const MAX_RETRIES = 5;
+
 let stompClient: Client | null = null;
+let isManualDisconnect = false;
 
 const scrollToBottom = async () => {
-  // 1. DOM이 업데이트될 때까지 기다립니다.
   await nextTick();
-  // 2. 메시지 컨테이너(스크롤이 발생하는 박스)가 존재하는지 확인합니다.
   if (messageContainer.value) {
-    // 3. 컨테이너의 스크롤 위치를 전체 높이(scrollHeight)로 설정합니다.
     messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
   }
 };
@@ -32,16 +35,19 @@ const scrollToBottom = async () => {
 const connectWebSocket = () => {
   const apiBase = import.meta.env.VITE_BACKEND_URL;
 
-  // 1. 기존 연결이 있다면 안전하게 종료 (중복 연결 및 메모리 누수 방지)
   if (stompClient) {
     stompClient.deactivate();
   }
 
+  isManualDisconnect = false;
+  isConnectionFailed.value = false;
+  isReconnecting.value = false;
+  retryCount.value = 0;
+
   stompClient = new Client({
-    // 2. 🔥 가장 중요한 수정: 팩토리 내부에서 매번 새로운 인스턴스 생성
     webSocketFactory: () => new SockJS(`${apiBase}/ws`),
     debug: (str) => {
-      console.log(str); // 상용 배포 시에는 주석 처리하는 것을 권장합니다.
+      console.log(str);
     },
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
@@ -49,9 +55,11 @@ const connectWebSocket = () => {
   });
 
   stompClient.onConnect = () => {
-    console.log('Connected to WebSocket');
+    console.log('WebSocket 연결됨');
+    retryCount.value = 0;
+    isReconnecting.value = false;
+    isConnectionFailed.value = false;
 
-    // 연결이 확정된 상태이므로 안전하게 구독 진행
     stompClient?.subscribe(`/sub/chat/room/${roomId.value}`, (message) => {
       const receivedMessage: ChatMessageDto = JSON.parse(message.body);
       messages.value.push(receivedMessage);
@@ -60,20 +68,35 @@ const connectWebSocket = () => {
   };
 
   stompClient.onStompError = (frame) => {
-    console.error('Broker reported error: ' + frame.headers['message']);
-    console.error('Additional details: ' + frame.body);
+    console.error('STOMP error: ' + frame.headers['message']);
   };
 
-  // 3. 웹소켓 자체의 네트워크 끊김/에러 핸들링 추가
   stompClient.onWebSocketError = (event) => {
-    console.error('WebSocket connection error:', event);
+    console.error('WebSocket error:', event);
   };
 
   stompClient.onWebSocketClose = () => {
-    console.log('WebSocket connection closed');
+    // 수동 종료(페이지 이탈 등)는 재시도 카운트에서 제외
+    if (isManualDisconnect) return;
+
+    retryCount.value += 1;
+    console.log(`WebSocket 연결 끊김 (${retryCount.value}/${MAX_RETRIES}회 재시도)`);
+
+    if (retryCount.value >= MAX_RETRIES) {
+      stompClient?.deactivate();
+      isReconnecting.value = false;
+      isConnectionFailed.value = true;
+      console.warn('최대 재연결 횟수 초과. 재시도를 중단합니다.');
+    } else {
+      isReconnecting.value = true;
+    }
   };
 
   stompClient.activate();
+};
+
+const retryConnect = () => {
+  connectWebSocket();
 };
 
 const sendMessage = () => {
@@ -105,9 +128,8 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  if (stompClient) {
-    stompClient.deactivate();
-  }
+  isManualDisconnect = true;
+  stompClient?.deactivate();
 });
 </script>
 
@@ -115,6 +137,14 @@ onUnmounted(() => {
   <div class="chat-container">
     <div class="chat-header">
       <h2>1:1 채팅</h2>
+    </div>
+
+    <div v-if="isReconnecting" class="connection-banner reconnecting">
+      서버와 연결이 끊겼습니다. 재연결 중... ({{ retryCount }}/{{ MAX_RETRIES }})
+    </div>
+    <div v-if="isConnectionFailed" class="connection-banner failed">
+      서버에 연결할 수 없습니다.
+      <button class="retry-btn" @click="retryConnect">다시 시도</button>
     </div>
 
     <div class="messages-wrapper" ref="messageContainer">
@@ -277,5 +307,37 @@ button:disabled {
   text-align: center;
   color: #888;
   margin-top: 40px;
+}
+
+.connection-banner {
+  padding: 10px 16px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.connection-banner.reconnecting {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.connection-banner.failed {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.retry-btn {
+  background: #842029;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  width: auto;
+  height: auto;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
 }
 </style>
