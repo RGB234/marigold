@@ -6,22 +6,25 @@ import {SpeciesLabels} from "@/adoption/enums/Species";
 import {SexLabels} from "@/adoption/enums/Sex";
 import {NeuteringLabels} from "@/adoption/enums/Neutering";
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
-import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus} from '@/adoption/api/adoptionPost.api';
+import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus, getAdoptionCandidates, completeAdoption, cancelCompleteAdoption} from '@/adoption/api/adoptionPost.api';
 import {createChatRoom} from '@/chat/api/chat.api';
 
 import {useAuthStore} from '@/auth/stores/auth';
 
-
 import {useAlert} from '@/global/composables/useAlert';
-import {AdoptionPostDetailResponse} from "@/adoption/types/adoptionPost.ts";
+import {AdoptionPostDetailResponse, AdoptionCandidateResponse} from "@/adoption/types/adoptionPost.ts";
 import {Navigator} from "@/global/router/routeHelper.ts";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const {confirm, toast} = useAlert();
+const {confirm, toast, alert} = useAlert();
 
 const detail = ref<AdoptionPostDetailResponse | null>(null);
+
+const candidates = ref<AdoptionCandidateResponse[]>([]);
+const showCandidateModal = ref(false);
+const selectedAdopterId = ref<string>('');
 
 // 로그인 상태 확인
 const isLoggedIn = computed(() => authStore.isLoggedIn);
@@ -90,6 +93,54 @@ const handleStatusChange = async (status: AdoptionPostStatus) => {
   } catch (error) {
     console.error("상태 변경 오류:", error);
     toast.error("상태 변경 중 오류가 발생했습니다.");
+  }
+};
+
+const handleCompleteAdoptionClick = async () => {
+  if (!detail.value) return;
+  try {
+    const data = await getAdoptionCandidates(detail.value.id);
+    if (data.length === 0) {
+      await alert("알림", "입양 문의 채팅 내역이 없어 입양 완료 처리를 할 수 없습니다.");
+      return;
+    }
+    candidates.value = data;
+    selectedAdopterId.value = '';
+    showCandidateModal.value = true;
+  } catch (error) {
+    console.error(error);
+    toast.error("후보자 목록을 불러오는 데 실패했습니다.");
+  }
+};
+
+const confirmCompleteAdoption = async () => {
+  if (!selectedAdopterId.value) {
+    toast.error("입양자를 선택해주세요.");
+    return;
+  }
+  if (!detail.value) return;
+  try {
+    await completeAdoption(detail.value.id, { adopterId: selectedAdopterId.value });
+    toast.success("입양 완료 처리되었습니다.");
+    showCandidateModal.value = false;
+    await fetchDetail(detail.value.id.toString());
+  } catch (error) {
+    console.error(error);
+    toast.error("입양 완료 처리 중 오류가 발생했습니다.");
+  }
+};
+
+const handleCancelCompleteAdoption = async () => {
+  if (!detail.value) return;
+  if (await confirm("확인", "입양 완료를 취소하시겠습니까?")) {
+    try {
+      await cancelCompleteAdoption(detail.value.id);
+      toast.success("입양 완료가 취소되었습니다.");
+      await fetchDetail(detail.value.id.toString());
+    } catch (error) {
+      console.error(error);
+      toast.error("입양 완료 취소 중 오류가 발생했습니다.");
+    }
   }
 };
 
@@ -227,9 +278,44 @@ onMounted(async () => {
             예약중으로 변경
           </button>
           <button v-if="detail.status !== AdoptionPostStatus.COMPLETED"
-                  class="btn completed" @click="handleStatusChange(AdoptionPostStatus.COMPLETED)">
+                  class="btn completed" @click="handleCompleteAdoptionClick">
             입양 완료 처리
           </button>
+          <button v-if="detail.status === AdoptionPostStatus.COMPLETED"
+                  class="btn secondary" @click="handleCancelCompleteAdoption">
+            입양 완료 취소
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 입양자 선택 모달 -->
+    <div v-if="showCandidateModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>입양자 선택</h3>
+        <p>채팅을 진행한 사용자 중 입양자를 선택해주세요.</p>
+        
+        <div class="candidates-list">
+          <div 
+            v-for="candidate in candidates" 
+            :key="candidate.id"
+            class="candidate-item"
+            :class="{ selected: selectedAdopterId === candidate.id }"
+            @click="selectedAdopterId = candidate.id"
+          >
+            <div class="candidate-profile">
+              <img :src="candidate.imageUrl || '/default-profile.png'" alt="프로필" class="candidate-img" />
+              <span class="candidate-nickname">{{ candidate.nickname }}</span>
+            </div>
+            <div class="candidate-radio">
+              <input type="radio" :value="candidate.id" v-model="selectedAdopterId" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn secondary" @click="showCandidateModal = false">취소</button>
+          <button class="btn primary" @click="confirmCompleteAdoption">확인</button>
         </div>
       </div>
     </div>
@@ -496,6 +582,84 @@ onMounted(async () => {
 
 .btn.completed:hover {
   background-color: #d32f2f;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.candidates-list {
+  margin: 20px 0;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.candidate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.candidate-item:last-child {
+  border-bottom: none;
+}
+
+.candidate-item:hover,
+.candidate-item.selected {
+  background-color: #f5f9ff;
+}
+
+.candidate-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.candidate-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.candidate-nickname {
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 /* 반응형 */

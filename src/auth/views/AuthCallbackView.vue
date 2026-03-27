@@ -8,11 +8,10 @@
 import { onMounted } from 'vue';
 import { useRoute, useRouter } from "vue-router";
 import { useAlert } from "@/global/composables/useAlert";
-import { HttpStatusCode } from 'axios';
 
 const route = useRoute();
 const router = useRouter();
-const { alert, toast } = useAlert();
+const { alert } = useAlert();
 
 onMounted(() => {
   handleOAuthCallback();
@@ -20,35 +19,43 @@ onMounted(() => {
 
 function handleOAuthCallback() {
   // 배열 형태로 들어올 경우를 대비해 첫 번째 값을 안전하게 추출하거나 문자열로 변환
-  const statusParam = route.query.status;
   const errorParam = route.query.error;
   const descParam = route.query.error_description;
+  const authStatusParam = route.query.auth_status;
 
-  const statusCode = Array.isArray(statusParam) ? statusParam[0] : statusParam;
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
   const errorDescription = Array.isArray(descParam) ? descParam[0] : descParam;
+  const authStatus = Array.isArray(authStatusParam) ? authStatusParam[0] : authStatusParam;
 
-  // 1. 에러 처리
   if (errorCode) {
     alert(errorCode, errorDescription || "알 수 없는 에러가 발생했습니다.");
-    router.replace({ name: "Home" }); // push 대신 replace 사용
+    router.replace({ name: "Login" }); 
     return;
   }
   
-  // 2. 성공 처리
-  if (statusCode === HttpStatusCode.Created.toString()) {
-    toast.success("회원가입 성공");
-    router.replace({ name: "Home" });
-    return;
+  switch(authStatus) {
+    case 'SIGNUP_SUCCESS':
+      // TODO: 신규가입 환영 모달 띄우기 또는 온보딩 화면으로 이동
+      router.replace({ name: "Home" });
+      break;
+    case 'BANNED':
+      alert("정지된 계정", "관리자에 의해 정지된 계정입니다.");
+      router.replace({ name: "Login" });
+      break;
+    case 'SLEEP':
+      alert("휴면 계정", "휴면 상태인 계정입니다. 해제가 필요합니다.");
+      // TODO: 휴면 해제 화면으로 이동
+      router.replace({ name: "Home" });
+      break;
+    case 'DELETED':
+      alert("탈퇴한 계정", "탈퇴 처리된 계정입니다. 재가입이 필요합니다.");
+      router.replace({ name: "Login" });
+      break;
+    case 'LOGIN_SUCCESS':
+    default:
+      // 정상 메인 홈으로
+      router.replace({ name: "Home" });
+      break;
   }
-
-  if (statusCode === HttpStatusCode.Ok.toString()) {
-    toast.success("로그인 성공");
-    router.replace({ name: "Home" });
-    return;
-  }
-
-  // 3. 예외 상황 (정상적인 콜백 파라미터가 없는 경우)
-  router.replace({ name: "Home" }); 
 }
 </script>

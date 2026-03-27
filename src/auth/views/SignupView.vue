@@ -60,9 +60,9 @@ function goToEmailSignup() {
   router.push({ name: RouteNames.AUTH.EMAIL_SIGNUP });
 }
 
-// 소셜 계정으로 회원가입
+// 소셜 계정으로 회원가입 (이제 로그인과 통합 처리)
 const handleSocialSignUp = (providerCode: ProviderInfo) => {
-  authStore.signup(providerCode);
+  authStore.login(providerCode);
 };
 
 // 로그인 페이지 이동

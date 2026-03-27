@@ -4,6 +4,8 @@ import {
   AdoptionPostPageResponse, AdoptionPostDetailResponse,
   AdoptionPostWithChatPageResponse,
   AdoptionPostSearchParams,
+  AdoptionCandidateResponse,
+  CompleteAdoptionRequest,
 } from "@/adoption/types/adoptionPost";
 import { getPresignedUrl } from "@/storage/storage";
 type TSID = string;
@@ -108,4 +110,20 @@ export const getUserAdoptionPostListByJoinedChat = async (params?: PageableParam
     );
   }
   return response;
+};
+
+// 입양 후보자(채팅 상대) 목록 조회
+export const getAdoptionCandidates = async (id: number | string): Promise<AdoptionCandidateResponse[]> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionCandidateResponse[]>>(`/adoption/${id}/candidates`);
+  return apiResponse.data ?? [];
+};
+
+// 입양 완료 처리
+export const completeAdoption = async (id: number | string, data: CompleteAdoptionRequest): Promise<void> => {
+  await api.post<ApiResponse<void>>(`/adoption/${id}/complete`, data);
+};
+
+// 입양 완료 취소
+export const cancelCompleteAdoption = async (id: number | string): Promise<void> => {
+  await api.post<ApiResponse<void>>(`/adoption/${id}/cancel-complete`);
 };

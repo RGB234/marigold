@@ -62,24 +62,13 @@ export const useAuthStore = defineStore("auth", {
       switch(providerCode){
         // 오류 발생시 백엔드에서 AuthCallbackForm으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
         case ProviderInfo.KAKAO:
-          window.location.href =  import.meta.env.VITE_API_OAUTH2_LOGIN_KAKAO;
+          window.location.href =  import.meta.env.VITE_API_OAUTH2_KAKAO;
           break;
         case ProviderInfo.NAVER:
-          window.location.href = import.meta.env.VITE_API_OAUTH2_LOGIN_NAVER;
+          window.location.href = import.meta.env.VITE_API_OAUTH2_NAVER;
           break;
       }
     },
-
-    signup(providerCode : ProviderInfo){
-      switch(providerCode){
-        case ProviderInfo.KAKAO:
-          window.location.href =  import.meta.env.VITE_API_OAUTH2_SIGNUP_KAKAO;
-          break;
-        case ProviderInfo.NAVER:
-          window.location.href = import.meta.env.VITE_API_OAUTH2_SIGNUP_NAVER;
-          break;
-      }
-    },    
 
     async localLogin(dto: any): Promise<boolean> {
       try {

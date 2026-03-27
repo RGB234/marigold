@@ -38,6 +38,7 @@ import { useAlert } from '@/global/composables/useAlert';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
+import { Navigator } from '@/global/router/routeHelper';
 
 const authStore = useAuthStore();
 const { toast, alert } = useAlert();
@@ -59,8 +60,7 @@ const providers = ref<Provider[]>([
 const handleLocalLogin = async () => {
   try {
     await authStore.localLogin(loginDto.value);
-    toast.info("로그인 성공");
-    router.push("/");
+    router.push(Navigator.home());
   } catch (error: any) {
     alert("로그인 실패", "이메일이나 비밀번호가 유효하지 않습니다.");
   }

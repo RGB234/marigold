@@ -113,4 +113,19 @@ export interface AdoptionPostDetailResponse {
   imageFileNames: string[];
   imageUrls: ImageUrl[];
   status: AdoptionPostStatus;
+  adopter?: {
+    id: TSID_String;
+    nickname: string;
+    imageUrl: ImageUrl | null;
+  };
+}
+
+export interface AdoptionCandidateResponse {
+  id: TSID_String;
+  nickname: string;
+  imageUrl: ImageUrl | null;
+}
+
+export interface CompleteAdoptionRequest {
+  adopterId: TSID_String;
 }
