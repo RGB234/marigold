@@ -6,35 +6,40 @@
   <div class="card-container">
     <div v-for="(item, index) in visibleCards" :key="index" class="item-wrapper">
       <!-- 게시글 정보 영역 (왼쪽) -->
-      <div class="card adoption-card" @click="handleAdoptionClick(item.adoptionPost)">
+      <div class="card adoption-card hover-effect" @click="handleAdoptionClick(item.adoptionPost)">
         <div class="card-image">
           <img :src="item.adoptionPost.imageUrl" alt="대표이미지" class="thumb"/>
         </div>
 
         <div class="card-body">
-          <span class="status-badge" :class="item.adoptionPost.status">
-              {{ getAdoptionStatusLabel(item.adoptionPost.status) }}
-          </span>
-          <div class="card-meta">
-            <span class="species">{{ SpeciesLabels[item.adoptionPost.species] }}</span>
-            <span class="divider">|</span>
-            <span class="date">{{
-                item.adoptionPost.createdAt ? new Date(item.adoptionPost.createdAt).toLocaleDateString('ko-KR') : ''
-              }}</span>
+          <div class="body-content">
+            <span class="status-badge" :class="item.adoptionPost.status">
+                {{ getAdoptionStatusLabel(item.adoptionPost.status) }}
+            </span>
+            <div class="card-meta">
+              <span class="species">{{ SpeciesLabels[item.adoptionPost.species] }}</span>
+              <span class="divider">  |  </span>
+              <span class="date">{{
+                  item.adoptionPost.createdAt ? new Date(item.adoptionPost.createdAt).toLocaleDateString('ko-KR') : ''
+                }}</span>
+            </div>
+            <h3 class="card-title">{{ item.adoptionPost.title }}</h3>
+            <div class="card-info">
+              <span>{{ item.adoptionPost.age }}살</span>
+              <span>|</span>
+              <span>{{ SexLabels[item.adoptionPost.sex] }}</span>
+              <span>|</span>
+              <span>{{ item.adoptionPost.area }}</span>
+            </div>
           </div>
-          <h3 class="card-title">{{ item.adoptionPost.title }}</h3>
-          <div class="card-info">
-            <span>{{ item.adoptionPost.age }}살</span>
-            <span>|</span>
-            <span>{{ SexLabels[item.adoptionPost.sex] }}</span>
-            <span>|</span>
-            <span>{{ item.adoptionPost.area }}</span>
+          <div class="action-btn-area">
+            <button class="btn-action">게시글 보기 〉</button>
           </div>
         </div>
       </div>
 
       <!-- 채팅방 정보 영역 (오른쪽) -->
-      <div class="chat-info-area" @click="handleChatClick(item.chatRoomId)">
+      <div class="chat-info-area hover-effect" @click="handleChatClick(item.chatRoomId)">
         <div class="chat-header">
           <span class="chat-label">채팅방</span>
           <span class="chat-date">{{
@@ -48,8 +53,8 @@
           <button class="btn-delete" @click.stop="handleDeleteChat(item.chatRoomId)">
             나가기
           </button>
-          <div class="chat-action">
-            채팅방으로 이동 >
+          <div class="action-btn-area">
+            <button class="btn-action chat-btn">채팅방 입장 〉</button>
           </div>
         </div>
       </div>
@@ -231,7 +236,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: row;
   cursor: pointer;
-  border-right: 1px dashed #eee;
+  border-right: 1px solid #eaeaea;
 }
 
 .card.adoption-card:hover {
@@ -256,6 +261,12 @@ onMounted(async () => {
 .card-body {
   padding: 15px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.body-content {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -309,17 +320,18 @@ onMounted(async () => {
 /* 채팅 정보 영역 */
 .chat-info-area {
   flex: 1;
-  background-color: #fff9f0;
+  background-color: #fffaf0;
   padding: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  border-left: 1px solid #f5eedc;
 }
 
 .chat-info-area:hover {
-  background-color: #fff2e0;
+  background-color: #fff4e5;
 }
 
 .chat-header {
@@ -383,6 +395,58 @@ onMounted(async () => {
   font-weight: 600;
   color: #eaa221;
   text-align: right;
+}
+
+/* 추가된 버튼 스타일 */
+.hover-effect {
+  position: relative;
+}
+
+.hover-effect::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+  pointer-events: none;
+}
+
+.item-wrapper:hover .hover-effect:hover::after {
+  border-color: rgba(234, 162, 33, 0.4);
+}
+
+.action-btn-area {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-action.chat-btn {
+  color: white;
+  background: #eaa221;
+  border-color: #eaa221;
+}
+
+.hover-effect:hover .btn-action:not(.chat-btn) {
+  background: #eaeaea;
+  color: #333;
+}
+
+.hover-effect:hover .btn-action.chat-btn {
+  background: #d9921b;
+  border-color: #d9921b;
 }
 
 .pagination {

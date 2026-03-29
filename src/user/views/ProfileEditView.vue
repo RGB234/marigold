@@ -4,8 +4,8 @@
 
         <form @submit.prevent="submitForm">
             <div class="image-upload-section">
-                <div class="image-preview" @click="triggerFileInput" :class="{ 'has-image': previewUrl }">
-                    <img :src="previewUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img" @error="handleImageError" />
+                <div class="image-preview" @click="triggerFileInput">
+                    <img :src="previewUrl" alt="프로필 이미지" class="profile-img" />
                 </div>
 
                 <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none" />
@@ -98,11 +98,6 @@ onUnmounted(() => {
 
 const triggerFileInput = () => {
     fileInput.value?.click();
-};
-
-const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement;
-    target.src = defaultProfileImage;
 };
 
 const handleFileChange = (event: Event) => {

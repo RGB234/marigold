@@ -2,8 +2,7 @@
   <div class="my-page-container">
     <section class="profile-section">
       <div class="profile-image-wrapper">
-        <img :src="userInfo.imageUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img"
-          @error="handleImageError" />
+        <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-img" />
       </div>
       <h2 class="nickname">{{ userInfo.nickname }}</h2>
       <button v-if="isMyProfile" class="edit-btn" @click="goToProfileEdit">프로필 수정</button>
@@ -45,7 +44,6 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getUserProfile, deleteUser } from '@/user/api/user.api';
 import { useAuthStore } from '@/auth/stores/auth';
-import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useAlert } from '@/global/composables/useAlert';
 
 const router = useRouter();
@@ -70,11 +68,6 @@ const isMyProfile = computed(() => {
 
   return false;
 });
-
-const handleImageError = (event : Event) => {
-  const target = event.target as HTMLImageElement;
-  target.src = defaultProfileImage;
-};
 
 // 모달 관련 상태
 const showDeleteModal = ref(false);

@@ -269,11 +269,11 @@ onMounted(async () => {
 
         <!-- 작성자일 경우: 상태 변경 버튼들 -->
         <div v-if="isLoggedIn && isAuthor && detail.status" class="status-actions">
-          <button v-if="detail.status !== AdoptionPostStatus.PROCEEDING"
+          <button v-if="detail.status !== AdoptionPostStatus.PROCEEDING && detail.status !== AdoptionPostStatus.COMPLETED"
                   class="btn reserved" @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
             모집중으로 변경
           </button>
-          <button v-if="detail.status !== AdoptionPostStatus.RESERVED"
+          <button v-if="detail.status !== AdoptionPostStatus.RESERVED && detail.status !== AdoptionPostStatus.COMPLETED"
                   class="btn proceeding" @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
             예약중으로 변경
           </button>
@@ -304,7 +304,7 @@ onMounted(async () => {
             @click="selectedAdopterId = candidate.id"
           >
             <div class="candidate-profile">
-              <img :src="candidate.imageUrl || '/default-profile.png'" alt="프로필" class="candidate-img" />
+              <img :src="candidate.imageUrl" alt="프로필" class="candidate-img" />
               <span class="candidate-nickname">{{ candidate.nickname }}</span>
             </div>
             <div class="candidate-radio">

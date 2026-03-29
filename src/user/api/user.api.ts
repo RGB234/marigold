@@ -1,7 +1,6 @@
 import api from "../../global/api";
 import type { ApiResponse } from "@/global/types/common";
 import type { UserProfileResponse } from "@/user/types/user";
-import { getPresignedUrl } from "../../storage/storage";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 유저 프로필 조회
@@ -13,9 +12,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfileRespons
         throw new Error("유저 프로필 데이터를 불러오지 못했습니다.");
     }
 
-    if (profile.imageUrl) {
-        profile.imageUrl = await getPresignedUrl(profile.imageUrl);
-    } else {
+    if (!profile.imageUrl) {
         profile.imageUrl = defaultProfileImage;
     }
     return profile;
