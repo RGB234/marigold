@@ -1,78 +1,70 @@
 <template>
-  <v-app>
+  <div class="app-container">
     <nav>
       <router-link :to="{ name: 'Home' }">홈</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
       <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }">회원가입</router-link>
-      <router-link v-if="isLoggedIn" :to="{ name: 'Home' }" @click="authStore.logout()">로그아웃</router-link>
-      <a v-if="isLoggedIn && userId" @click="drawer = !drawer">
-        <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-image">
-      </a>
+      
+      <div v-if="isLoggedIn && userId" class="profile-menu-container" ref="menuContainer">
+        <a class="profile-activator" @click="toggleMenu">
+          <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-image">
+        </a>
+
+        <!-- 드롭다운 메뉴 (Vuetify 대체) -->
+        <div v-if="isMenuOpen" class="dropdown-menu">
+          <div class="menu-header">
+            <img :src="userInfo.imageUrl" alt="프로필 이미지" class="header-profile-image">
+            <span class="header-nickname">{{ userInfo.nickname }}</span>
+          </div>
+          
+          <div class="divider"></div>
+
+          <div class="menu-list">
+            <div class="menu-item" @click="handleNavigation(Navigator.adoption.history(userId))">
+              <i class="mdi mdi-pencil-box-outline item-icon"></i>
+              <span class="item-title">내 작성글</span>
+            </div>
+
+            <div class="menu-item" @click="handleNavigation(Navigator.chat.myList())">
+              <i class="mdi mdi-chat-outline item-icon"></i>
+              <span class="item-title">내 채팅</span>
+            </div>
+
+            <div class="menu-item" @click="handleNavigation(Navigator.user.myProfile())">
+              <i class="mdi mdi-cog-outline item-icon"></i>
+              <span class="item-title">설정</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="menu-list">
+            <div class="menu-item" @click="handleLogout">
+              <i class="mdi mdi-logout item-icon"></i>
+              <span class="item-title">로그아웃</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </nav>
 
-    <!-- 사이드바 -->
-    <!-- <v-navigation-drawer v-if="isLoggedIn && userId" v-model="drawer" temporary location="right">
-      <v-list>
-          <v-list-item @click="router.push(Navigator.adoption.history(userId))" link>
-          <v-list-item-title>내 작성글</v-list-item-title>
-        </v-list-item>
-          <v-list-item  @click="router.push(Navigator.chat.myList())" link>
-          <v-list-item-title>내 채팅</v-list-item-title>
-        </v-list-item>
-        <v-list-item @click="router.push(Navigator.user.myProfile())" link>
-          <v-list-item-title>설정</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer> -->
-
-    <v-navigation-drawer v-if="isLoggedIn && userId" v-model="drawer" temporary location="right" class="custom-drawer">
-      <div class="drawer-header">
-        <span>내 메뉴</span>
-      </div>
-      <v-divider class="mb-2"></v-divider>
-
-      <v-list class="drawer-list">
-        <v-list-item @click="router.push(Navigator.adoption.history(userId))" link class="drawer-item">
-          <template v-slot:prepend>
-            <v-icon class="item-icon">mdi-pencil-box-outline</v-icon>
-          </template>
-          <v-list-item-title class="item-title">내 작성글</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item @click="router.push(Navigator.chat.myList())" link class="drawer-item">
-          <template v-slot:prepend>
-            <v-icon class="item-icon">mdi-chat-outline</v-icon>
-          </template>
-          <v-list-item-title class="item-title">내 채팅</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item @click="router.push(Navigator.user.myProfile())" link class="drawer-item">
-          <template v-slot:prepend>
-            <v-icon class="item-icon">mdi-cog-outline</v-icon>
-          </template>
-          <v-list-item-title class="item-title">설정</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
-
     <router-view />
-    <!-- 여기서 URL에 맞는 화면이 바뀜 -->
-
     <LoadingOverlay v-if="loadingStore.isLoading" />
     <GlobalAlert />
-  </v-app>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, ref } from "vue";
+import { onMounted, onUnmounted, computed, ref } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
-import { Navigator, RouteNames } from "@/global/router/routeHelper.ts";
+import { Navigator } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
 import { getUserProfile } from "./user/api/user.api";
 import { UserProfileResponse } from "./user/types/user";
+import { RouteLocationRaw } from "vue-router";
 
 const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
@@ -80,14 +72,42 @@ const isLoggedIn = computed(() => authStore.isLoggedIn);
 const userId = computed(() => authStore.userId);
 const { alert } = useAlert();
 
-const drawer = ref(false);
+// 드롭다운 메뉴 상태 관리
+const isMenuOpen = ref(false);
+const menuContainer = ref<HTMLElement | null>(null);
+
 const userInfo = ref<UserProfileResponse>({
   id: '',
   nickname: '',
   imageUrl: ''
 });
 
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value;
+};
+
+// 메뉴 외부 클릭 시 닫기
+const closeMenu = (e: MouseEvent) => {
+  if (menuContainer.value && !menuContainer.value.contains(e.target as Node)) {
+    isMenuOpen.value = false;
+  }
+};
+
+const handleNavigation = (path: RouteLocationRaw) => {
+  router.push(path);
+  isMenuOpen.value = false;
+};
+
+// 로그아웃 후 홈으로 이동하는 함수 추가
+const handleLogout = () => {
+  authStore.logout();
+  router.push({ name: 'Home' });
+  isMenuOpen.value = false;
+};
+
 onMounted(async () => {
+  document.addEventListener('click', closeMenu);
+  
   // 앱 시작 시 로그인 상태 초기화 (전역 상태 업데이트)
   try {
     await authStore.initializeAuth();
@@ -100,9 +120,21 @@ onMounted(async () => {
   }
 });
 
+onUnmounted(() => {
+  document.removeEventListener('click', closeMenu);
+});
+
 </script>
 
 <style scoped>
+/* Vuetify v-app 역할을 대체하는 기본 컨테이너 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f9f9f9; /* 필요에 따라 전체 배경색 지정 */
+}
+
 nav {
   height: 4rem;
   background-color: white;
@@ -113,9 +145,7 @@ nav {
   display: flex;
   gap: 2rem;
   justify-content: flex-end;
-  /* 오른쪽 정렬 */
   align-items: center;
-  /* 세로 중앙 정렬 */
   padding-right: 2rem;
   font-size: 1.3rem;
   font-weight: 700;
@@ -126,66 +156,130 @@ nav {
 
 a {
   text-decoration: none;
-  /* 밑줄 제거 */
   color: inherit;
-  /* 부모 색상 상속 (기본 파란색 제거) */
   cursor: pointer;
-  /* 선택 시 커서 포인터 */
 }
 
+/* Nav 우측 프로필 이미지 및 테두리 설정 */
 .profile-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eba421; /* 테두리 추가 및 두께 조절 부분 */
+}
+
+/* 메뉴 호출용 버튼 래퍼 */
+.profile-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.profile-activator {
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.profile-activator:hover {
+  opacity: 0.8;
+}
+
+/* 드롭다운 메뉴 스타일 (Vuetify v-card, v-menu 대체) */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: scale-in 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transform-origin: top right;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 구분선 (Vuetify v-divider 대체) */
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 0;
+}
+
+/* 팝업 메뉴 상단 헤더 */
+.menu-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.header-profile-image {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
   object-fit: cover;
 }
 
-/* Drawer 전체 배경색 설정 (원하시면 변경 가능) */
-.custom-drawer {
-  background-color: #ffffff;
-}
-
-/* Drawer 상단 헤더 부분 */
-.drawer-header {
-  padding: 24px 20px 12px;
+.header-nickname {
   font-size: 1.1rem;
   font-weight: 700;
   color: #333;
 }
 
-/* 리스트 전체 여백 */
-.drawer-list {
-  padding: 8px 12px;
+/* 팝업 메뉴 리스트 스타일 */
+.menu-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 개별 리스트 아이템 스타일 */
-.drawer-item {
-  border-radius: 10px !important;
-  /* 모서리를 둥글게 */
-  margin-bottom: 8px;
-  /* 메뉴 사이 간격 */
-  transition: all 0.2s ease;
-  /* 부드러운 애니메이션 효과 */
+/* 개별 리스트 아이템 스타일 (Vuetify v-list-item 대체) */
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  gap: 12px;
 }
 
-/* 마우스 호버(올렸을 때) 효과 */
-.drawer-item:hover {
-  background-color: #f4f4f9 !important;
-  /* 연한 회색/파란색 톤 배경 */
-  transform: translateX(4px);
-  /* 오른쪽으로 살짝 이동하는 효과 */
+.menu-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 확실한 Hover 효과 (문제 해결) */
+.menu-item:hover {
+  background-color: #f5f5f5; /* 이제 검은색이나 투명도 없이 완전한 회색으로 적용됩니다. */
 }
 
 /* 아이콘 스타일 */
 .item-icon {
   color: #666;
-  font-size: 1.4rem;
-  margin-right: 8px;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 텍스트 스타일 */
 .item-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: #444;
 }
