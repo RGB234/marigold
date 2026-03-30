@@ -134,7 +134,7 @@
 <script setup lang="ts">
 import { reactive, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { createAdoption } from "@/adoption/api/adoptionPost.api";
+import { createAdoptionPost } from "@/adoption/api/adoptionPost.api";
 import { Species } from "@/adoption/enums/Species";
 import { Sex } from "@/adoption/enums/Sex";
 import { Neutering } from "@/adoption/enums/Neutering";
@@ -142,6 +142,7 @@ import { convertToFormData } from "@/global/utils/objectUtils";
 import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";
 import { useAlert } from "@/global/composables/useAlert";
+import { RouteHelper } from "@/global/router/routeHelper";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -258,10 +259,10 @@ const handleSubmit = async () => {
   const formData = convertToFormData({ ...form }) as FormData;
   
   try {
-    const response = await createAdoption(formData);
+    const response = await createAdoptionPost(formData);
     const createdPostId = response.data?.id;
     toast.success("입양글 작성이 완료되었습니다.");
-    router.push({ name: 'Adoption_detail', params: { id: createdPostId } });
+    if(createdPostId) router.push(RouteHelper.adoption.detail(createdPostId.toString()));
   } catch (err: any) {
     if(isApiResponse(err)){
       if(err.errors && Array.isArray(err.errors)){
@@ -276,7 +277,7 @@ const handleSubmit = async () => {
 };
 
 const handleCancel = () => {
-  router.push({name: 'Adoption_list'});
+  router.push(RouteHelper.adoption.list());
 };
 </script>
 

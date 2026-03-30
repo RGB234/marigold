@@ -46,7 +46,7 @@ import { ref } from 'vue';
 import { useAuthStore } from '@/auth/stores/auth';
 import router from '@/global/router';
 import { useAlert } from '@/global/composables/useAlert';
-import { RouteNames } from '@/global/router/routeHelper';
+import { RouteHelper, RouteNames } from '@/global/router/routeHelper';
 
 interface FieldError {
   field: string;
@@ -73,7 +73,7 @@ const handleLocalSignup = async () => {
   try {
     await authStore.localSignup(signupDto.value);
     toast.info("회원가입 성공. 로그인 해주세요.");
-    router.push({ name: RouteNames.AUTH.LOGIN });
+    router.push(RouteHelper.auth.login());
   } catch (error: any) {
     const errorResponse = error.response?.data;
 
@@ -84,7 +84,7 @@ const handleLocalSignup = async () => {
 };
 
 function goBack() {
-  router.push({ name: RouteNames.AUTH.SIGNUP });
+  router.push(RouteHelper.auth.signup());
 }
 </script>
 

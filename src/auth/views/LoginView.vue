@@ -38,7 +38,7 @@ import { useAlert } from '@/global/composables/useAlert';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
-import { Navigator } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/global/router/routeHelper';
 
 const authStore = useAuthStore();
 const { toast, alert } = useAlert();
@@ -60,7 +60,7 @@ const providers = ref<Provider[]>([
 const handleLocalLogin = async () => {
   try {
     await authStore.localLogin(loginDto.value);
-    router.push(Navigator.home());
+    router.push(RouteHelper.home());
   } catch (error: any) {
     alert("로그인 실패", "이메일이나 비밀번호가 유효하지 않습니다.");
   }
@@ -72,7 +72,7 @@ function loginWithSocial(providerCode: ProviderInfo) {
 
 // 회원가입 페이지 이동
 function goToSignupForm() {
-  router.push({ name: "Signup" });
+  router.push(RouteHelper.auth.signup());
 }
 
 </script>

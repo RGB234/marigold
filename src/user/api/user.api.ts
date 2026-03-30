@@ -20,7 +20,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfileRespons
 
 // 유저 프로필 수정
 export const updateUserProfile = async (formData: FormData): Promise<void> => {
-    await api.patch<ApiResponse<void>>("/user/update", formData);
+    await api.patch<ApiResponse<void>>("/user", formData);
 };
 
 // 유저 삭제

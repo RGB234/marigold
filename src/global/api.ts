@@ -3,7 +3,7 @@ import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import router from "@/global/router";
-import {Navigator} from "@/global/router/routeHelper.ts";
+import {RouteHelper} from "@/global/router/routeHelper.ts";
 
 // Axios Request Config 확장을 통해 커스텀 속성(skipAlert) 추가
 declare module 'axios' {
@@ -67,7 +67,7 @@ api.interceptors.response.use(
             break;
           case 401:
             await alert("인증 필요", errorResponse.message);
-            router.push(Navigator.auth.login());
+            router.push(RouteHelper.auth.login());
             break;
           case 404:
             await alert("찾을 수 없음", errorResponse.message);
@@ -84,7 +84,7 @@ api.interceptors.response.use(
         // 인증 에러면서 skipAlert가 설정되어 있어도, 라우팅 처리는 필요한 경우
         switch(errorResponse.status) {
           case 401:
-            router.push(Navigator.auth.login());
+            router.push(RouteHelper.auth.login());
             break;
           case 404:
             router.back();

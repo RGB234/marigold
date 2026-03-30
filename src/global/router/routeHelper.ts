@@ -3,35 +3,34 @@ import {Long_String, TSID_Long, TSID_String} from "@/global/types/common.ts";
 export const RouteNames = {
   HOME: "Home",
   AUTH: {
-    LOGIN: "Login",
-    SIGNUP: "Signup",
-    EMAIL_SIGNUP: "EmailSignup",
-    CALLBACK: "AuthCallback",
+    LOGIN: "login",
+    SIGNUP: "signup",
+    EMAIL_SIGNUP: "email_signup",
+    CALLBACK: "callback",
   },
   ADOPTION: {
-    LIST: "Adoption_list",
-    DETAIL: "Adoption_detail",
-    WRITE: "Adoption_write",
-    EDIT: "Adoption_edit",
-    HISTORY: "UserAdoption_list",
+    LIST: "list",
+    DETAIL: "detail",
+    CREATE: "create",
+    UPDATE: "update",
+    ADOPTER_LIST: "adopter_list",
+    WRITER_LIST: "writer_list",
   },
   USER: {
-    MY_PROFILE: "MyProfile",
-    PROFILE: "Profile",
-    PROFILE_EDIT: "Profile_edit",
+    PROFILE: "profile",
+    PROFILE_UPDATE: "profile_update",
   },
   CHAT: {
-    MY_LIST: "MyChatRoom_list",
-    ROOM: "ChatRoom",
+    LIST: "list",
+    ROOM: "room",
   },
 } as const;
 
 /**
- * 중앙 집중식 Navigator
  * 라우터 이동 시 파라미터를 강제하고 오타를 방지하기 위해 사용합니다.
- * 사용법: router.push(Navigator.adoption.detail(123))
+ * 사용법: router.push(RouteHelper.adoption.detail(123))
  */
-export const Navigator = {
+export const RouteHelper = {
   home: () => ({name: RouteNames.HOME}),
   auth: {
     login: () => ({name: RouteNames.AUTH.LOGIN}),
@@ -45,26 +44,29 @@ export const Navigator = {
       name: RouteNames.ADOPTION.DETAIL,
       params: {id: id},
     }),
-    write: () => ({name: RouteNames.ADOPTION.WRITE}),
-    edit: (id: Long_String) => ({
-      name: RouteNames.ADOPTION.EDIT,
+    create: () => ({name: RouteNames.ADOPTION.CREATE}),
+    update: (id: Long_String) => ({
+      name: RouteNames.ADOPTION.UPDATE,
       params: {id: id},
     }),
-    history: (userId: TSID_String) => ({
-      name: RouteNames.ADOPTION.HISTORY,
+    adopterList: (userId: TSID_String) => ({
+      name: RouteNames.ADOPTION.ADOPTER_LIST,
+      params: {userId: userId.toString()},
+    }),
+    writerList: (userId: TSID_String) => ({
+      name: RouteNames.ADOPTION.WRITER_LIST,
       params: {userId: userId.toString()},
     }),
   },
   user: {
-    myProfile: () => ({name: RouteNames.USER.MY_PROFILE}),
     profile: (id: TSID_String) => ({
       name: RouteNames.USER.PROFILE,
-      params: {id: id},
+      params: {userId: id.toString()},
     }),
-    profileEdit: () => ({name: RouteNames.USER.PROFILE_EDIT}),
+    profileUpdate: () => ({name: RouteNames.USER.PROFILE_UPDATE}),
   },
   chat: {
-    myList: () => ({name: RouteNames.CHAT.MY_LIST}),
+    list: () => ({name: RouteNames.CHAT.LIST}),
     room: (roomId: TSID_Long) => ({
       name: RouteNames.CHAT.ROOM,
       params: {roomId: roomId},

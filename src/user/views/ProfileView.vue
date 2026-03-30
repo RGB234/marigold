@@ -45,6 +45,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { getUserProfile, deleteUser } from '@/user/api/user.api';
 import { useAuthStore } from '@/auth/stores/auth';
 import { useAlert } from '@/global/composables/useAlert';
+import { RouteHelper } from '@/global/router/routeHelper';
 
 const router = useRouter();
 const route = useRoute();
@@ -53,8 +54,8 @@ const { toast } = useAlert();
 
 // 대상 유저 ID (Path Variable이 있으면 사용, 없으면 내 로그인 ID 사용)
 const targetUserId = computed(() => {
-  const paramId = route.params.id;
-  // route.params.id는 string 또는 string[] 일 수 있음
+  const paramId = route.params.userId;
+  // route.params.userId는 string 또는 string[] 일 수 있음
   const id = Array.isArray(paramId) ? paramId[0] : paramId;
   return id || authStore.userId;
 });
@@ -106,15 +107,15 @@ const fetchUserProfile = async (userId: string) => {
 }
 
 const goToProfileEdit = () => {
-  router.push({ name: "Profile_edit" });
+  router.push(RouteHelper.user.profileUpdate());
 }
 
 const goToUserAdoptionPostList = () => {
-  router.push({ name: "UserAdoptionPost_list", params: { userId: targetUserId.value } });
+  router.push(RouteHelper.adoption.writerList(targetUserId.value));
 }
 
 const goToMyChatRoomList = () => {
-  router.push({ name: "MyChatRoom_list" });
+  router.push(RouteHelper.chat.list());
 }
 
 const openDeleteModal = () => {
@@ -137,7 +138,7 @@ const deleteAccount = async () => {
   try {
     await deleteUser();
     authStore.logout();
-    router.push({ name: "Home" })
+    router.push(RouteHelper.home());
   } catch (error) {
     console.error("계정 삭제 중 오류 발생:", error);
     toast.error("계정 삭제 중 오류가 발생했습니다.");
@@ -156,7 +157,7 @@ onMounted(async () => {
 // 라우트 파라미터가 변경되거나(예: 다른 사람 프로필 클릭), 
 // MyProfile <-> Profile 이동 시 데이터 갱신
 watch(
-  () => route.params.id,
+  () => route.params.userId,
   async (newId) => {
     // 새 ID가 있으면 그 ID로, 없으면 내 ID로 조회
     const idToFetch = Array.isArray(newId) ? newId[0] : newId || authStore.userId;

@@ -38,6 +38,7 @@ import defaultProfileImage from '@/assets/images/default-profile.png';
 import { useRouter } from 'vue-router';
 import { isApiResponse } from '@/global/types/common';
 import { ErrorDetail } from '@/global/types/common';
+import { RouteHelper } from '@/global/router/routeHelper';
 
 interface ProfileForm {
     nickname: string;
@@ -161,7 +162,7 @@ const submitForm = async () => {
 
         await updateUserProfile(formData);
         // location.reload();
-        router.push({name: 'MyProfile'});        
+        if(userId.value) router.push(RouteHelper.user.profile(userId.value));
     } catch (error) {
         if(isApiResponse(error)){
             if(error.errors && Array.isArray(error.errors)){
@@ -180,11 +181,11 @@ const submitForm = async () => {
 
 <style scoped>
 .profile-form-container {
-    max-width: 800px;
+    max-width: 600px;
     min-width: max-content;
     width: 100%;
     box-sizing: border-box;
-    margin: 0 auto;
+    margin: 30px auto;
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 8px;

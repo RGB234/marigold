@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <nav>
-      <router-link :to="{ name: 'Home' }">홈</router-link>
-      <router-link v-if="!isLoggedIn" :to="{ name: 'Login' }">로그인</router-link>
-      <router-link v-if="!isLoggedIn" :to="{ name: 'Signup' }">회원가입</router-link>
+      <router-link :to=RouteHelper.home()>홈</router-link>
+      <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.login()>로그인</router-link>
+      <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.signup()>회원가입</router-link>
       
       <div v-if="isLoggedIn && userId" class="profile-menu-container" ref="menuContainer">
         <a class="profile-activator" @click="toggleMenu">
@@ -20,17 +20,23 @@
           <div class="divider"></div>
 
           <div class="menu-list">
-            <div class="menu-item" @click="handleNavigation(Navigator.adoption.history(userId))">
+            <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.writerList(userId))">
               <i class="mdi mdi-pencil-box-outline item-icon"></i>
-              <span class="item-title">내 작성글</span>
+              <span class="item-title">보호 목록</span>
             </div>
 
-            <div class="menu-item" @click="handleNavigation(Navigator.chat.myList())">
+            <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.adopterList(userId))">
+              <i class="mdi mdi-pencil-box-outline item-icon"></i>
+              <span class="item-title">입양 목록</span>
+            </div>
+
+            <!-- 위 목록에 통합 -->
+            <!-- <div class="menu-item" @click="handleNavigation(RouteHelper.chat.myList())">
               <i class="mdi mdi-chat-outline item-icon"></i>
               <span class="item-title">내 채팅</span>
-            </div>
+            </div> -->
 
-            <div class="menu-item" @click="handleNavigation(Navigator.user.myProfile())">
+            <div class="menu-item" @click="handleNavigation(RouteHelper.user.profile(userId))">
               <i class="mdi mdi-cog-outline item-icon"></i>
               <span class="item-title">설정</span>
             </div>
@@ -60,7 +66,7 @@ import { useAuthStore } from "./auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
-import { Navigator } from "@/global/router/routeHelper.ts";
+import { RouteHelper } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
 import { getUserProfile } from "./user/api/user.api";
 import { UserProfileResponse } from "./user/types/user";
@@ -101,7 +107,7 @@ const handleNavigation = (path: RouteLocationRaw) => {
 // 로그아웃 후 홈으로 이동하는 함수 추가
 const handleLogout = () => {
   authStore.logout();
-  router.push({ name: 'Home' });
+  router.push(RouteHelper.home());
   isMenuOpen.value = false;
 };
 

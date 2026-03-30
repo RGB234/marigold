@@ -11,29 +11,29 @@ import defaultProfileImage from '@/assets/images/default-profile.png';
 type TSID = string;
 
 // 생성
-export const createAdoption = async (formData: FormData): Promise<ApiResponse<{ id: number }>> => {
+export const createAdoptionPost = async (formData: FormData): Promise<ApiResponse<{ id: number }>> => {
   const {data: apiResponse} = await api.post<ApiResponse<{ id: number }>>("/adoption", formData);
   return apiResponse;
 };
 
 // 수정
-export const editAdoption = async (id: number | string, formData: FormData): Promise<void> => {
+export const updateAdoptionPost = async (id: number | string, formData: FormData): Promise<void> => {
   await api.patch<ApiResponse<void>>(`/adoption/${id}`, formData);
 };
 
 // 삭제
-export const deleteAdoption = async (id: number | string): Promise<void> => {
+export const deleteAdoptionPost = async (id: number | string): Promise<void> => {
     await api.delete<ApiResponse<void>>(`/adoption/${id}`);
 };
 
 // 입양 상태 변경
-export const updateAdoptionStatus = async (id: BigInt | string, status: string): Promise<void> => {
+export const updateAdoptionPostStatus = async (id: BigInt | string, status: string): Promise<void> => {
     const params = { status };
     await api.patch<ApiResponse<void>>(`/adoption/${id}/status`, null, { params });
 };
 
 // 상세보기
-export const getAdoptionDetail = async (id: number | string): Promise<AdoptionPostDetailResponse> => {
+export const getAdoptionPostDetail = async (id: number | string): Promise<AdoptionPostDetailResponse> => {
   const {data : apiResponse} = await api.get<ApiResponse<AdoptionPostDetailResponse>>(`/adoption/${id}`);
   const detail = apiResponse.data;
 
@@ -54,7 +54,7 @@ export const getAdoptionDetail = async (id: number | string): Promise<AdoptionPo
 };
 
 // 목록 보기
-export const getAdoptionList = async (params: AdoptionPostSearchParams): Promise<AdoptionPostPageResponse> => {
+export const getAdoptionPostList = async (params: AdoptionPostSearchParams): Promise<AdoptionPostPageResponse> => {
   const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostPageResponse>>("/adoption", { params });
   const page = apiResponse.data;
 
@@ -66,12 +66,23 @@ export const getAdoptionList = async (params: AdoptionPostSearchParams): Promise
 };
 
 // 작성글 목록 보기
-export const getUserAdoptions = async (userId: TSID, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
+export const getAdoptionPostListByWriter = async (userId: TSID, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
   const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostPageResponse>>(`/adoption/writer/${userId}`, { params });
   const page = apiResponse.data;
 
   if (!page) {
     throw new Error("작성글 목록 데이터를 불러오지 못했습니다.");
+  }
+
+  return page;
+};
+
+export const getAdoptionPostListByAdopter = async (userId: TSID, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostPageResponse>>(`/adoption/adopter/${userId}`, { params });
+  const page = apiResponse.data;
+
+  if (!page) {
+    throw new Error("입양 목록 데이터를 불러오지 못했습니다.");
   }
 
   return page;

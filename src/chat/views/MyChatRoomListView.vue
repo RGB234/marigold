@@ -91,7 +91,7 @@ import {
   AdoptionPostWithChatPageResponse,
   AdoptionPostWithChatResponse
 } from "@/adoption/types/adoptionPost.ts";
-import {Navigator} from "@/global/router/routeHelper.ts";
+import {RouteHelper} from "@/global/router/routeHelper.ts";
 import {TSID_Long} from "@/global/types/common.ts";
 
 // ==========================================
@@ -166,12 +166,12 @@ const visibleCards = computed(() => searchResult.value);
 
 // 게시글 상세 페이지로 이동
 const handleAdoptionClick = (adoptionPost: AdoptionPostResponse) => {
-  router.push(Navigator.adoption.detail(adoptionPost.id));
+  router.push(RouteHelper.adoption.detail(adoptionPost.id));
 };
 
 // 채팅방으로 이동
 const handleChatClick = (chatRoomId: TSID_Long) => {
-  router.push(Navigator.chat.room(chatRoomId));
+  router.push(RouteHelper.chat.room(chatRoomId));
 };
 
 // 채팅방 삭제

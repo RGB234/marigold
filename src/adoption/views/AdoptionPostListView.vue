@@ -89,11 +89,12 @@ import { SpeciesLabels, SpeciesOptions } from "@/adoption/enums/Species";
 import { SexLabels, SexOptions } from "@/adoption/enums/Sex";
 import { getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
 import { cleanParams } from "@/global/utils/objectUtils";
-import { getAdoptionList } from "@/adoption/api/adoptionPost.api";
+import { getAdoptionPostList } from "@/adoption/api/adoptionPost.api";
+import { RouteHelper } from "@/global/router/routeHelper";
 import {
-  AdoptionItemResponse,
-  AdoptionPageResponse
-} from "@/adoption/types/adoption";
+  AdoptionPostResponse,
+  AdoptionPostPageResponse
+} from "@/adoption/types/adoptionPost";
 
 // ==========================================
 // 데이터 호출 및 상태 관리
@@ -101,7 +102,7 @@ import {
 
 const router = useRouter();
 
-const searchResult = ref<AdoptionItemResponse[]>();
+const searchResult = ref<AdoptionPostResponse[]>();
 const searchFilters = ref<{ species?: string; sex?: string }>({
   species: undefined, // undefined이면 전체검색
   sex: undefined,     // undefined이면 전체검색
@@ -122,7 +123,7 @@ const handleSearch = async (page = 0) => {
   searchResult.value = [];
   try {
     const params = { ...cleanParams(searchFilters.value), page };
-    const data: AdoptionPageResponse = await getAdoptionList(params);
+    const data: AdoptionPostPageResponse = await getAdoptionPostList(params);
 
     searchResult.value = data.content ?? [];
 
@@ -154,12 +155,12 @@ const visibleCards = computed(() => searchResult.value);
 // ==========================================
 
 const handleWrite = () => {
-  router.push({ name: "Adoption_write" });
+  router.push(RouteHelper.adoption.create());
 };
 
 // 카드 클릭 시 상세 페이지로 이동
 const handleCardClick = (card: any) => {
-  router.push({ name: "Adoption_detail", params: { id: String(card.id) } });
+  router.push(RouteHelper.adoption.detail(card.id));
 };
 
 onMounted(async () => {

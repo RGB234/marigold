@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { getUserAdoptions } from '@/adoption/api/adoptionPost.api.ts';
+import { getAdoptionPostListByWriter } from '@/adoption/api/adoptionPost.api.ts';
 import NoImage from '@/assets/images/no-image.jpeg';
 import { SexLabels } from '@/adoption/enums/Sex.ts';
 import { SpeciesLabels } from '@/adoption/enums/Species.ts';
-import { AdoptionItemResponse, AdoptionPageResponse } from '@/adoption/types/adoption';
+import { AdoptionPostResponse, AdoptionPostPageResponse } from '@/adoption/types/adoptionPost';
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
+import { RouteHelper } from '@/global/router/routeHelper';
+import { Long_String } from '@/global/types/common';
 
 const router = useRouter(); 
 const route = useRoute();
 
 // 상태 변수
-const myAdoptionInfoList = ref<AdoptionItemResponse[]>([]);
+const myAdoptionInfoList = ref<AdoptionPostResponse[]>([]);
 const loading = ref(false);
 
 // 서버 사이드 페이지네이션
@@ -21,14 +23,14 @@ const totalServerPages = ref(1); // 서버에서 반환한 총 페이지 수
 const visiblePageCount = 10;     // 페이지네이션 바에 표시할 페이지 버튼 수
 
 // 작성한 글 목록 불러오기
-const fetchMyAdoptions = async (page = 0) => {
+const fetchAdoptionPostListByWriter = async (page = 0) => {
     const userId = route.params.userId as string;
     if (!userId) return;
 
     loading.value = true;
     currentPage.value = page;
     try {
-        const data: AdoptionPageResponse = await getUserAdoptions(userId, { page, size: 10 });
+        const data: AdoptionPostPageResponse = await getAdoptionPostListByWriter(userId, { page, size: 10 });
         myAdoptionInfoList.value = data.content || [];
         totalServerPages.value = data.page.totalPages ?? 1;
     } catch (error) {
@@ -40,8 +42,8 @@ const fetchMyAdoptions = async (page = 0) => {
 };
 
 // 상세 페이지로 이동
-const goToDetail = (id: number) => {
-    router.push({ name: 'Adoption_detail', params: { id } });
+const goToDetail = (id: Long_String) => {
+    router.push(RouteHelper.adoption.detail(id.toString()));
 };
 
 // 날짜 포맷팅 (YYYY.MM.DD)
@@ -59,7 +61,7 @@ const visiblePages = computed(() => {
 });
 
 onMounted(() => {
-    fetchMyAdoptions(0);
+    fetchAdoptionPostListByWriter(0);
 });
 </script>
 
@@ -108,16 +110,16 @@ onMounted(() => {
 
             <!-- 페이지네이션 추가 -->
             <div class="pagination">
-                <button @click="fetchMyAdoptions(currentPage - 1)" :disabled="currentPage === 0">전</button>
+                <button @click="fetchAdoptionPostListByWriter(currentPage - 1)" :disabled="currentPage === 0">전</button>
                 <button
                     v-for="page in visiblePages"
                     :key="page"
                     :class="{ active: currentPage === page }"
-                    @click="fetchMyAdoptions(page)"
+                    @click="fetchAdoptionPostListByWriter(page)"
                 >
                     {{ page + 1 }}
                 </button>
-                <button @click="fetchMyAdoptions(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">후</button>
+                <button @click="fetchAdoptionPostListByWriter(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">후</button>
             </div>
         </div>
 

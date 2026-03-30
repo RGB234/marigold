@@ -38,7 +38,7 @@ import {ProviderInfo, useAuthStore } from '@/auth/stores/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
-import { RouteNames } from '@/global/router/routeHelper';
+import { RouteHelper, RouteNames } from '@/global/router/routeHelper';
 
 interface Provider {
   name: ProviderInfo;
@@ -57,7 +57,7 @@ const authStore = useAuthStore();
 
 // 이메일 회원가입 페이지 이동
 function goToEmailSignup() {
-  router.push({ name: RouteNames.AUTH.EMAIL_SIGNUP });
+  router.push(RouteHelper.auth.emailSignup());
 }
 
 // 소셜 계정으로 회원가입 (이제 로그인과 통합 처리)
@@ -67,7 +67,7 @@ const handleSocialSignUp = (providerCode: ProviderInfo) => {
 
 // 로그인 페이지 이동
 function goToLoginForm() {
-  router.push({ name: RouteNames.AUTH.LOGIN });
+  router.push(RouteHelper.auth.login());
 }
 </script>
 

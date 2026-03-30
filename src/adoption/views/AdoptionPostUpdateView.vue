@@ -108,7 +108,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { editAdoption, getAdoptionDetail } from "@/adoption/api/adoptionPost.api";
+import { updateAdoptionPost, getAdoptionPostDetail } from "@/adoption/api/adoptionPost.api";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { Species } from "@/adoption/enums/Species";
 import { Sex } from "@/adoption/enums/Sex";
@@ -116,6 +116,7 @@ import { Neutering } from "@/adoption/enums/Neutering";
 import { isApiResponse } from "@/global/types/common";
 import { ErrorDetail } from "@/global/types/common";
 import { useAlert } from "@/global/composables/useAlert";
+import { RouteHelper } from "@/global/router/routeHelper";
 
 const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
 const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
@@ -172,7 +173,7 @@ const openLightbox = (index: number) => { lightboxIndex.value = index; };
 const closeLightbox = () => { lightboxIndex.value = null; };
 
 const handleFetchAdoption = async () => {
-  const data = await getAdoptionDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
+  const data = await getAdoptionPostDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
 
   Object.assign(form, {
     species: data.species,
@@ -275,11 +276,11 @@ const handleSubmit = async () => {
   try {
     const routeId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
 
-    await editAdoption(routeId, formData);
+    await updateAdoptionPost(routeId, formData);
 
     toast.success("입양글 수정이 완료되었습니다.");
 
-    router.push({ name: 'Adoption_detail', params: { id: routeId } });
+    router.push(RouteHelper.adoption.detail(routeId));
   } catch (err) {
     if (isApiResponse(err)) {
       if (err.errors && Array.isArray(err.errors)) {
@@ -294,7 +295,8 @@ const handleSubmit = async () => {
 };
 
 const handleCancel = () => {
-  router.push({ name: 'Adoption_detail', params: { id: route.params.id } });
+  const routeId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
+  router.push(RouteHelper.adoption.detail(routeId));
 };
 
 onMounted(async () => {

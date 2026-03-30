@@ -6,14 +6,14 @@ import {SpeciesLabels} from "@/adoption/enums/Species";
 import {SexLabels} from "@/adoption/enums/Sex";
 import {NeuteringLabels} from "@/adoption/enums/Neutering";
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
-import {deleteAdoption, getAdoptionDetail, updateAdoptionStatus, getAdoptionCandidates, completeAdoption, cancelCompleteAdoption} from '@/adoption/api/adoptionPost.api';
+import {deleteAdoptionPost, getAdoptionPostDetail, updateAdoptionPostStatus, getAdoptionCandidates, completeAdoption, cancelCompleteAdoption} from '@/adoption/api/adoptionPost.api';
 import {createChatRoom} from '@/chat/api/chat.api';
 
 import {useAuthStore} from '@/auth/stores/auth';
 
 import {useAlert} from '@/global/composables/useAlert';
 import {AdoptionPostDetailResponse, AdoptionCandidateResponse} from "@/adoption/types/adoptionPost.ts";
-import {Navigator} from "@/global/router/routeHelper.ts";
+import {RouteHelper} from "@/global/router/routeHelper.ts";
 
 const route = useRoute();
 const router = useRouter();
@@ -51,18 +51,16 @@ const formatDate = (dateString: string) => {
 
 const fetchDetail = async (id: string | string[]) => {
   try {
-    detail.value = await getAdoptionDetail(Array.isArray(id) ? id[0] : id);
+    detail.value = await getAdoptionPostDetail(Array.isArray(id) ? id[0] : id);
   } catch (error) {
-    // router.push({name: 'Adoption_list'});
-    router.push(Navigator.adoption.list());
+    router.push(RouteHelper.adoption.list());
   }
 };
 
 // 게시글 수정
 const editPost = () => {
-  // router.push({name: 'Adoption_edit', params: {id: route.params.id}});
   const postId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
-  router.push(Navigator.adoption.edit(postId));
+  router.push(RouteHelper.adoption.update(postId));
 };
 
 // 게시글 삭제 확인
@@ -75,9 +73,9 @@ const confirmDelete = async () => {
 // 게시글 삭제
 const deletePost = async () => {
   try {
-    await deleteAdoption(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
+    await deleteAdoptionPost(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
     toast.success('게시글이 삭제되었습니다.');
-    router.push({name: 'Home'});
+    router.push(RouteHelper.home());
   } catch (error) {
     console.error("게시글 삭제 중 오류 발생:", error);
     toast.error("게시글 삭제 중 오류가 발생했습니다.");
@@ -87,7 +85,7 @@ const deletePost = async () => {
 const handleStatusChange = async (status: AdoptionPostStatus) => {
   if (!detail.value) return;
   try {
-    await updateAdoptionStatus(detail.value.id, status);
+    await updateAdoptionPostStatus(detail.value.id, status);
     detail.value.status = status;
     toast.success(`상태가 '${getAdoptionStatusLabel(status)}'(으)로 변경되었습니다.`);
   } catch (error) {
@@ -161,7 +159,7 @@ const handleChatRequest = async () => {
 
       // toast.success("채팅방이 개설되었습니다.");
 
-      router.push(Navigator.chat.room(chatRoom.id.toString()));
+      router.push(RouteHelper.chat.room(chatRoom.id.toString()));
     } catch (error) {
       console.log(error);
       toast.error("채팅방 생성 중 오류가 발생했습니다.");
@@ -172,11 +170,11 @@ const handleChatRequest = async () => {
 const goToProfile = () => {
   if (!detail.value) return;
   const writerId = detail.value.writer?.id;
-  router.push({name: 'Profile', params: {id: writerId}});
+  if(writerId) router.push(RouteHelper.user.profile(writerId));
 };
 
 const goToAdoptionList = () => {
-  router.push({name: 'Adoption_list'});
+  router.push(RouteHelper.adoption.list());
 };
 
 onMounted(async () => {

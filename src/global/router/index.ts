@@ -14,18 +14,11 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: false,
     },
   },
+  // Auth
   {
     name: RouteNames.AUTH.CALLBACK,
     path: "/auth/callback",
     component: () => import("@/auth/views/AuthCallbackView.vue"),
-    meta: {
-      requiresAuth: false,
-    },
-  },
-  {
-    name: RouteNames.ADOPTION.LIST,
-    path: "/adoption",
-    component: () => import("@/adoption/views/AdoptionPostListView.vue"),
     meta: {
       requiresAuth: false,
     },
@@ -54,10 +47,19 @@ const routes: Array<RouteRecordRaw> = [
       requiresAuth: false,
     },
   },
+  // Adoption
   {
-    name: RouteNames.ADOPTION.WRITE,
-    path: "/adoption/write",
-    component: () => import("@/adoption/views/AdoptionPostWriteView.vue"),
+    name: RouteNames.ADOPTION.LIST,
+    path: "/adoption",
+    component: () => import("@/adoption/views/AdoptionPostListView.vue"),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    name: RouteNames.ADOPTION.CREATE,
+    path: "/adoption/create",
+    component: () => import("@/adoption/views/AdoptionPostCreateView.vue"),
     meta: {
       requiresAuth: true,
     },
@@ -71,47 +73,49 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    name: RouteNames.ADOPTION.EDIT,
-    path: "/adoption/:id/edit",
-    component: () => import("@/adoption/views/AdoptionPostEditView.vue"),
+    name: RouteNames.ADOPTION.UPDATE,
+    path: "/adoption/:id/update",
+    component: () => import("@/adoption/views/AdoptionPostUpdateView.vue"),
     meta: {
       requiresAuth: true,
     },
   },
   {
-    name: RouteNames.USER.MY_PROFILE,
-    path: "/profile",
-    component: () => import("@/user/views/ProfileView.vue"),
+    name: RouteNames.ADOPTION.WRITER_LIST,
+    path: "/adoption/writer/:userId",
+    component: () => import("@/adoption/views/AdoptionPostListByWriterView.vue"),
     meta: {
       requiresAuth: true,
     },
   },
+  {
+    name: RouteNames.ADOPTION.ADOPTER_LIST,
+    path: "/adoption/adopter/:userId",
+    component: () => import("@/adoption/views/AdoptionPostListByAdopterView.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  // User
   {
     name: RouteNames.USER.PROFILE,
-    path: "/profile/:id",
+    path: "/user/profile/:userId",
     component: () => import("@/user/views/ProfileView.vue"),
     meta: {
       requiresAuth: true,
     },
   },
   {
-    name: RouteNames.USER.PROFILE_EDIT,
-    path: "/profile/edit",
-    component: () => import("@/user/views/ProfileEditView.vue"),
+    name: RouteNames.USER.PROFILE_UPDATE,
+    path: "/user/profile/update",
+    component: () => import("@/user/views/ProfileUpdateView.vue"),
     meta: {
       requiresAuth: true,
     },
   },
+  // Chat
   {
-    name: RouteNames.ADOPTION.HISTORY,
-    path: "/profile/history/:userId",
-    component: () => import("@/adoption/views/UserAdoptionPostListView.vue"),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    name: RouteNames.CHAT.MY_LIST,
+    name: RouteNames.CHAT.LIST,
     path: "/chat",
     component: () => import("@/chat/views/MyChatRoomListView.vue"),
     meta: {
