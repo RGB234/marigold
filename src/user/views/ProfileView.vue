@@ -110,14 +110,6 @@ const goToProfileEdit = () => {
   router.push(RouteHelper.user.profileUpdate());
 }
 
-const goToUserAdoptionPostList = () => {
-  router.push(RouteHelper.adoption.writerList(targetUserId.value));
-}
-
-const goToMyChatRoomList = () => {
-  router.push(RouteHelper.chat.list());
-}
-
 const openDeleteModal = () => {
   showDeleteModal.value = true;
   deleteConfirmationInput.value = '';
@@ -171,11 +163,11 @@ watch(
 <style scoped>
 /* 전체 컨테이너 */
 .my-page-container {
-  max-width: 800px;
+  max-width: 600px;
   min-width: max-content;
   width: 100%;
   box-sizing: border-box;
-  margin: 0 auto;
+  margin: 20px auto;
   padding: 20px;
   background-color: #f9f9f9;
   min-height: 100vh;

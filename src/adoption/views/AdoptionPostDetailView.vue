@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-import {SpeciesLabels} from "@/adoption/enums/Species";
-import {SexLabels} from "@/adoption/enums/Sex";
-import {NeuteringLabels} from "@/adoption/enums/Neutering";
-import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
-import {deleteAdoptionPost, getAdoptionPostDetail, updateAdoptionPostStatus, getAdoptionCandidates, completeAdoption, cancelCompleteAdoption} from '@/adoption/api/adoptionPost.api';
-import {createChatRoom} from '@/chat/api/chat.api';
+import { SpeciesLabels } from "@/adoption/enums/Species";
+import { SexLabels } from "@/adoption/enums/Sex";
+import { NeuteringLabels } from "@/adoption/enums/Neutering";
+import { AdoptionPostStatus, getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
+import { deleteAdoptionPost, getAdoptionPostDetail, updateAdoptionPostStatus, getAdoptionCandidates, completeAdoption, cancelCompleteAdoption } from '@/adoption/api/adoptionPost.api';
+import { getOrCreateChatRoom } from '@/chat/api/chat.api';
 
-import {useAuthStore} from '@/auth/stores/auth';
+import { useAuthStore } from '@/auth/stores/auth';
 
-import {useAlert} from '@/global/composables/useAlert';
-import {AdoptionPostDetailResponse, AdoptionCandidateResponse} from "@/adoption/types/adoptionPost.ts";
-import {RouteHelper} from "@/global/router/routeHelper.ts";
+import { useAlert } from '@/global/composables/useAlert';
+import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoption/types/adoptionPost.ts";
+import { RouteHelper } from "@/global/router/routeHelper.ts";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const {confirm, toast, alert} = useAlert();
+const { confirm, toast, alert } = useAlert();
 
 const detail = ref<AdoptionPostDetailResponse | null>(null);
 
@@ -145,36 +145,35 @@ const handleCancelCompleteAdoption = async () => {
 const handleChatRequest = async () => {
   if (!detail.value || !detail.value.writer) return;
 
-  if (await confirm("확인", "입양 문의를 하시겠습니까?")) {
-    try {
-      // 채팅방 생성 (이미 있으면 기존 방 반환)
-      const adoptionInfoId = detail.value.id;
-      const writerId = detail.value.writer.id;
+  try {
+    // 채팅방 생성 (이미 있으면 기존 방 반환)
+    const adoptionInfoId = detail.value.id;
+    const writerId = detail.value.writer.id;
 
-      // 없으면 생성, 이미 있으면 GET
-      const chatRoom = await createChatRoom(adoptionInfoId, writerId);
+    // 없으면 생성, 이미 있으면 GET
+    const chatRoom = await getOrCreateChatRoom(adoptionInfoId, writerId);
 
-      // 상태 변경 (예약중으로)
-      // await handleStatusChange(AdoptionPostStatus.RESERVED);
-
-      // toast.success("채팅방이 개설되었습니다.");
-
-      router.push(RouteHelper.chat.room(chatRoom.id.toString()));
-    } catch (error) {
-      console.log(error);
-      toast.error("채팅방 생성 중 오류가 발생했습니다.");
-    }
+    router.push(RouteHelper.chat.room(chatRoom.id.toString()));
+  } catch (error) {
+    console.log(error);
+    toast.error("채팅방 생성 중 오류가 발생했습니다.");
   }
 };
 
 const goToProfile = () => {
   if (!detail.value) return;
   const writerId = detail.value.writer?.id;
-  if(writerId) router.push(RouteHelper.user.profile(writerId));
+  if (writerId) router.push(RouteHelper.user.profile(writerId));
 };
 
-const goToAdoptionList = () => {
-  router.push(RouteHelper.adoption.list());
+const goToChatList = () => {
+  if (detail.value) {
+    router.push(RouteHelper.adoption.chatList(detail.value.id.toString()));
+  }
+};
+
+const goBack = () => {
+  router.back();
 };
 
 onMounted(async () => {
@@ -185,27 +184,31 @@ onMounted(async () => {
 
 <template>
   <div class="detail-container">
+    <div class="back-btn-wrapper">
+      <button class="btn-back" @click="goBack">
+        < 뒤로가기
+      </button>
+    </div>
     <div v-if="detail" class="content-wrapper">
       <div class="header-section">
         <div class="header-top">
           <div class="title-row">
             <span class="badge species">{{ SpeciesLabels[detail.species] }}</span>
             <span class="badge" :class="detail.status">{{
-                getAdoptionStatusLabel(detail.status)
-              }}</span>
+              getAdoptionStatusLabel(detail.status)
+            }}</span>
             <h1 class="name">{{ detail.title }}</h1>
           </div>
           <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
           <div v-if="isLoggedIn && isAuthor" class="action-buttons">
-            <!-- <button class="btn-small edit" @click="editPost" v-if="detail.status !== AdoptionPostStatus.COMPLETED">수정</button> -->
             <button class="btn-small edit" @click="editPost">수정</button>
             <button class="btn-small delete" @click="confirmDelete">삭제</button>
           </div>
         </div>
         <div class="meta-info">
           <span @click="goToProfile()" class="clickable">작성자: {{
-              detail.writer?.nickname || '알 수 없음'
-            }}</span>
+            detail.writer?.nickname || '알 수 없음'
+          }}</span>
           <span class="divider">|</span>
           <span>등록일: {{ formatDate(detail.createdAt) }}</span>
           <span class="divider">|</span>
@@ -213,7 +216,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <hr class="separator"/>
+      <hr class="separator" />
 
       <div class="info-grid">
         <div class="info-item">
@@ -222,7 +225,7 @@ onMounted(async () => {
         </div>
         <div class="image-container">
           <div v-for="imageUrl in detail.imageUrls" :key="imageUrl">
-            <img :src="imageUrl" alt="이미지"/>
+            <img :src="imageUrl" alt="이미지" />
           </div>
         </div>
         <div class="info-item">
@@ -247,7 +250,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <hr class="separator"/>
+      <hr class="separator" />
 
       <div class="features-section">
         <h3>특징 및 상세 설명</h3>
@@ -257,32 +260,40 @@ onMounted(async () => {
       </div>
 
       <div class="button-group">
-        <button class="btn secondary" @click="goToAdoptionList()">목록으로</button>
+        <div class="action-buttons-wrapper">
+          <!-- 작성자가 아닌 경우: 입양 문의하기 -->
+          <button
+            v-if="isLoggedIn && !isAuthor && detail.status === AdoptionPostStatus.PROCEEDING || detail.adopter?.id === detail.writer?.id"
+            class="btn primary" @click="handleChatRequest">
+            입양 문의 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
+          </button>
 
-        <!-- 작성자가 아닌 경우: 입양 문의하기 -->
-        <button v-if="isLoggedIn && !isAuthor && detail.status === AdoptionPostStatus.PROCEEDING"
-                class="btn primary" @click="handleChatRequest">
-          입양 문의하기 (채팅)
-        </button>
-
-        <!-- 작성자일 경우: 상태 변경 버튼들 -->
-        <div v-if="isLoggedIn && isAuthor && detail.status" class="status-actions">
-          <button v-if="detail.status !== AdoptionPostStatus.PROCEEDING && detail.status !== AdoptionPostStatus.COMPLETED"
-                  class="btn reserved" @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
-            모집중으로 변경
-          </button>
-          <button v-if="detail.status !== AdoptionPostStatus.RESERVED && detail.status !== AdoptionPostStatus.COMPLETED"
-                  class="btn proceeding" @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
-            예약중으로 변경
-          </button>
-          <button v-if="detail.status !== AdoptionPostStatus.COMPLETED"
-                  class="btn completed" @click="handleCompleteAdoptionClick">
-            입양 완료 처리
-          </button>
-          <button v-if="detail.status === AdoptionPostStatus.COMPLETED"
-                  class="btn secondary" @click="handleCancelCompleteAdoption">
-            입양 완료 취소
-          </button>
+          <!-- 작성자일 경우 -->
+          <div v-if="isLoggedIn && isAuthor && detail.status" class="author-actions">
+            <div class="status-actions">
+              <button
+                v-if="detail.status !== AdoptionPostStatus.PROCEEDING && detail.status !== AdoptionPostStatus.COMPLETED"
+                class="btn reserved" @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
+                모집중으로 변경
+              </button>
+              <button
+                v-if="detail.status !== AdoptionPostStatus.RESERVED && detail.status !== AdoptionPostStatus.COMPLETED"
+                class="btn proceeding" @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
+                예약중으로 변경
+              </button>
+              <button v-if="detail.status !== AdoptionPostStatus.COMPLETED" class="btn completed"
+                @click="handleCompleteAdoptionClick">
+                입양 완료 처리
+              </button>
+              <button v-if="detail.status === AdoptionPostStatus.COMPLETED" class="btn cancel"
+                @click="handleCancelCompleteAdoption">
+                입양 완료 취소
+              </button>
+            </div>
+            <button class="btn chat-list" @click="goToChatList">
+              문의 온 채팅 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -292,17 +303,12 @@ onMounted(async () => {
       <div class="modal-content">
         <h3>입양자 선택</h3>
         <p>채팅을 진행한 사용자 중 입양자를 선택해주세요.</p>
-        
+
         <div class="candidates-list">
-          <div 
-            v-for="candidate in candidates" 
-            :key="candidate.id"
-            class="candidate-item"
-            :class="{ selected: selectedAdopterId === candidate.id }"
-            @click="selectedAdopterId = candidate.id"
-          >
+          <div v-for="candidate in candidates" :key="candidate.id" class="candidate-item"
+            :class="{ selected: selectedAdopterId === candidate.id }" @click="selectedAdopterId = candidate.id">
             <div class="candidate-profile">
-              <img :src="candidate.imageUrl" alt="프로필" class="candidate-img" />
+              <img :src="candidate.imageUrl || undefined" alt="프로필" class="candidate-img" />
               <span class="candidate-nickname">{{ candidate.nickname }}</span>
             </div>
             <div class="candidate-radio">
@@ -321,6 +327,28 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.back-btn-wrapper {
+  margin-bottom: 20px;
+}
+
+.btn-back {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.btn-back:hover {
+  color: #333;
+}
+
 .clickable {
   cursor: pointer;
   color: #2196f3;
@@ -329,7 +357,7 @@ onMounted(async () => {
 /* 컨테이너 */
 .detail-container {
   max-width: 800px;
-  margin: 0 auto;
+  margin: 20px auto;
   padding: 40px 20px;
   background-color: #fff;
   border-radius: 12px;
@@ -412,17 +440,8 @@ onMounted(async () => {
   color: white;
 }
 
-.btn-small.edit:hover {
-  background-color: #1976d2;
-}
-
 .btn-small.delete {
   background-color: #f44336;
-  color: white;
-}
-
-.btn-small.delete:hover {
-  background-color: #d32f2f;
   color: white;
 }
 
@@ -479,7 +498,7 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.image-container > div {
+.image-container>div {
   flex: 0 0 auto;
   max-width: 200px;
   border-radius: 8px;
@@ -488,7 +507,7 @@ onMounted(async () => {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.image-container > div:hover {
+.image-container>div:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -518,7 +537,13 @@ onMounted(async () => {
 .button-group {
   margin-top: 40px;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.action-buttons-wrapper {
+  display: flex;
   gap: 12px;
 }
 
@@ -530,6 +555,8 @@ onMounted(async () => {
   border: none;
   font-size: 15px;
   transition: background 0.2s;
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .btn.primary {
@@ -537,17 +564,22 @@ onMounted(async () => {
   color: white;
 }
 
-.btn.primary:hover {
-  background-color: #f57c00;
-}
-
 .btn.secondary {
   background-color: #f0f0f0;
   color: #333;
 }
 
-.btn.secondary:hover {
-  background-color: #e0e0e0;
+.btn.chat-list {
+  background-color: #ff9800;
+  color: white;
+  border: 1px solid #ddd;
+}
+
+.author-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
 }
 
 .status-actions {
@@ -555,32 +587,6 @@ onMounted(async () => {
   gap: 8px;
 }
 
-.btn.reserved {
-  background-color: #ff9800;
-  color: white;
-}
-
-.btn.reserved:hover {
-  background-color: #f57c00;
-}
-
-.btn.proceeding {
-  background-color: #2196f3;
-  color: white;
-}
-
-.btn.proceeding:hover {
-  background-color: #1976d2;
-}
-
-.btn.completed {
-  background-color: #f44336;
-  color: white;
-}
-
-.btn.completed:hover {
-  background-color: #d32f2f;
-}
 
 /* 모달 스타일 */
 .modal-overlay {
@@ -684,7 +690,7 @@ onMounted(async () => {
     grid-column: span 1;
   }
 
-  .image-container > div {
+  .image-container>div {
     max-width: 100%;
   }
 

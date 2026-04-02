@@ -22,19 +22,18 @@
           <div class="menu-list">
             <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.writerList(userId))">
               <i class="mdi mdi-pencil-box-outline item-icon"></i>
-              <span class="item-title">보호 목록</span>
+              <span class="item-title">작성글 목록</span>
             </div>
 
             <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.adopterList(userId))">
-              <i class="mdi mdi-pencil-box-outline item-icon"></i>
+              <i class="mdi mdi-heart-outline item-icon"></i>
               <span class="item-title">입양 목록</span>
             </div>
 
-            <!-- 위 목록에 통합 -->
-            <!-- <div class="menu-item" @click="handleNavigation(RouteHelper.chat.myList())">
+            <div class="menu-item" @click="handleNavigation(RouteHelper.chat.list())">
               <i class="mdi mdi-chat-outline item-icon"></i>
-              <span class="item-title">내 채팅</span>
-            </div> -->
+              <span class="item-title">대화 목록</span>
+            </div>
 
             <div class="menu-item" @click="handleNavigation(RouteHelper.user.profile(userId))">
               <i class="mdi mdi-cog-outline item-icon"></i>

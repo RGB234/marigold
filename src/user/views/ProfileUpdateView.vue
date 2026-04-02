@@ -1,6 +1,6 @@
 <template>
     <div class="profile-form-container">
-        <h2>프로필 설정</h2>
+        <h2>프로필 수정</h2>
 
         <form @submit.prevent="submitForm">
             <div class="image-upload-section">
@@ -185,7 +185,7 @@ const submitForm = async () => {
     min-width: max-content;
     width: 100%;
     box-sizing: border-box;
-    margin: 30px auto;
+    margin: 20px auto;
     padding: 20px;
     border: 1px solid #ddd;
     border-radius: 8px;

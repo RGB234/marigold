@@ -1,9 +1,10 @@
-import {Long_String, TSID_String} from "@/global/types/common.ts";
+import {Long_String, PageResponse, TSID_String} from "@/global/types/common.ts";
 
 export interface ChatRoomDto {
     id: TSID_String;
     parentPostId: Long_String;
     parentPostTitle: string;
+    postWriterId: TSID_String;
     user1Id: TSID_String; // TSID
     user1Nickname: string;
     user2Id: TSID_String;
@@ -18,3 +19,5 @@ export interface ChatMessageDto {
     message: string;
     createdAt: string;
 }
+
+export type ChatRoomPageResponse = PageResponse<ChatRoomDto>;

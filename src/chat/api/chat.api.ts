@@ -1,13 +1,32 @@
 import api from "@/global/api";
-import {ChatMessageDto, ChatRoomDto} from "@/chat/types/chat";
-import {Long_String} from "@/global/types/common.ts";
+import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
+import {ApiResponse, Long_String, Pageable, PageableParams} from "@/global/types/common.ts";
 
-export const createChatRoom = async (adoptionPostId: Long_String, receiverId: Long_String): Promise<ChatRoomDto> => {
-  return (await api.post<ChatRoomDto>(`/chat/rooms`, {adoptionPostId, receiverId})).data;
+export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: Long_String): Promise<ChatRoomDto> => {
+  const {data: apiResponse} = await api.post<ApiResponse<ChatRoomDto>>(`/chat/rooms`, {adoptionPostId, receiverId});
+  if (!apiResponse.data) {
+    throw new Error("채팅방 생성 중 오류가 발생했습니다.");
+  }
+  return apiResponse.data;
+};
+
+export const getMyChatRooms = async (params?: PageableParams): Promise<ChatRoomPageResponse> => {
+  const {data: apiResponse} =  await api.get<ApiResponse<ChatRoomPageResponse>>(`/chat/rooms`, {params});
+  const page = apiResponse.data;
+
+  if (!page) {
+    throw new Error("채팅방 목록 데이터를 불러오지 못했습니다.");
+  }
+
+  return page;
 };
 
 export const getChatRoomMessages = async (roomId: Long_String): Promise<ChatMessageDto[]> => {
-  return (await api.get<ChatMessageDto[]>(`/chat/rooms/${roomId}/messages`)).data;
+  const {data: apiResponse} = await api.get<ApiResponse<ChatMessageDto[]>>(`/chat/rooms/${roomId}/messages`);
+  if (!apiResponse.data) {
+    throw new Error("채팅방 메시지 데이터를 불러오지 못했습니다.");
+  }
+  return apiResponse.data;
 };
 
 export const deleteChatRoom = async (roomId: Long_String): Promise<void> => {

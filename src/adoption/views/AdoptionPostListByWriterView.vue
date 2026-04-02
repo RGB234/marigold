@@ -68,7 +68,7 @@ onMounted(() => {
 <template>
     <div class="list-container">
         <div class="page-header">
-            <h2>내가 쓴 입양 공고</h2>
+            <h2>작성한 입양 공고</h2>
         </div>
 
         <div v-if="loading" class="loading-state">

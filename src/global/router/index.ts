@@ -89,6 +89,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    name: RouteNames.ADOPTION.CHAT_LIST,
+    path: "/adoption/:id/chats",
+    component: () => import("@/adoption/views/AdoptionPostChatListView.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     name: RouteNames.ADOPTION.ADOPTER_LIST,
     path: "/adoption/adopter/:userId",
     component: () => import("@/adoption/views/AdoptionPostListByAdopterView.vue"),

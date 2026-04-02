@@ -118,6 +118,7 @@ export interface AdoptionPostDetailResponse {
     nickname: string;
     imageUrl: ImageUrl | null;
   };
+  chatRoomCount: number;
 }
 
 export interface AdoptionCandidateResponse {

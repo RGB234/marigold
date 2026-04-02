@@ -15,6 +15,7 @@ export const RouteNames = {
     UPDATE: "update",
     ADOPTER_LIST: "adopter_list",
     WRITER_LIST: "writer_list",
+    CHAT_LIST: "adoption_chat_list",
   },
   USER: {
     PROFILE: "profile",
@@ -56,6 +57,10 @@ export const RouteHelper = {
     writerList: (userId: TSID_String) => ({
       name: RouteNames.ADOPTION.WRITER_LIST,
       params: {userId: userId.toString()},
+    }),
+    chatList: (id: Long_String) => ({
+      name: RouteNames.ADOPTION.CHAT_LIST,
+      params: {id: id},
     }),
   },
   user: {

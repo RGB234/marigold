@@ -1,487 +1,301 @@
-<template>
-  <div class="card-header">
-    <h3>참가중인 채팅방</h3>
-  </div>
-
-  <div class="card-container">
-    <div v-for="(item, index) in visibleCards" :key="index" class="item-wrapper">
-      <!-- 게시글 정보 영역 (왼쪽) -->
-      <div class="card adoption-card hover-effect" @click="handleAdoptionClick(item.adoptionPost)">
-        <div class="card-image">
-          <img :src="item.adoptionPost.imageUrl" alt="대표이미지" class="thumb"/>
-        </div>
-
-        <div class="card-body">
-          <div class="body-content">
-            <span class="status-badge" :class="item.adoptionPost.status">
-                {{ getAdoptionStatusLabel(item.adoptionPost.status) }}
-            </span>
-            <div class="card-meta">
-              <span class="species">{{ SpeciesLabels[item.adoptionPost.species] }}</span>
-              <span class="divider">  |  </span>
-              <span class="date">{{
-                  item.adoptionPost.createdAt ? new Date(item.adoptionPost.createdAt).toLocaleDateString('ko-KR') : ''
-                }}</span>
-            </div>
-            <h3 class="card-title">{{ item.adoptionPost.title }}</h3>
-            <div class="card-info">
-              <span>{{ item.adoptionPost.age }}살</span>
-              <span>|</span>
-              <span>{{ SexLabels[item.adoptionPost.sex] }}</span>
-              <span>|</span>
-              <span>{{ item.adoptionPost.area }}</span>
-            </div>
-          </div>
-          <div class="action-btn-area">
-            <button class="btn-action">게시글 보기 〉</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 채팅방 정보 영역 (오른쪽) -->
-      <div class="chat-info-area hover-effect" @click="handleChatClick(item.chatRoomId)">
-        <div class="chat-header">
-          <span class="chat-label">채팅방</span>
-          <span class="chat-date">{{
-              item.chatCreatedAt ? formatDate(item.chatCreatedAt) : ''
-            }}</span>
-        </div>
-        <div class="chat-partner">
-          <span class="partner-name">{{ item.receiverNickname }}</span> 님과의 대화
-        </div>
-        <div class="chat-footer">
-          <button class="btn-delete" @click.stop="handleDeleteChat(item.chatRoomId)">
-            나가기
-          </button>
-          <div class="action-btn-area">
-            <button class="btn-action chat-btn">채팅방 입장 〉</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="pagination">
-    <button @click="handleSearch(currentPage - 1)" :disabled="currentPage === 0">전</button>
-    <button
-        v-for="page in visiblePages"
-        :key="page"
-        :class="{ active: currentPage === page }"
-        @click="handleSearch(page)"
-    >
-      {{ page + 1 }}
-    </button>
-    <button @click="handleSearch(currentPage + 1)" :disabled="currentPage >= totalServerPages - 1">
-      후
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
-import {useRouter} from "vue-router";
-import {SpeciesLabels} from "@/adoption/enums/Species.ts";
-import {SexLabels} from "@/adoption/enums/Sex.ts";
-import {getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
-import {getUserAdoptionPostListByJoinedChat} from "@/adoption/api/adoptionPost.api";
-import {useAuthStore} from "@/auth/stores/auth.ts";
-import {deleteChatRoom} from "@/chat/api/chat.api";
-import {useAlert} from "@/global/composables/useAlert.ts";
-import {
-  AdoptionPostResponse,
-  AdoptionPostWithChatPageResponse,
-  AdoptionPostWithChatResponse
-} from "@/adoption/types/adoptionPost.ts";
-import {RouteHelper} from "@/global/router/routeHelper.ts";
-import {TSID_Long} from "@/global/types/common.ts";
-
-// ==========================================
-// 데이터 호출 및 상태 관리
-// ==========================================
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/auth/stores/auth';
+import { getMyChatRooms } from '@/chat/api/chat.api';
+import type { ChatRoomDto } from '@/chat/types/chat';
+import { RouteHelper } from '@/global/router/routeHelper';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const {toast, confirm} = useAlert();
+const allRooms = ref<ChatRoomDto[]>([]);
+const loading = ref(false);
 
-const searchResult = ref<AdoptionPostWithChatResponse[]>([]);
+// 탭 상태: 'writer' (내가 올린 공고에 대한 채팅) | 'inquirer' (내가 문의한 채팅)
+const currentTab = ref<'inquirer' | 'writer'>('inquirer');
 
-// ==========================================
-// 서버 사이드 페이지네이션
-// ==========================================
+// 탭에 따른 리스트 필터링
+const filteredRooms = computed(() => {
+  const myId = authStore.userId;
+  if (!myId) return [];
+  
+  if (currentTab.value === 'writer') {
+    // 1. 내가 작성자인 게시글에 달린 채팅방들
+    return allRooms.value.filter(room => room.postWriterId === myId);
+  } else {
+    // 2. 남이 작성한 게시글에 내가 문의한 채팅방들
+    return allRooms.value.filter(room => room.postWriterId !== myId);
+  }
+});
 
-const currentPage = ref(0);      // 서버 페이지 번호 (0부터 시작)
-const totalServerPages = ref(1); // 서버에서 반환한 총 페이지 수
-const totalElements = ref(0);    // 서버에서 반환한 총 아이템 수
-const visiblePageCount = 10;     // 페이지네이션 바에 표시할 페이지 버튼 수
+const fetchRooms = async () => {
+  loading.value = true;
+  try {
+    const response = await getMyChatRooms({ size: 10, sort: 'createdAt', direction: 'DESC' });
+    allRooms.value = response.content || [];
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
 
+const goToChatRoom = (roomId: string) => {
+  router.push(RouteHelper.chat.room(roomId));
+};
+
+const goToPostDetail = (postId: string) => {
+  router.push(RouteHelper.adoption.detail(postId));
+};
+
+// 상대방 닉네임 구하기 로직
+const getOtherUserNickname = (room: ChatRoomDto) => {
+  return room.user1Id === authStore.userId ? room.user2Nickname : room.user1Nickname;
+};
+
+// 날짜 포맷팅
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('ko-KR', {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
   });
 };
 
-// page를 인자로 받아 서버에서 해당 페이지 데이터를 불러옴
-const handleSearch = async (page = 0) => {
-  currentPage.value = page;
-  searchResult.value = [];
-
-  const userId = authStore.userId;
-  if (userId) {
-    try {
-      const data: AdoptionPostWithChatPageResponse = await getUserAdoptionPostListByJoinedChat({
-        page,
-        size: 10
-      });
-      searchResult.value = data.content ?? [];
-      totalServerPages.value = data.page.totalPages ?? 1;
-      totalElements.value = data.page.totalElements ?? 0;
-    } catch (error) {
-      console.error("데이터 로드 실패:", error);
-      toast.error("데이터를 불러오는데 실패했습니다.");
-    }
-  } else {
-    toast.error("유효하지 않은 유저입니다");
-  }
-};
-
-
-// 페이지네이션 바에 표시될 페이지 번호 목록 (0-indexed)
-const visiblePages = computed(() => {
-  const half = Math.floor(visiblePageCount / 2);
-  const start = Math.max(0, currentPage.value - half);
-  const end = Math.min(totalServerPages.value - 1, start + visiblePageCount - 1);
-  return Array.from({length: end - start + 1}, (_, i) => start + i);
-});
-
-// 현재 페이지에 표시되는 카드 (서버가 이미 페이지 단위로 반환)
-const visibleCards = computed(() => searchResult.value);
-
-// ==========================================
-// 기타 이벤트 핸들러
-// ==========================================
-
-// 게시글 상세 페이지로 이동
-const handleAdoptionClick = (adoptionPost: AdoptionPostResponse) => {
-  router.push(RouteHelper.adoption.detail(adoptionPost.id));
-};
-
-// 채팅방으로 이동
-const handleChatClick = (chatRoomId: TSID_Long) => {
-  router.push(RouteHelper.chat.room(chatRoomId));
-};
-
-// 채팅방 삭제
-const handleDeleteChat = async (chatRoomId: TSID_Long) => {
-  const confirmed = await confirm("확인", "채팅방을 나가시겠습니까?\n나간 채팅방은 새 메시지가 올 때까지 목록에서 사라집니다.");
-  if (confirmed) {
-    try {
-      await deleteChatRoom(String(chatRoomId));
-      toast.success("채팅방에서 나갔습니다.");
-      await handleSearch(currentPage.value);
-    } catch (error) {
-      console.error("채팅방 삭제 실패:", error);
-      toast.error("채팅방을 나가는데 실패했습니다.");
-    }
-  }
-};
-
-onMounted(async () => {
-  await handleSearch(0); // 초기 로드 시 첫 페이지 검색
-});
+onMounted(() => fetchRooms());
 </script>
 
-<style lang="css" scoped>
+<template>
+  <div class="chat-list-container">
+    <div class="page-header">
+      <h2>대화 목록</h2>
+      <p>진행 중인 모든 채팅 내역입니다.</p>
+    </div>
 
+    <!-- 탭 토글 UI -->
+    <div class="tab-toggle">
+      <button 
+        class="tab-btn"
+        :class="{ active: currentTab === 'inquirer' }" 
+        @click="currentTab = 'inquirer'"
+      >
+        내가 문의한 채팅
+      </button>
+      <button 
+        class="tab-btn"
+        :class="{ active: currentTab === 'writer' }" 
+        @click="currentTab = 'writer'"
+      >
+        내 공고에 온 채팅
+      </button>
+    </div>
 
-.card-header {
-  max-width: 800px;
-  margin: 0 auto 1rem auto;
-  padding: 0 20px;
-}
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>목록을 불러오는 중입니다...</p>
+    </div>
 
-/* card */
+    <div v-else-if="filteredRooms.length > 0" class="room-list">
+      <div v-for="room in filteredRooms" :key="room.id" class="room-card" @click="goToChatRoom(room.id)">
+        <div class="room-info">
+          <div class="user-info">
+            <span class="avatar">👤</span>
+            <span class="nickname">{{ getOtherUserNickname(room) }}</span>
+            <span class="date">{{ formatDate(room.createdAt) }}</span>
+          </div>
+          <div class="post-title" @click.stop="goToPostDetail(room.parentPostId.toString())">
+            게시글: {{ room.parentPostTitle }} <span class="link-arrow">〉</span>
+          </div>
+        </div>
+        <div class="action-arrow">
+          대화하기 〉
+        </div>
+      </div>
+    </div>
 
-.card-container {
+    <div v-else class="empty-state">
+      <div class="empty-icon">💬</div>
+      <p v-if="currentTab === 'inquirer'">문의한 채팅 내역이 없습니다.</p>
+      <p v-else>내 공고에 온 채팅 내역이 없습니다.</p>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.chat-list-container {
   max-width: 800px;
   width: 100%;
-  box-sizing: border-box;
   margin: 0 auto;
-  padding: 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.item-wrapper {
-  display: flex;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  background: white;
-  transition: transform 0.2s, box-shadow 0.2s;
-  height: 180px;
-}
-
-.item-wrapper:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-}
-
-.card.adoption-card {
-  flex: 2;
-  display: flex;
-  flex-direction: row;
-  cursor: pointer;
-  border-right: 1px solid #eaeaea;
-}
-
-.card.adoption-card:hover {
-  background-color: #fcfcfc;
-}
-
-.card-image {
-  width: 160px;
-  min-width: 160px;
-  height: 100%;
-  padding: 10px;
+  padding: 40px 20px;
   box-sizing: border-box;
 }
 
-.thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
+.page-header {
+  margin-bottom: 24px;
+  text-align: center;
 }
 
-.card-body {
-  padding: 15px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.body-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.status-badge {
-  display: inline-block;
-  width: fit-content;
-  background-color: #ff9800;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: bold;
-  margin-bottom: 6px;
-}
-
-.status-badge.COMPLETED {
-  background-color: #888;
-}
-
-.status-badge.RESERVED {
-  background-color: #2196f3;
-}
-
-.card-meta {
-  font-size: 12px;
-  color: #888;
-  margin-bottom: 5px;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: bold;
+.page-header h2 {
+  font-size: 28px;
   color: #333;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin-bottom: 8px;
 }
 
-.card-info {
-  font-size: 13px;
+.page-header p {
   color: #666;
-  display: flex;
-  gap: 6px;
 }
 
-/* 채팅 정보 영역 */
-.chat-info-area {
+/* 탭 토글 */
+.tab-toggle {
+  display: flex;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #eee;
+}
+
+.tab-btn {
   flex: 1;
-  background-color: #fffaf0;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-left: 1px solid #f5eedc;
-}
-
-.chat-info-area:hover {
-  background-color: #fff4e5;
-}
-
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.chat-label {
-  font-size: 12px;
-  font-weight: bold;
-  color: #eaa221;
-  background: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid #ffd8a8;
-}
-
-.chat-date {
-  font-size: 11px;
-  color: #999;
-}
-
-.chat-partner {
-  font-size: 14px;
-  color: #444;
-  margin-bottom: 15px;
-}
-
-.partner-name {
-  font-weight: bold;
-  color: #333;
-}
-
-.chat-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-
-.btn-delete {
-  font-size: 12px;
-  color: #ff5252;
+  padding: 16px 0;
   background: none;
-  border: 1px solid #ff5252;
-  padding: 2px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-delete:hover {
-  background-color: #ff5252;
-  color: white;
-}
-
-.chat-action {
-  font-size: 12px;
+  border: none;
+  font-size: 16px;
   font-weight: 600;
-  color: #eaa221;
-  text-align: right;
-}
-
-/* 추가된 버튼 스타일 */
-.hover-effect {
+  color: #888;
+  cursor: pointer;
   position: relative;
+  transition: color 0.2s;
 }
 
-.hover-effect::after {
+.tab-btn.active {
+  color: #ff9800;
+}
+
+.tab-btn.active::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  border: 2px solid transparent;
-  transition: border-color 0.2s;
-  pointer-events: none;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #ff9800;
 }
 
-.item-wrapper:hover .hover-effect:hover::after {
-  border-color: rgba(234, 162, 33, 0.4);
+.tab-btn:hover:not(.active) {
+  color: #555;
+  background-color: #fafafa;
 }
 
-.action-btn-area {
+/* 리스트 */
+.room-list {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.btn-action {
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  padding: 6px 12px;
-  border-radius: 6px;
+.room-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 12px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.2s;
 }
 
-.btn-action.chat-btn {
-  color: white;
-  background: #eaa221;
-  border-color: #eaa221;
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #ddd;
 }
 
-.hover-effect:hover .btn-action:not(.chat-btn) {
-  background: #eaeaea;
+.room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  font-size: 20px;
+}
+
+.nickname {
+  font-size: 16px;
+  font-weight: 600;
   color: #333;
 }
 
-.hover-effect:hover .btn-action.chat-btn {
-  background: #d9921b;
-  border-color: #d9921b;
+.date {
+  font-size: 13px;
+  color: #999;
+  margin-left: 8px;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  margin: 2rem 0;
+.post-title {
+  font-size: 14px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+  transition: background 0.2s;
 }
 
-.pagination button {
-  border: 1px solid #ccc;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
+.post-title:hover {
+  background: #eee;
+  color: #333;
 }
 
-.pagination button.active {
-  background-color: #eaa221;
-  color: white;
-  border-color: #eaa221;
+.link-arrow {
+  font-size: 11px;
+  color: #aaa;
 }
 
-@media (max-width: 640px) {
-  .item-wrapper {
-    flex-direction: column;
-    height: auto;
-  }
+.action-arrow {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc;
+  transition: color 0.2s;
+}
 
-  .card.adoption-card {
-    border-right: none;
-    border-bottom: 1px dashed #eee;
-  }
+.room-card:hover .action-arrow {
+  color: #ff9800;
+}
 
-  .chat-info-area {
-    padding: 15px;
-  }
+/* 로딩 & 빈 상태 */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 80px 0;
+  color: #888;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #ff9800;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
 }
 </style>

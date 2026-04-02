@@ -2,7 +2,6 @@ import api from "@/global/api";
 import { ApiResponse, PageableParams } from "@/global/types/common";
 import {
   AdoptionPostPageResponse, AdoptionPostDetailResponse,
-  AdoptionPostWithChatPageResponse,
   AdoptionPostSearchParams,
   AdoptionCandidateResponse,
   CompleteAdoptionRequest,
@@ -88,16 +87,6 @@ export const getAdoptionPostListByAdopter = async (userId: TSID, params?: Pageab
   return page;
 };
 
-export const getUserAdoptionPostListByJoinedChat = async (params?: PageableParams): Promise<AdoptionPostWithChatPageResponse> => {
-  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostWithChatPageResponse>>(`/adoption/chat`, { params });
-  const response = apiResponse.data;
-
-  if (!response) {
-    throw new Error("참여 중인 입양 대화 목록을 불러오지 못했습니다.");
-  }
-
-  return response;
-};
 
 // 입양 후보자(채팅 상대) 목록 조회
 export const getAdoptionCandidates = async (id: number | string): Promise<AdoptionCandidateResponse[]> => {

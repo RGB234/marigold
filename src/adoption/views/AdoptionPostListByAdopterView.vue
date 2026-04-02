@@ -68,8 +68,7 @@ onMounted(() => {
 <template>
     <div class="list-container">
         <div class="page-header">
-            <h2>내 입양 목록</h2>
-            <p>나와 새로운 가족이 된 아이들입니다.</p>
+            <h2>입양 목록</h2>
         </div>
 
         <div v-if="loading" class="loading-state">
