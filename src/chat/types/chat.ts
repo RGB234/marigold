@@ -2,8 +2,8 @@ import {Long_String, PageResponse, TSID_String} from "@/global/types/common.ts";
 
 export interface ChatRoomDto {
     id: TSID_String;
-    parentPostId: Long_String;
-    parentPostTitle: string;
+    postId: Long_String;
+    postTitle: string;
     postWriterId: TSID_String;
     user1Id: TSID_String; // TSID
     user1Nickname: string;

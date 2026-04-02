@@ -1,6 +1,6 @@
 import api from "@/global/api";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
-import {ApiResponse, Long_String, Pageable, PageableParams} from "@/global/types/common.ts";
+import {ApiResponse, Long_String, PageableParams} from "@/global/types/common.ts";
 
 export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: Long_String): Promise<ChatRoomDto> => {
   const {data: apiResponse} = await api.post<ApiResponse<ChatRoomDto>>(`/chat/rooms`, {adoptionPostId, receiverId});
@@ -10,7 +10,19 @@ export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverI
   return apiResponse.data;
 };
 
-export const getMyChatRooms = async (params?: PageableParams): Promise<ChatRoomPageResponse> => {
+export interface ChatRoomSearchParams extends PageableParams {
+  type?: 'writer' | 'inquirer';
+}
+
+export const getChatRoom = async (roomId: Long_String): Promise<ChatRoomDto> => {
+  const {data: apiResponse} = await api.get<ApiResponse<ChatRoomDto>>(`/chat/rooms/${roomId}`);
+  if (!apiResponse.data) {
+    throw new Error("채팅방 데이터를 불러오지 못했습니다.");
+  }
+  return apiResponse.data;
+};
+
+export const getMyChatRooms = async (params?: ChatRoomSearchParams): Promise<ChatRoomPageResponse> => {
   const {data: apiResponse} =  await api.get<ApiResponse<ChatRoomPageResponse>>(`/chat/rooms`, {params});
   const page = apiResponse.data;
 

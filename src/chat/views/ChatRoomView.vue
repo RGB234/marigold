@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, onUnmounted, ref} from 'vue';
-import {useRoute} from 'vue-router';
+import {useRoute, useRouter} from 'vue-router';
 import {Client} from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import {useAuthStore} from '@/auth/stores/auth';
-import {getChatRoomMessages} from '@/chat/api/chat.api';
+import {getChatRoomMessages, getChatRoom} from '@/chat/api/chat.api';
+import {getAdoptionPostSummary} from '@/adoption/api/adoptionPost.api';
 import {ChatMessageDto} from '@/chat/types/chat';
+import type {AdoptionPostResponse} from '@/adoption/types/adoptionPost';
+import {RouteHelper} from '@/global/router/routeHelper';
+import {AdoptionPostStatus, getAdoptionStatusLabel} from '@/adoption/enums/AdoptionPostStatus';
+import NoImage from '@/assets/images/no-image.jpeg';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const roomId = computed(() => Array.isArray(route.params) ? route.params[0].roomId : route.params.roomId);
 const currentUserId = computed(() => authStore.userId);
@@ -16,6 +22,8 @@ const currentUserId = computed(() => authStore.userId);
 const messages = ref<ChatMessageDto[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
+
+const postInfo = ref<AdoptionPostResponse | null>(null);
 
 const isReconnecting = ref(false);
 const isConnectionFailed = ref(false);
@@ -116,7 +124,25 @@ const sendMessage = () => {
   newMessage.value = '';
 };
 
+const fetchPostDetail = async () => {
+  try {
+    const room = await getChatRoom(roomId.value);
+    const postInfoData = await getAdoptionPostSummary(room.postId.toString());
+    postInfo.value = postInfoData;
+  } catch (error) {
+    console.error('Failed to fetch post detail:', error);
+  }
+};
+
+const goToPostDetail = () => {
+  if (postInfo.value) {
+    router.push(RouteHelper.adoption.detail(postInfo.value.id.toString()));
+  }
+};
+
 onMounted(async () => {
+  await fetchPostDetail();
+
   try {
     const initialMessages = await getChatRoomMessages(roomId.value);
     messages.value = initialMessages;
@@ -136,7 +162,21 @@ onUnmounted(() => {
 <template>
   <div class="chat-container">
     <div class="chat-header">
-      <h2>1:1 채팅</h2>
+      <div v-if="postInfo" class="post-summary" @click="goToPostDetail">
+          <div class="summary-img">
+              <img :src="postInfo.imageUrl as string || NoImage" alt="썸네일" />
+          </div>
+          <div class="summary-info">
+              <div class="summary-status-row">
+                  <span class="status-badge" :class="{ done: postInfo.status === AdoptionPostStatus.COMPLETED }">
+                      {{ getAdoptionStatusLabel(postInfo.status) }}
+                  </span>
+              </div>
+              <div class="summary-title">{{ postInfo.title }}</div>
+          </div>
+          <div class="shortcut-btn">게시글 바로가기 〉</div>
+      </div>
+      <h2 v-else>1:1 채팅</h2>
     </div>
 
     <div v-if="isReconnecting" class="connection-banner reconnecting">
@@ -195,7 +235,82 @@ onUnmounted(() => {
   padding: 16px;
   background: #fff;
   border-bottom: 1px solid #eee;
-  text-align: center;
+  text-align: left;
+}
+
+.post-summary {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.post-summary:hover {
+  background-color: #f1f3f5;
+}
+
+.summary-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.summary-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.summary-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+.status-badge {
+  display: inline-block;
+  background-color: #ff9800;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.status-badge.done {
+  background-color: #888;
+}
+
+.summary-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.shortcut-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.post-summary:hover .shortcut-btn {
+  color: #ff9800;
 }
 
 .messages-wrapper {

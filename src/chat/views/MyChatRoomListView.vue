@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/auth/stores/auth';
 import { getMyChatRooms } from '@/chat/api/chat.api';
@@ -14,24 +14,15 @@ const loading = ref(false);
 // 탭 상태: 'writer' (내가 올린 공고에 대한 채팅) | 'inquirer' (내가 문의한 채팅)
 const currentTab = ref<'inquirer' | 'writer'>('inquirer');
 
-// 탭에 따른 리스트 필터링
-const filteredRooms = computed(() => {
-  const myId = authStore.userId;
-  if (!myId) return [];
-  
-  if (currentTab.value === 'writer') {
-    // 1. 내가 작성자인 게시글에 달린 채팅방들
-    return allRooms.value.filter(room => room.postWriterId === myId);
-  } else {
-    // 2. 남이 작성한 게시글에 내가 문의한 채팅방들
-    return allRooms.value.filter(room => room.postWriterId !== myId);
-  }
-});
-
 const fetchRooms = async () => {
   loading.value = true;
   try {
-    const response = await getMyChatRooms({ size: 10, sort: 'createdAt', direction: 'DESC' });
+    const response = await getMyChatRooms({ 
+      type: currentTab.value,
+      size: 10, 
+      sort: 'createdAt', 
+      direction: 'DESC' 
+    });
     allRooms.value = response.content || [];
   } catch (error) {
     console.error(error);
@@ -39,6 +30,10 @@ const fetchRooms = async () => {
     loading.value = false;
   }
 };
+
+watch(currentTab, () => {
+  fetchRooms();
+});
 
 const goToChatRoom = (roomId: string) => {
   router.push(RouteHelper.chat.room(roomId));
@@ -88,7 +83,7 @@ onMounted(() => fetchRooms());
         :class="{ active: currentTab === 'writer' }" 
         @click="currentTab = 'writer'"
       >
-        내 공고에 온 채팅
+        내 게시글로 온 채팅
       </button>
     </div>
 
@@ -97,16 +92,16 @@ onMounted(() => fetchRooms());
       <p>목록을 불러오는 중입니다...</p>
     </div>
 
-    <div v-else-if="filteredRooms.length > 0" class="room-list">
-      <div v-for="room in filteredRooms" :key="room.id" class="room-card" @click="goToChatRoom(room.id)">
+    <div v-else-if="allRooms.length > 0" class="room-list">
+      <div v-for="room in allRooms" :key="room.id" class="room-card" @click="goToChatRoom(room.id)">
         <div class="room-info">
           <div class="user-info">
             <span class="avatar">👤</span>
             <span class="nickname">{{ getOtherUserNickname(room) }}</span>
             <span class="date">{{ formatDate(room.createdAt) }}</span>
           </div>
-          <div class="post-title" @click.stop="goToPostDetail(room.parentPostId.toString())">
-            게시글: {{ room.parentPostTitle }} <span class="link-arrow">〉</span>
+          <div class="post-title" @click.stop="goToPostDetail(room.postId.toString())">
+            게시글: {{ room.postTitle }} <span class="link-arrow">〉</span>
           </div>
         </div>
         <div class="action-arrow">

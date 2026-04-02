@@ -5,6 +5,7 @@ import {
   AdoptionPostSearchParams,
   AdoptionCandidateResponse,
   CompleteAdoptionRequest,
+  AdoptionPostResponse,
 } from "@/adoption/types/adoptionPost";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 type TSID = string;
@@ -30,6 +31,18 @@ export const updateAdoptionPostStatus = async (id: BigInt | string, status: stri
     const params = { status };
     await api.patch<ApiResponse<void>>(`/adoption/${id}/status`, null, { params });
 };
+
+
+export const getAdoptionPostSummary = async (id: number | string): Promise<AdoptionPostResponse> => {
+  const {data: apiResponse} = await api.get<ApiResponse<AdoptionPostResponse>>(`/adoption/${id}/summary`);
+
+  if (!apiResponse.data) {
+    throw new Error("입양 게시글 데이터를 불러오지 못했습니다.");
+  }
+
+  return apiResponse.data;
+};
+
 
 // 상세보기
 export const getAdoptionPostDetail = async (id: number | string): Promise<AdoptionPostDetailResponse> => {

@@ -64,7 +64,7 @@ export interface AdoptionPostResponse {
   age: number;
   sex: Sex;
   area: string;
-  imageUrl: ImageUrl;
+  imageUrl: string;
   status: AdoptionPostStatus;
   createdAt: ISO8601DateString;
 }
