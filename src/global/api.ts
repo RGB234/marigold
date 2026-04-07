@@ -63,21 +63,26 @@ api.interceptors.response.use(
       if (!skipAlert) {
         switch (errorResponse.status) {
           case 400:
-            await alert("요청 오류", errorResponse.message);
+            await alert("400 Bad Request", "잘못된 요청입니다");
+            console.debug(errorResponse.message);
             break;
           case 401:
-            await alert("인증 필요", errorResponse.message);
+            await alert("401 Unauthorized", "인증 필요");
+            console.debug(errorResponse.message);
             router.push(RouteHelper.auth.login());
             break;
           case 404:
-            await alert("찾을 수 없음", errorResponse.message);
+            await alert("404 Not Found", "페이지를 찾을 수 없습니다");
+            console.debug(errorResponse.message);
             router.back();
             break;
           case 500:
-            await alert("서버 오류", errorResponse.message);
+            await alert("500 Internal Server Error", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            console.debug(errorResponse.message);
             break;
           default:
-            await alert("오류", errorResponse.message);
+            await alert("Error " + errorResponse.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            console.debug(errorResponse.message);
             break;
         }
       } else {
@@ -92,11 +97,12 @@ api.interceptors.response.use(
       }
     } else {
       if (!skipAlert) {
-        await alert("네트워크 오류", error.message);
+        await alert("Error " + error.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        console.debug(error.message);
       }
     }
 
-    // 호출한 측에서 에러 객체를 그대로 활용할 수 있도록 수정 (error.response.data에 접근 가능)
+    // 호출한 측에서 에러 객체를 그대로 활용할 수 있도록 리턴 (error.response.data에 접근 가능)
     return Promise.reject(error);
   }
 );
