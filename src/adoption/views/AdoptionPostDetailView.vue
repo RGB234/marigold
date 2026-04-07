@@ -166,12 +166,6 @@ const handleChatRequest = async () => {
   }
 };
 
-const goToProfile = () => {
-  if (!detail.value) return;
-  const writerId = detail.value.writer?.id;
-  if (writerId) router.push(RouteHelper.user.profile(writerId));
-};
-
 const goToChatList = () => {
   if (detail.value) {
     router.push(RouteHelper.adoption.chatList(detail.value.id.toString()));
@@ -192,8 +186,7 @@ onMounted(async () => {
   <div class="detail-container">
     <div class="back-btn-wrapper">
       <button class="btn-back" @click="goBack">
-        < 목록으로
-      </button>
+        < 목록으로 </button>
     </div>
 
     <div v-if="detail" class="content-wrapper">
@@ -201,7 +194,7 @@ onMounted(async () => {
         <div class="header-top">
           <div class="title-row">
             <span class="badge species">{{ SpeciesLabels[detail.species] }}</span>
-            <span class="badge" :class="detail.status">{{
+            <span class="badge status" :class="detail.status">{{
               getAdoptionStatusLabel(detail.status)
             }}</span>
             <h1 class="name">{{ detail.title }}</h1>
@@ -213,11 +206,17 @@ onMounted(async () => {
           </div>
         </div>
         <div class="meta-info">
-          <UserProfileLink :userId="detail.writer?.id" :nickname="detail.writer?.nickname" :imageUrl="detail.writer?.imageUrl" :showImage="true" />
-          <span class="divider">|</span>
+          <UserProfileLink :userId="detail.writer?.id" :nickname="detail.writer?.nickname"
+            :imageUrl="detail.writer?.imageUrl" :showImage="true" />
+          <!-- <span class="divider">|</span>
           <span>등록일: {{ formatDate(detail.createdAt) }}</span>
           <span class="divider">|</span>
-          <span>수정일: {{ formatDate(detail.modifiedAt) }}</span>
+          <span>수정일: {{ formatDate(detail.modifiedAt) }}</span> -->
+          <div class="meta-info-date">
+            <span>등록일: {{ formatDate(detail.createdAt) }}</span>
+            <span class="divider">|</span>
+            <span>수정일: {{ formatDate(detail.modifiedAt) }}</span>
+          </div>
         </div>
       </div>
 
@@ -267,9 +266,7 @@ onMounted(async () => {
       <div class="button-group">
         <div class="action-buttons-wrapper">
           <!-- 작성자가 아닌 경우: 입양 문의하기 -->
-          <button
-            v-if="isLoggedIn && !isAuthor"
-            class="btn primary" @click="handleChatRequest">
+          <button v-if="isLoggedIn && !isAuthor" class="btn primary" @click="handleChatRequest">
             입양 문의 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
           </button>
 
@@ -313,7 +310,8 @@ onMounted(async () => {
           <div v-for="candidate in candidates" :key="candidate.id" class="candidate-item"
             :class="{ selected: selectedAdopterId === candidate.id }" @click="selectedAdopterId = candidate.id">
             <div class="candidate-profile">
-              <UserProfileLink :userId="candidate.id" :nickname="candidate.nickname" :imageUrl="candidate.imageUrl" :showImage="true" />
+              <UserProfileLink :userId="candidate.id" :nickname="candidate.nickname" :imageUrl="candidate.imageUrl"
+                :showImage="true" />
             </div>
             <div class="candidate-radio">
               <input type="radio" :value="candidate.id" v-model="selectedAdopterId" />
@@ -389,11 +387,20 @@ onMounted(async () => {
   flex: 1;
 }
 
-.badge {
+.badge.species {
+  background-color: #888;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.badge.status {
   background-color: #ff9800;
   color: #fff;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: bold;
 }
@@ -413,6 +420,16 @@ onMounted(async () => {
 }
 
 .meta-info {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 12px;
+  font-size: 14px;
+  color: #888;
+}
+
+.meta-info-date {
   display: flex;
   align-items: center;
   gap: 4px;

@@ -67,7 +67,7 @@
         <!-- 이미지 업로드 필드 -->
         <div class="field full">
           <span class="field-label required">이미지 (최대 {{ MAX_IMAGE_COUNT }}개)</span>
-          <input type="file" id="images" accept="image/*" multiple @change="handleImageChange" class="file-input-hidden"
+          <input type="file" id="images" accept="image/jpeg, image/png, image/webp" multiple @change="handleImageChange" class="file-input-hidden"
             ref="fileInputRef" />
           <div class="image-upload-area">
             <div class="image-preview-container">
@@ -215,11 +215,22 @@ const handleImageChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (!target.files) return;
   
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
   // 기존 form.images에 있는 파일들
   const currentNewImages = form.images;
   
   // 새로 선택된 파일들
   const selectedFiles = Array.from(target.files);
+
+  // 허용 확장자 검증
+  for (const file of selectedFiles) {
+    if (!allowedTypes.includes(file.type)) {
+      errors.images = "JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.";
+      if (fileInputRef.value) fileInputRef.value.value = "";
+      return;
+    }
+  }
 
   const allNewImages = [...currentNewImages, ...selectedFiles];
 

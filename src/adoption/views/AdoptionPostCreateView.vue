@@ -70,7 +70,7 @@
           <input
             type="file"
             id="images"
-            accept="image/*"
+            accept="image/jpeg, image/png, image/webp"
             multiple
             @change="handleImageChange"
             class="file-input-hidden"
@@ -199,7 +199,17 @@ const handleImageChange = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (!target.files) return;
 
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
   const newFiles = Array.from(target.files);
+
+  for (const file of newFiles) {
+    if (!allowedTypes.includes(file.type)) {
+      errors.images = "JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.";
+      if (fileInputRef.value) fileInputRef.value.value = "";
+      return;
+    }
+  }
+
   const currentImages = Array.from(form.images || []);
 
   // 각 파일 크기 체크 (5MB 제한)

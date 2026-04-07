@@ -8,7 +8,7 @@
                     <img :src="previewUrl" alt="프로필 이미지" class="profile-img" />
                 </div>
 
-                <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" style="display: none" />
+                <input type="file" ref="fileInput" @change="handleFileChange" accept="image/jpeg, image/png, image/webp" style="display: none" />
 
                 <button v-if="previewUrl" type="button" class="remove-btn" @click.stop="resetImageToDefault">
                     기본 이미지
@@ -108,6 +108,12 @@ const handleFileChange = (event: Event) => {
     errors.image = '';
 
     if (file) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            errors.image = 'JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.';
+            return;
+        }
+
         if (file.size > 5 * 1024 * 1024) {
             errors.image = '파일 크기는 5MB 이하여야 합니다.';
             return;
