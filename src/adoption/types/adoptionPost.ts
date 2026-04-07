@@ -67,6 +67,7 @@ export interface AdoptionPostResponse {
   imageUrl: string;
   status: AdoptionPostStatus;
   createdAt: ISO8601DateString;
+  isDeleted: boolean;
 }
 
 /**
@@ -119,6 +120,7 @@ export interface AdoptionPostDetailResponse {
     imageUrl: ImageUrl | null;
   };
   chatRoomCount: number;
+  deleted: boolean;
 }
 
 export interface AdoptionCandidateResponse {

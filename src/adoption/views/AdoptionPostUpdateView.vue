@@ -173,29 +173,40 @@ const openLightbox = (index: number) => { lightboxIndex.value = index; };
 const closeLightbox = () => { lightboxIndex.value = null; };
 
 const handleFetchAdoption = async () => {
-  const data = await getAdoptionPostDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
+  try {
+    const data = await getAdoptionPostDetail(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
 
-  Object.assign(form, {
-    species: data.species,
-    title: data.title,
-    age: data.age,
-    sex: data.sex,
-    area: data.area,
-    weight: data.weight,
-    neutering: data.neutering,
-    features: data.features,
-  });
+    if (data.deleted) {
+      toast.error("삭제된 게시글은 수정할 수 없습니다.");
+      router.replace(RouteHelper.adoption.deleted());
+      return;
+    }
 
-  // 수정 전 이미지 목록 저장
-  if(data.imageFileNames?.length > 0) {
-    form.imagesToKeep = data.imageFileNames.map((fileName, index) => ({
-      fileName: fileName,
-      url: data.imageUrls[index],
-    }));
-  }
-  // 이미지 Presigned URL (렌더링용)
-  if (data.imageUrls?.length > 0) {
-    imagePreviews.value = [...data.imageUrls];
+    Object.assign(form, {
+      species: data.species,
+      title: data.title,
+      age: data.age,
+      sex: data.sex,
+      area: data.area,
+      weight: data.weight,
+      neutering: data.neutering,
+      features: data.features,
+    });
+
+    // 수정 전 이미지 목록 저장
+    if(data.imageFileNames?.length > 0) {
+      form.imagesToKeep = data.imageFileNames.map((fileName, index) => ({
+        fileName: fileName,
+        url: data.imageUrls[index],
+      }));
+    }
+    // 이미지 Presigned URL (렌더링용)
+    if (data.imageUrls?.length > 0) {
+      imagePreviews.value = [...data.imageUrls];
+    }
+  } catch (error) {
+    console.error(error);
+    router.push(RouteHelper.adoption.list());
   }
 }
 

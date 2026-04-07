@@ -111,9 +111,6 @@ onMounted(() => {
                         <img :src="candidate.imageUrl || NoImage" alt="프로필" class="candidate-img" />
                         <span class="candidate-nickname">{{ candidate.nickname }}</span>
                     </div>
-                    <div class="action-arrow">
-                        채팅방 이동 〉
-                    </div>
                 </div>
             </div>
 
@@ -172,13 +169,7 @@ onMounted(() => {
     padding: 16px;
     background-color: #f8f9fa;
     border-radius: 8px;
-    /* cursor: pointer;
-    transition: background-color 0.2s; */
 }
-
-/* .post-summary:hover {
-    background-color: #f1f3f5;
-} */
 
 .summary-img {
     width: 100px;
@@ -257,7 +248,8 @@ h3 {
 
 .candidate-item {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 10px;
     padding: 16px;
     border: 1px solid #eee;

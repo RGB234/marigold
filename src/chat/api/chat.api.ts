@@ -41,6 +41,6 @@ export const getChatRoomMessages = async (roomId: Long_String): Promise<ChatMess
   return apiResponse.data;
 };
 
-export const deleteChatRoom = async (roomId: Long_String): Promise<void> => {
-  await api.delete(`/chat/rooms/${roomId}`);
+export const leaveChatRoom = async (roomId: Long_String): Promise<void> => {
+  await api.delete(`/chat/rooms/${roomId}/leave`);
 };

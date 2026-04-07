@@ -21,11 +21,6 @@ export type Long_String = string;
 export type ISO8601DateString = string;
 
 /**
- * 이미지 URL 경로
- */
-export type ImageUrl = string;
-
-/**
  * 백엔드 공통 응답 래퍼 인터페이스
  */
 export interface ApiResponse<T = void> {

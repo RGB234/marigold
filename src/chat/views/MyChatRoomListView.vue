@@ -5,6 +5,7 @@ import { useAuthStore } from '@/auth/stores/auth';
 import { getMyChatRooms } from '@/chat/api/chat.api';
 import type { ChatRoomDto } from '@/chat/types/chat';
 import { RouteHelper } from '@/global/router/routeHelper';
+import UserProfileLink from '@/global/components/UserProfileLink.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -46,6 +47,11 @@ const goToPostDetail = (postId: string) => {
 // 상대방 닉네임 구하기 로직
 const getOtherUserNickname = (room: ChatRoomDto) => {
   return room.user1Id === authStore.userId ? room.user2Nickname : room.user1Nickname;
+};
+
+// 상대방 ID 구하기 로직
+const getOtherUserId = (room: ChatRoomDto) => {
+  return room.user1Id === authStore.userId ? room.user2Id : room.user1Id;
 };
 
 // 날짜 포맷팅
@@ -93,19 +99,21 @@ onMounted(() => fetchRooms());
     </div>
 
     <div v-else-if="allRooms.length > 0" class="room-list">
-      <div v-for="room in allRooms" :key="room.id" class="room-card" @click="goToChatRoom(room.id)">
+      <div v-for="room in allRooms" :key="room.id" class="room-card" :class="{ 'closed': room.status === 'CLOSED' }" @click="goToChatRoom(room.id)">
         <div class="room-info">
           <div class="user-info">
-            <span class="avatar">👤</span>
-            <span class="nickname">{{ getOtherUserNickname(room) }}</span>
+            <UserProfileLink :userId="getOtherUserId(room)" :nickname="getOtherUserNickname(room)" :showImage="false" />
             <span class="date">{{ formatDate(room.createdAt) }}</span>
           </div>
           <div class="post-title" @click.stop="goToPostDetail(room.postId.toString())">
             게시글: {{ room.postTitle }} <span class="link-arrow">〉</span>
           </div>
         </div>
-        <div class="action-arrow">
+        <div class="action-arrow" v-if="room.status === 'ACTIVE'">
           대화하기 〉
+        </div>
+        <div class="action-arrow closed-badge" v-else>
+          종료됨
         </div>
       </div>
     </div>
@@ -263,8 +271,21 @@ onMounted(() => fetchRooms());
   transition: color 0.2s;
 }
 
-.room-card:hover .action-arrow {
+.room-card:not(.closed):hover .action-arrow {
   color: #ff9800;
+}
+
+.room-card.closed {
+  filter: grayscale(100%);
+  opacity: 0.7;
+}
+
+.closed-badge {
+  font-size: 12px;
+  background: #eee;
+  color: #888;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 /* 로딩 & 빈 상태 */

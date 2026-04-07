@@ -12,9 +12,8 @@
 
         <!-- 드롭다운 메뉴 (Vuetify 대체) -->
         <div v-if="isMenuOpen" class="dropdown-menu">
-          <div class="menu-header">
-            <img :src="userInfo.imageUrl" alt="프로필 이미지" class="header-profile-image">
-            <span class="header-nickname">{{ userInfo.nickname }}</span>
+          <div class="menu-header" @click="handleNavigation(RouteHelper.user.profile(userId))">
+            <UserProfileLink class="app-profile-link" :userId="userId" :nickname="userInfo.nickname" :imageUrl="userInfo.imageUrl" :showImage="true" imageSize="2.5rem" />
           </div>
           
           <div class="divider"></div>
@@ -68,8 +67,9 @@ import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
 import { getUserProfile } from "./user/api/user.api";
-import { UserProfileResponse } from "./user/types/user";
+import { UserInfoDto } from "./user/types/user";
 import { RouteLocationRaw } from "vue-router";
+import UserProfileLink from '@/global/components/UserProfileLink.vue';
 
 const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
@@ -81,7 +81,7 @@ const { alert } = useAlert();
 const isMenuOpen = ref(false);
 const menuContainer = ref<HTMLElement | null>(null);
 
-const userInfo = ref<UserProfileResponse>({
+const userInfo = ref<UserInfoDto>({
   id: '',
   nickname: '',
   imageUrl: ''
@@ -230,16 +230,20 @@ a {
   align-items: center;
   padding: 16px;
   gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.header-profile-image {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  object-fit: cover;
+.menu-header:hover {
+  background-color: #f5f5f5;
 }
 
-.header-nickname {
+/* UserProfileLink 오버라이딩 */
+:deep(.app-profile-link) {
+  pointer-events: none; /* 자체 링크 클릭 방지, 부모 div 이벤트 사용 */
+}
+
+:deep(.app-profile-link .nickname) {
   font-size: 1.1rem;
   font-weight: 700;
   color: #333;

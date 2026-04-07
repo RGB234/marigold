@@ -14,6 +14,7 @@ import { useAuthStore } from '@/auth/stores/auth';
 import { useAlert } from '@/global/composables/useAlert';
 import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoption/types/adoptionPost.ts";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
+import UserProfileLink from '@/global/components/UserProfileLink.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,7 +52,12 @@ const formatDate = (dateString: string) => {
 
 const fetchDetail = async (id: string | string[]) => {
   try {
-    detail.value = await getAdoptionPostDetail(Array.isArray(id) ? id[0] : id);
+    const data = await getAdoptionPostDetail(Array.isArray(id) ? id[0] : id);
+    if (data.deleted) {
+      router.replace(RouteHelper.adoption.deleted());
+      return;
+    }
+    detail.value = data;
   } catch (error) {
     router.push(RouteHelper.adoption.list());
   }
@@ -66,7 +72,7 @@ const editPost = () => {
 // 게시글 삭제 확인
 const confirmDelete = async () => {
   if (await confirm("경고", "정말로 이 게시글을 삭제하시겠습니까?")) {
-    deletePost();
+    await deletePost();
   }
 };
 
@@ -173,7 +179,7 @@ const goToChatList = () => {
 };
 
 const goBack = () => {
-  router.back();
+  router.push(RouteHelper.adoption.list());
 };
 
 onMounted(async () => {
@@ -186,9 +192,10 @@ onMounted(async () => {
   <div class="detail-container">
     <div class="back-btn-wrapper">
       <button class="btn-back" @click="goBack">
-        < 뒤로가기
+        < 목록으로
       </button>
     </div>
+
     <div v-if="detail" class="content-wrapper">
       <div class="header-section">
         <div class="header-top">
@@ -206,9 +213,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="meta-info">
-          <span @click="goToProfile()" class="clickable">작성자: {{
-            detail.writer?.nickname || '알 수 없음'
-          }}</span>
+          <UserProfileLink :userId="detail.writer?.id" :nickname="detail.writer?.nickname" :imageUrl="detail.writer?.imageUrl" :showImage="true" />
           <span class="divider">|</span>
           <span>등록일: {{ formatDate(detail.createdAt) }}</span>
           <span class="divider">|</span>
@@ -263,7 +268,7 @@ onMounted(async () => {
         <div class="action-buttons-wrapper">
           <!-- 작성자가 아닌 경우: 입양 문의하기 -->
           <button
-            v-if="isLoggedIn && !isAuthor && detail.status === AdoptionPostStatus.PROCEEDING || detail.adopter?.id === detail.writer?.id"
+            v-if="isLoggedIn && !isAuthor"
             class="btn primary" @click="handleChatRequest">
             입양 문의 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
           </button>
@@ -308,8 +313,7 @@ onMounted(async () => {
           <div v-for="candidate in candidates" :key="candidate.id" class="candidate-item"
             :class="{ selected: selectedAdopterId === candidate.id }" @click="selectedAdopterId = candidate.id">
             <div class="candidate-profile">
-              <img :src="candidate.imageUrl || undefined" alt="프로필" class="candidate-img" />
-              <span class="candidate-nickname">{{ candidate.nickname }}</span>
+              <UserProfileLink :userId="candidate.id" :nickname="candidate.nickname" :imageUrl="candidate.imageUrl" :showImage="true" />
             </div>
             <div class="candidate-radio">
               <input type="radio" :value="candidate.id" v-model="selectedAdopterId" />
@@ -409,6 +413,9 @@ onMounted(async () => {
 }
 
 .meta-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
   color: #888;
 }

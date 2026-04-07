@@ -9,21 +9,22 @@ export const RouteNames = {
     CALLBACK: "callback",
   },
   ADOPTION: {
-    LIST: "list",
-    DETAIL: "detail",
-    CREATE: "create",
-    UPDATE: "update",
-    ADOPTER_LIST: "adopter_list",
-    WRITER_LIST: "writer_list",
+    LIST: "adoption_list",
+    DETAIL: "adoption_detail",
+    CREATE: "adoption_create",
+    UPDATE: "adoption_update",
+    ADOPTER_LIST: "adoption_adopter_list",
+    WRITER_LIST: "adoption_writer_list",
     CHAT_LIST: "adoption_chat_list",
+    DELETED: "adoption_deleted",
   },
   USER: {
-    PROFILE: "profile",
-    PROFILE_UPDATE: "profile_update",
+    PROFILE: "user_profile",
+    PROFILE_UPDATE: "user_profile_update",
   },
   CHAT: {
-    LIST: "list",
-    ROOM: "room",
+    LIST: "chat_list",
+    ROOM: "chat_room",
   },
 } as const;
 
@@ -62,6 +63,7 @@ export const RouteHelper = {
       name: RouteNames.ADOPTION.CHAT_LIST,
       params: {id: id},
     }),
+    deleted: () => ({name: RouteNames.ADOPTION.DELETED}),
   },
   user: {
     profile: (id: TSID_String) => ({

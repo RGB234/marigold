@@ -1,11 +1,11 @@
 import api from "../../global/api";
 import type { ApiResponse } from "@/global/types/common";
-import type { UserProfileResponse } from "@/user/types/user";
+import type { UserInfoDto } from "@/user/types/user";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 유저 프로필 조회
-export const getUserProfile = async (userId: string): Promise<UserProfileResponse> => {
-    const {data: apiResponse} = await api.get<ApiResponse<UserProfileResponse>>(`/user/profile/${userId}`);
+export const getUserProfile = async (userId: string): Promise<UserInfoDto> => {
+    const {data: apiResponse} = await api.get<ApiResponse<UserInfoDto>>(`/user/profile/${userId}`);
     const profile = apiResponse.data;
 
     if (!profile) {

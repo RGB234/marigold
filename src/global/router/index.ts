@@ -65,6 +65,14 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
+    name: RouteNames.ADOPTION.DELETED,
+    path: "/adoption/deleted",
+    component: () => import("@/adoption/views/AdoptionPostDeletedView.vue"),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
     name: RouteNames.ADOPTION.DETAIL,
     path: "/adoption/:id",
     component: () => import("@/adoption/views/AdoptionPostDetailView.vue"),

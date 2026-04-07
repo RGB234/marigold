@@ -10,12 +10,14 @@ export interface ChatRoomDto {
     user2Id: TSID_String;
     user2Nickname: string;
     createdAt: string;
+    status: 'ACTIVE' | 'CLOSED';
 }
 
 export interface ChatMessageDto {
     roomId: TSID_String;
     senderId: TSID_String;
     senderNickname: string;
+    senderImageUrl: string;
     message: string;
     createdAt: string;
 }

@@ -1,28 +1,33 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, onUnmounted, ref} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
-import {Client} from '@stomp/stompjs';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-import {useAuthStore} from '@/auth/stores/auth';
-import {getChatRoomMessages, getChatRoom} from '@/chat/api/chat.api';
-import {getAdoptionPostSummary} from '@/adoption/api/adoptionPost.api';
-import {ChatMessageDto} from '@/chat/types/chat';
-import type {AdoptionPostResponse} from '@/adoption/types/adoptionPost';
-import {RouteHelper} from '@/global/router/routeHelper';
-import {AdoptionPostStatus, getAdoptionStatusLabel} from '@/adoption/enums/AdoptionPostStatus';
+import { useAuthStore } from '@/auth/stores/auth';
+import { getChatRoomMessages, getChatRoom } from '@/chat/api/chat.api';
+import { getAdoptionPostSummary } from '@/adoption/api/adoptionPost.api';
+import { ChatMessageDto, ChatRoomDto } from '@/chat/types/chat';
+import type { AdoptionPostResponse } from '@/adoption/types/adoptionPost';
+import { RouteHelper } from '@/global/router/routeHelper';
+import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
 import NoImage from '@/assets/images/no-image.jpeg';
+import UserProfileLink from '@/global/components/UserProfileLink.vue';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const roomId = computed(() => Array.isArray(route.params) ? route.params[0].roomId : route.params.roomId);
+const roomId = computed(() => {
+  const id = route.params.roomId;
+  return Array.isArray(id) ? id[0] : id;
+});
 const currentUserId = computed(() => authStore.userId);
 
 const messages = ref<ChatMessageDto[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
 
+const chatRoom = ref<ChatRoomDto | null>(null);
 const postInfo = ref<AdoptionPostResponse | null>(null);
 
 const isReconnecting = ref(false);
@@ -127,6 +132,7 @@ const sendMessage = () => {
 const fetchPostDetail = async () => {
   try {
     const room = await getChatRoom(roomId.value);
+    chatRoom.value = room;
     const postInfoData = await getAdoptionPostSummary(room.postId.toString());
     postInfo.value = postInfoData;
   } catch (error) {
@@ -163,18 +169,18 @@ onUnmounted(() => {
   <div class="chat-container">
     <div class="chat-header">
       <div v-if="postInfo" class="post-summary" @click="goToPostDetail">
-          <div class="summary-img">
-              <img :src="postInfo.imageUrl as string || NoImage" alt="썸네일" />
+        <div class="summary-img">
+          <img :src="postInfo.imageUrl as string || NoImage" alt="썸네일" />
+        </div>
+        <div class="summary-info">
+          <div class="summary-status-row">
+            <span class="status-badge" :class="{ done: postInfo.status === AdoptionPostStatus.COMPLETED }">
+              {{ getAdoptionStatusLabel(postInfo.status) }}
+            </span>
           </div>
-          <div class="summary-info">
-              <div class="summary-status-row">
-                  <span class="status-badge" :class="{ done: postInfo.status === AdoptionPostStatus.COMPLETED }">
-                      {{ getAdoptionStatusLabel(postInfo.status) }}
-                  </span>
-              </div>
-              <div class="summary-title">{{ postInfo.title }}</div>
-          </div>
-          <div class="shortcut-btn">게시글 바로가기 〉</div>
+          <div class="summary-title">{{ postInfo.title }}</div>
+        </div>
+        <div class="shortcut-btn">게시글 바로가기 〉</div>
       </div>
       <h2 v-else>1:1 채팅</h2>
     </div>
@@ -187,21 +193,25 @@ onUnmounted(() => {
       <button class="retry-btn" @click="retryConnect">다시 시도</button>
     </div>
 
+    <div v-if="chatRoom?.status === 'CLOSED'" class="connection-banner failed"
+      style="background: #e2e3e5; color: #383d41;">
+      종료된 채팅방입니다. 더 이상 메시지를 보낼 수 없습니다.
+    </div>
+
     <div class="messages-wrapper" ref="messageContainer">
       <div v-for="(msg, index) in messages" :key="index"
-           :class="['message-item', msg.senderId === currentUserId ? 'my-message' : 'other-message']">
-        <div class="sender-name" v-if="msg.senderId !== currentUserId">{{
-            msg.senderNickname
-          }}
+        :class="['message-item', msg.senderId === currentUserId ? 'my-message' : 'other-message']">
+        <div v-if="msg.senderId !== currentUserId" class="sender-profile">
+          <UserProfileLink :userId="msg.senderId" :nickname="msg.senderNickname" :showImage="true" :imageUrl="msg.senderImageUrl" />
         </div>
         <div class="message-bubble">
           <p>{{ msg.message }}</p>
           <span class="message-time">{{
-              new Date(msg.createdAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-              })
-            }}</span>
+            new Date(msg.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          }}</span>
         </div>
       </div>
       <div v-if="messages.length === 0" class="no-messages">
@@ -210,9 +220,9 @@ onUnmounted(() => {
     </div>
 
     <div class="input-area">
-      <textarea v-model="newMessage" @keyup.enter.prevent="sendMessage" placeholder="메시지를 입력하세요..."
-                rows="1"></textarea>
-      <button @click="sendMessage" :disabled="!newMessage.trim()">전송</button>
+      <textarea v-model="newMessage" @keyup.enter.prevent="sendMessage" placeholder="메시지를 입력하세요..." rows="1"
+        :disabled="chatRoom?.status === 'CLOSED'"></textarea>
+      <button @click="sendMessage" :disabled="!newMessage.trim() || chatRoom?.status === 'CLOSED'">전송</button>
     </div>
   </div>
 </template>
@@ -337,11 +347,20 @@ onUnmounted(() => {
   align-self: flex-start;
 }
 
-.sender-name {
-  font-size: 12px;
-  color: #666;
+.sender-profile {
   margin-bottom: 4px;
   margin-left: 4px;
+}
+
+:deep(.sender-profile .nickname) {
+  font-size: 12px;
+  color: #666;
+  font-weight: 400;
+}
+
+:deep(.sender-profile .profile-img) {
+  width: 28px !important;
+  height: 28px !important;
 }
 
 .message-bubble {
