@@ -11,7 +11,7 @@ export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverI
 };
 
 export interface ChatRoomSearchParams extends PageableParams {
-  type?: 'writer' | 'inquirer';
+  type?: 'writer' | 'inquirer'; // 'all'도 요청가능하지만 사용하지 않는다.
 }
 
 export const getChatRoom = async (roomId: Long_String): Promise<ChatRoomDto> => {
