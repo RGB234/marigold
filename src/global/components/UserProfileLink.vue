@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { RouteHelper } from '@/global/router/routeHelper';
 import type { TSID_String } from '@/global/types/common';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
+
 const props = defineProps<{
-  userId?: TSID_String | string | null;
+  userId?: TSID_String | null;
   nickname?: string;
   imageUrl?: string | null;
   showImage?: boolean;
@@ -15,14 +15,13 @@ const props = defineProps<{
 
 const router = useRouter();
 
-const isDeleted = computed(() => props.nickname === '삭제된유저');
 const defaultImage = defaultProfileImage
 
 const goToProfile = (event: Event) => {
   // 이벤트 버블링 방지 (목록 등에서 클릭 시 다른 액션이 트리거되는 것 방지)
   event.stopPropagation();
   
-  if (isDeleted.value || !props.userId) return;
+  if (!props.userId) return;
   
   router.push(RouteHelper.user.profile(props.userId.toString()));
 };
@@ -31,7 +30,7 @@ const goToProfile = (event: Event) => {
 <template>
   <div 
     class="user-profile-link" 
-    :class="{ 'is-clickable': !isDeleted && userId }"
+    :class="{ 'is-clickable': !!userId }"
     @click="goToProfile"
   >
     <img 

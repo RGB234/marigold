@@ -8,29 +8,40 @@
 import { onMounted } from 'vue';
 import { useRoute, useRouter } from "vue-router";
 import { useAlert } from "@/global/composables/useAlert";
+import { useAuthStore } from "@/auth/stores/auth";
 
 const route = useRoute();
 const router = useRouter();
 const { alert } = useAlert();
+const authStore = useAuthStore();
 
-onMounted(() => {
-  handleOAuthCallback();
+onMounted(async () => {
+  await handleOAuthCallback();
 });
 
-function handleOAuthCallback() {
+async function handleOAuthCallback() {
   // 배열 형태로 들어올 경우를 대비해 첫 번째 값을 안전하게 추출하거나 문자열로 변환
   const errorParam = route.query.error;
   const descParam = route.query.error_description;
   const authStatusParam = route.query.auth_status;
+  const accessTokenParam = route.query.access_token;
 
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
   const errorDescription = Array.isArray(descParam) ? descParam[0] : descParam;
   const authStatus = Array.isArray(authStatusParam) ? authStatusParam[0] : authStatusParam;
+  const accessToken = Array.isArray(accessTokenParam) ? accessTokenParam[0] : accessTokenParam;
 
   if (errorCode) {
     alert(errorCode, errorDescription || "알 수 없는 에러가 발생했습니다.");
     router.replace({ name: "Login" }); 
     return;
+  }
+
+  // Access Token 저장
+  if (accessToken) {
+    authStore.setAccessToken(accessToken);
+
+    await authStore.initializeAuth();
   }
   
   switch(authStatus) {

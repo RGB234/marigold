@@ -4,18 +4,19 @@
       <router-link :to=RouteHelper.home()>홈</router-link>
       <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.login()>로그인</router-link>
       <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.signup()>회원가입</router-link>
-      
+
       <div v-if="isLoggedIn && userId" class="profile-menu-container" ref="menuContainer">
         <a class="profile-activator" @click="toggleMenu">
-          <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-image">
+          <img :src="userInfo.imageUrl || defaultProfileImage" alt="" class="profile-image">
         </a>
 
-        <!-- 드롭다운 메뉴 (Vuetify 대체) -->
+        <!-- 드롭다운 메뉴 -->
         <div v-if="isMenuOpen" class="dropdown-menu">
           <div class="menu-header" @click="handleNavigation(RouteHelper.user.profile(userId))">
-            <UserProfileLink class="app-profile-link" :userId="userId" :nickname="userInfo.nickname" :imageUrl="userInfo.imageUrl" :showImage="true" imageSize="2.5rem" />
+            <UserProfileLink class="app-profile-link" :userId="userInfo.id" :nickname="userInfo.nickname"
+              :imageUrl="userInfo.imageUrl" :showImage="true" imageSize="2.5rem" />
           </div>
-          
+
           <div class="divider"></div>
 
           <div class="menu-list">
@@ -59,16 +60,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref } from "vue";
+import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
-import { RouteHelper } from "@/global/router/routeHelper.ts";
+import { RouteHelper, RouteNames } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
 import { getUserProfile } from "./user/api/user.api";
 import { UserInfoDto } from "./user/types/user";
 import { RouteLocationRaw } from "vue-router";
+import defaultProfileImage from '@/assets/images/default-profile.png';
+
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 
 const loadingStore = useLoadingStore();
@@ -110,18 +113,32 @@ const handleLogout = () => {
   isMenuOpen.value = false;
 };
 
+watch(
+  () => userId.value, // userId 값이 변경될 때마다 실행
+  async (newUserId) => {
+    if (newUserId) {
+      // 로그인이 되어 새로운 userId가 들어오면 프로필 정보를 가져옴
+      try {
+        const data = await getUserProfile(newUserId);
+        userInfo.value = data;
+      } catch (error) {
+        console.error("유저 프로필 조회 실패:", error);
+      }
+    } else {
+      // 로그아웃되어 userId가 null이 되면 프로필 정보 초기화
+      userInfo.value = { id: '', nickname: '', imageUrl: '' };
+    }
+  },
+  { immediate: true } // 컴포넌트가 처음 마운트될 때도 즉시 한 번 실행되도록 옵션 켜기
+);
+
 onMounted(async () => {
   document.addEventListener('click', closeMenu);
-  
-  // 앱 시작 시 로그인 상태 초기화 (전역 상태 업데이트)
+  // 새로고침 등 앱 초기화 시 로그인 상태를 복구합니다 (쿠키의 Refresh Token 활용)
   try {
     await authStore.initializeAuth();
   } catch (error) {
-    alert("Error", "앱 시작 시 로그인 상태 초기화 실패");
-  }
-  if (isLoggedIn.value && userId.value) {
-    const data = await getUserProfile(userId.value); // nickname, imageUrl
-    userInfo.value = data;
+    console.debug("앱 초기화 시 인증 상태 복구 실패", error);
   }
 });
 
@@ -137,7 +154,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f9f9f9; /* 필요에 따라 전체 배경색 지정 */
+  background-color: #f9f9f9;
+  /* 필요에 따라 전체 배경색 지정 */
 }
 
 nav {
@@ -171,7 +189,8 @@ a {
   height: 2.5rem;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #eba421; /* 테두리 추가 및 두께 조절 부분 */
+  border: 2px solid #eba421;
+  /* 테두리 추가 및 두께 조절 부분 */
 }
 
 /* 메뉴 호출용 버튼 래퍼 */
@@ -211,6 +230,7 @@ a {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -240,7 +260,8 @@ a {
 
 /* UserProfileLink 오버라이딩 */
 :deep(.app-profile-link) {
-  pointer-events: none; /* 자체 링크 클릭 방지, 부모 div 이벤트 사용 */
+  pointer-events: none;
+  /* 자체 링크 클릭 방지, 부모 div 이벤트 사용 */
 }
 
 :deep(.app-profile-link .nickname) {
@@ -274,7 +295,8 @@ a {
 
 /* 확실한 Hover 효과 (문제 해결) */
 .menu-item:hover {
-  background-color: #f5f5f5; /* 이제 검은색이나 투명도 없이 완전한 회색으로 적용됩니다. */
+  background-color: #f5f5f5;
+  /* 이제 검은색이나 투명도 없이 완전한 회색으로 적용됩니다. */
 }
 
 /* 아이콘 스타일 */

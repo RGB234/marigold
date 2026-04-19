@@ -19,11 +19,14 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     id: null as TSID_String | null,
     authorities: [] as string[],
+    accessToken: null as string | null,
   }),
   
   getters: {
     // 로그인 여부 확인
-    isLoggedIn: (state) => validBASE32(state.id),
+    isLoggedIn: (state) => {
+      return validBASE32(state.id) && !!state.accessToken;
+    },
     userId: (state) => state.id, // String format TSID
     // 권한 목록
     userAuthorities: (state) => state.authorities,
@@ -39,9 +42,14 @@ export const useAuthStore = defineStore("auth", {
   },
   
   actions: {
-    // 로그인 상태 초기화 (앱 시작 시 호출)
+    // 로그인 상태 초기화 (App.vue 호출시 인증 상태 확인)
     async initializeAuth() : Promise<boolean> {  
       try {
+        // 새로고침 직후 등 메모리에 토큰이 없을 때 silent refresh 시도
+        if (!this.accessToken) {
+          await this.silentRefresh();
+        }
+
         const {data: apiResponse} = await api.get<ApiResponse<{ userId: string, authorities: string[] }>>("/auth/status");
         console.log("AUTH STATUS RESPONSE", apiResponse);
 
@@ -58,6 +66,22 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     
+    async silentRefresh(): Promise<boolean> {
+      try {
+        const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/refresh", {}, { skipAlert: true });
+        
+        if (response.data?.data?.accessToken) {
+          this.setAccessToken(response.data.data.accessToken);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.debug("Silent refresh failed (e.g., refresh token expired or missing)");
+        this.resetAuthState();
+        return false;
+      }
+    },
+
     login(providerCode : ProviderInfo){
       switch(providerCode){
         // 오류 발생시 백엔드에서 AuthCallbackForm으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
@@ -70,10 +94,19 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    setAccessToken(token: string | null) {
+      this.accessToken = token;
+    },
+
     async localLogin(dto: any): Promise<boolean> {
       try {
         // 로그인 에러는 컴포넌트에서 직접 표시하기 위해 skipAlert 사용
-        await api.post<ApiResponse<void>>("/auth/login", dto, { skipAlert: true });
+        const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/login", dto, { skipAlert: true });
+        
+        if (response.data?.data?.accessToken) {
+          this.setAccessToken(response.data.data.accessToken);
+        }
+        
         await this.initializeAuth();
         return true;
       } catch (error) {
@@ -120,6 +153,7 @@ export const useAuthStore = defineStore("auth", {
     resetAuthState(): void {
       this.id = null;
       this.authorities = [];
+      this.accessToken = null;
     },
   },
 });

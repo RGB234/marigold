@@ -12,6 +12,19 @@ declare module 'axios' {
   }
 }
 
+// Token Refresh 관련 변수
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+const addRefreshSubscriber = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_API_V1_BASE;
 
@@ -25,9 +38,17 @@ const api: AxiosInstance = axios.create({
  * 요청 Interceptor
  */
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const loadingStore = useLoadingStore();
     loadingStore.start();
+
+    // accessToken을 헤더에 추가
+    const { useAuthStore } = await import("@/auth/stores/auth");
+    const authStore = useAuthStore();
+    if (authStore.accessToken) {
+      config.headers.Authorization = `Bearer ${authStore.accessToken}`;
+    }
+
     return config;
   },
   (error) => {
@@ -52,14 +73,64 @@ api.interceptors.response.use(
 
     const { alert } = useAlert();
     const errorResponse = error.response?.data;
-    const skipAlert = error.config?.skipAlert; // skipAlert 플래그 확인
+    const originalRequest = error.config as any; // 인터셉터에서 config 재사용을 위해 캐스팅
+    const skipAlert = originalRequest?.skipAlert; 
 
     if (errorResponse) {
       console.error(
         `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
       );
       
-      // skipAlert가 true가 아닐 때만 전역 알림 표시
+      // 401 에러 발생 시 토큰 갱신 로직 (refresh 요청 자체에서 난 에러는 제외)
+      // _retry 플래그를 통해 무한 루프 방지. "이제 재시도를 할 것이니 다음번에 또 에러가 나더라도 재시도하지 마라"는 표시
+      if (errorResponse.status === 401 && !originalRequest.url?.includes('/auth/refresh') && !originalRequest._retry) {
+        // [A] 토큰 갱신을 시작하는 첫 번째 요청
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            const { useAuthStore } = await import("@/auth/stores/auth");
+            const authStore = useAuthStore();
+            const refreshed = await authStore.silentRefresh();
+            
+            if (refreshed && authStore.accessToken) {
+              // 토큰 갱신 성공 
+              // 대기열에 있는 모든 요청들을 새로운 accessToken과 함께 재요청
+              isRefreshing = false;
+              onRefreshed(authStore.accessToken);
+              
+              originalRequest._retry = true;
+              originalRequest.headers.Authorization = `Bearer ${authStore.accessToken}`;
+              return api(originalRequest);
+            } else {
+              isRefreshing = false;
+              authStore.resetAuthState();
+              if (!skipAlert) await alert("로그인 만료", "세션이 만료되었습니다. 다시 로그인해주세요.");
+              router.push(RouteHelper.auth.login());
+              return Promise.reject(error);
+            }
+          } catch (refreshError) {
+            isRefreshing = false;
+            const { useAuthStore } = await import("@/auth/stores/auth");
+            useAuthStore().resetAuthState();
+            router.push(RouteHelper.auth.login());
+            return Promise.reject(refreshError);
+          }
+        }
+        
+        // [B] 이미 토큰 갱신 중일 때 들어온 다른 요청들
+        // 새로운 Promise를 생성해 대기열 큐에 넣고, 갱신이 완료되면 resolve 되도록 함
+        return new Promise((resolve) => { // 새로운 Promise를 반환하여 Pending 상태로 유지. resolve 호출되기 전까지 대기.
+          addRefreshSubscriber((token: string) => {
+            originalRequest._retry = true;
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            // [A] 부분을 보면, 갱신 완료 시 onRefreshed 함수가 실행되어 refreshSubscribers 큐 내부의 익명함수들이 실행
+            // 익명함수 내부에서 resolve 호출하여 Promise 완료 처리
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      // 위 갱신 로직을 타지 않은 일반적인 에러 처리
       if (!skipAlert) {
         switch (errorResponse.status) {
           case 400:
