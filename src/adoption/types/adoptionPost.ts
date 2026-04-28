@@ -9,6 +9,7 @@ import {Species} from "@/adoption/enums/Species.ts";
 import {Sex} from "@/adoption/enums/Sex.ts";
 import {Neutering} from "@/adoption/enums/Neutering.ts";
 import {AdoptionPostStatus} from "@/adoption/enums/AdoptionPostStatus.ts";
+import type { UserStatus } from "@/user/types/user";
 
 /**
  * 입양 게시글 생성 요청
@@ -100,6 +101,7 @@ export interface AdoptionPostDetailResponse {
     id: TSID_String;
     nickname: string;
     imageUrl: ImageUrl;
+    status?: UserStatus;
   };
   createdAt: ISO8601DateString;
   modifiedAt: ISO8601DateString;
@@ -118,6 +120,7 @@ export interface AdoptionPostDetailResponse {
     id: TSID_String;
     nickname: string;
     imageUrl: ImageUrl | null;
+    status?: UserStatus;
   };
   chatRoomCount: number;
   deleted: boolean;
@@ -127,8 +130,32 @@ export interface AdoptionCandidateResponse {
   id: TSID_String;
   nickname: string;
   imageUrl: ImageUrl | null;
+  status?: UserStatus;
 }
 
 export interface CompleteAdoptionRequest {
   adopterId: TSID_String;
+}
+
+export interface AdoptionCommentResponse {
+  id: Long_String;
+  adoptionPostId: Long_String;
+  deleted: boolean;
+  writer: {
+    id: TSID_String;
+    nickname: string;
+    imageUrl: ImageUrl;
+    status?: UserStatus;
+  };
+  content: string;
+  imageUrls: string[];
+  createdAt: ISO8601DateString;
+  modifiedAt: ISO8601DateString;
+  children: AdoptionCommentResponse[];
+}
+
+export interface AdoptionCommentCreateRequest {
+  parentId?: Long_String;
+  content: string;
+  images: File[];
 }

@@ -15,6 +15,7 @@ import { useAlert } from '@/global/composables/useAlert';
 import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoption/types/adoptionPost.ts";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import AdoptionCommentList from '@/adoption/components/AdoptionCommentList.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -35,6 +36,16 @@ const currentUserId = computed(() => authStore.userId);
 const isAuthor = computed(() => {
   if (!detail.value || !currentUserId.value) return false;
   return detail.value.writer?.id === currentUserId.value;
+});
+
+// 입양 확정자인지 확인
+const isAdopter = computed(() => {
+  if (!detail.value || !currentUserId.value) return false;
+  return detail.value.adopter?.id === currentUserId.value;
+});
+
+const canComment = computed(() => {
+  return isAuthor.value || isAdopter.value;
 });
 
 // 날짜 포맷팅 함수 (YYYY-MM-DD HH:mm)
@@ -207,7 +218,7 @@ onMounted(async () => {
         </div>
         <div class="meta-info">
           <UserProfileLink :userId="detail.writer?.id" :nickname="detail.writer?.nickname"
-            :imageUrl="detail.writer?.imageUrl" :showImage="true" />
+            :imageUrl="detail.writer?.imageUrl" :status="detail.writer?.status" :showImage="true" />
           <!-- <span class="divider">|</span>
           <span>등록일: {{ formatDate(detail.createdAt) }}</span>
           <span class="divider">|</span>
@@ -298,6 +309,12 @@ onMounted(async () => {
           </div>
         </div>
       </div>
+
+      <!-- 댓글 영역 -->
+      <AdoptionCommentList 
+        :postId="detail.id" 
+        :canComment="canComment" 
+      />
     </div>
 
     <!-- 입양자 선택 모달 -->
@@ -311,6 +328,7 @@ onMounted(async () => {
             :class="{ selected: selectedAdopterId === candidate.id }" @click="selectedAdopterId = candidate.id">
             <div class="candidate-profile">
               <UserProfileLink :userId="candidate.id" :nickname="candidate.nickname" :imageUrl="candidate.imageUrl"
+                :status="candidate.status"
                 :showImage="true" />
             </div>
             <div class="candidate-radio">

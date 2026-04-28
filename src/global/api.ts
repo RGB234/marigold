@@ -9,6 +9,7 @@ import {RouteHelper} from "@/global/router/routeHelper.ts";
 declare module 'axios' {
   export interface AxiosRequestConfig {
     skipAlert?: boolean;
+    handledErrorStatuses?: number[];
   }
 }
 
@@ -23,6 +24,12 @@ const onRefreshed = (token: string) => {
 
 const addRefreshSubscriber = (cb: (token: string) => void) => {
   refreshSubscribers.push(cb);
+};
+
+const redirectToLoginIfProtectedRoute = () => {
+  if (router.currentRoute.value.meta?.requiresAuth) {
+    router.push(RouteHelper.auth.login());
+  }
 };
 
 // 환경변수로 API 기본 URL 설정
@@ -74,7 +81,8 @@ api.interceptors.response.use(
     const { alert } = useAlert();
     const errorResponse = error.response?.data;
     const originalRequest = error.config as any; // 인터셉터에서 config 재사용을 위해 캐스팅
-    const skipAlert = originalRequest?.skipAlert; 
+    const skipAlert = originalRequest?.skipAlert;
+    const handledErrorStatuses: number[] = originalRequest?.handledErrorStatuses ?? [];
 
     if (errorResponse) {
       console.error(
@@ -105,14 +113,14 @@ api.interceptors.response.use(
               isRefreshing = false;
               authStore.resetAuthState();
               if (!skipAlert) await alert("로그인 만료", "세션이 만료되었습니다. 다시 로그인해주세요.");
-              router.push(RouteHelper.auth.login());
+              redirectToLoginIfProtectedRoute();
               return Promise.reject(error);
             }
           } catch (refreshError) {
             isRefreshing = false;
             const { useAuthStore } = await import("@/auth/stores/auth");
             useAuthStore().resetAuthState();
-            router.push(RouteHelper.auth.login());
+            redirectToLoginIfProtectedRoute();
             return Promise.reject(refreshError);
           }
         }
@@ -130,7 +138,11 @@ api.interceptors.response.use(
         });
       }
 
-      // 위 갱신 로직을 타지 않은 일반적인 에러 처리
+      // 특정 오류코드에 대해 전역 알림/라우팅이 처리하기 전에 호출자에게 되돌려서 페이지가 해당 에러를 처리함
+      if (handledErrorStatuses.includes(errorResponse.status)) {
+        return Promise.reject(error);
+      }
+
       if (!skipAlert) {
         switch (errorResponse.status) {
           case 400:
@@ -140,7 +152,7 @@ api.interceptors.response.use(
           case 401:
             await alert("401 Unauthorized", "인증 필요");
             console.debug(errorResponse.message);
-            router.push(RouteHelper.auth.login());
+            redirectToLoginIfProtectedRoute();
             break;
           case 404:
             await alert("404 Not Found", "페이지를 찾을 수 없습니다");
@@ -158,12 +170,16 @@ api.interceptors.response.use(
         }
       } else {
         // 인증 에러면서 skipAlert가 설정되어 있어도, 라우팅 처리는 필요한 경우
-        switch(errorResponse.status) {
-          case 401:
-            router.push(RouteHelper.auth.login());
-            break;
-          case 404:
-            router.back();
+        // 단, 로그인 요청 등에서 발생한 에러는 자체 처리를 위해 자동 라우팅 방지
+        if (!originalRequest.url?.includes('/auth/login')) {
+          switch(errorResponse.status) {
+            case 401:
+              redirectToLoginIfProtectedRoute();
+              break;
+            case 404:
+              router.back();
+              break;
+          }
         }
       }
     } else {

@@ -3,11 +3,21 @@ import { validBASE32 } from "@/global/utils/validators";
 import api from "@/global/api";
 import { ApiResponse } from "@/global/types/common";
 import {TSID_String} from "@/global/types/common.ts";
+import {
+  clearPendingAuthState,
+  savePendingAuthState,
+  type PendingAuthState,
+} from "@/auth/utils/pendingAuth";
+import { clearSecurityAccess } from "@/user/utils/securityAccess";
 
 
 export enum ProviderInfo {
   KAKAO = "KAKAO",
   NAVER = "NAVER",
+}
+
+interface OAuthLoginOptions extends PendingAuthState {
+  action?: "link";
 }
 
 /*
@@ -82,14 +92,38 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    login(providerCode : ProviderInfo){
+    login(providerCode : ProviderInfo, options: OAuthLoginOptions = {}){
+      const pendingState = options.redirectTo
+        ? {
+            redirectTo: options.redirectTo,
+            expectedUserId: options.expectedUserId ?? null,
+            grantSecurityAccess: options.grantSecurityAccess ?? false,
+          }
+        : null;
+
+      if (pendingState) {
+        savePendingAuthState(pendingState);
+      } else {
+        clearPendingAuthState();
+      }
+
+      const getOAuthUrl = (baseUrl: string) => {
+        const url = new URL(baseUrl);
+
+        if (options.action) {
+          url.searchParams.set("action", options.action);
+        }
+
+        return url.toString();
+      };
+
       switch(providerCode){
         // 오류 발생시 백엔드에서 AuthCallbackForm으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
         case ProviderInfo.KAKAO:
-          window.location.href =  import.meta.env.VITE_API_OAUTH2_KAKAO;
+          window.location.assign(getOAuthUrl(import.meta.env.VITE_API_OAUTH2_KAKAO));
           break;
         case ProviderInfo.NAVER:
-          window.location.href = import.meta.env.VITE_API_OAUTH2_NAVER;
+          window.location.assign(getOAuthUrl(import.meta.env.VITE_API_OAUTH2_NAVER));
           break;
       }
     },
@@ -154,6 +188,7 @@ export const useAuthStore = defineStore("auth", {
       this.id = null;
       this.authorities = [];
       this.accessToken = null;
+      clearSecurityAccess();
     },
   },
 });

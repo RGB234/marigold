@@ -1,47 +1,66 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { RouteHelper } from '@/global/router/routeHelper';
 import type { TSID_String } from '@/global/types/common';
+import type { UserStatus } from '@/user/types/user';
 import defaultProfileImage from '@/assets/images/default-profile.png';
-
 
 const props = defineProps<{
   userId?: TSID_String | null;
   nickname?: string;
   imageUrl?: string | null;
+  status?: UserStatus | null;
   showImage?: boolean;
   imageSize?: string;
 }>();
 
 const router = useRouter();
 
-const defaultImage = defaultProfileImage
+const isDeletedUser = computed(() => props.status === 'DELETED');
+
+const displayNickname = computed(() => {
+  if (isDeletedUser.value) {
+    return '탈퇴한 유저';
+  }
+  return props.nickname || '알 수 없음';
+});
+
+const displayImage = computed(() => {
+  if (isDeletedUser.value) {
+    return defaultProfileImage;
+  }
+  return props.imageUrl ?? defaultProfileImage;
+});
+
+const isClickable = computed(() => {
+  return !!props.userId && !isDeletedUser.value;
+});
 
 const goToProfile = (event: Event) => {
-  // 이벤트 버블링 방지 (목록 등에서 클릭 시 다른 액션이 트리거되는 것 방지)
   event.stopPropagation();
-  
-  if (!props.userId) return;
-  
+
+  if (!isClickable.value || !props.userId) return;
+
   router.push(RouteHelper.user.profile(props.userId.toString()));
 };
 </script>
 
 <template>
-  <div 
-    class="user-profile-link" 
-    :class="{ 'is-clickable': !!userId }"
+  <div
+    class="user-profile-link"
+    :class="{ 'is-clickable': isClickable }"
     @click="goToProfile"
   >
-    <img 
-      v-if="showImage" 
-      :src="imageUrl ?? defaultImage" 
-      alt="프로필" 
+    <img
+      v-if="showImage"
+      :src="displayImage"
+      alt="프로필"
       class="profile-img"
       :style="{ width: imageSize || '40px', height: imageSize || '40px' }"
-      @error="(e) => (e.target as HTMLImageElement).src = defaultImage"
+      @error="(e) => (e.target as HTMLImageElement).src = defaultProfileImage"
     />
-    <span class="nickname">{{ nickname || '알 수 없음' }}</span>
+    <span class="nickname" :class="{ 'is-deleted': isDeletedUser }">{{ displayNickname }}</span>
   </div>
 </template>
 
@@ -71,5 +90,9 @@ const goToProfile = (event: Event) => {
 .nickname {
   font-weight: 500;
   transition: color 0.2s;
+}
+
+.nickname.is-deleted {
+  color: #777;
 }
 </style>

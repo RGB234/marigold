@@ -114,6 +114,22 @@ const routes: Array<RouteRecordRaw> = [
   },
   // User
   {
+    name: RouteNames.USER.SECURITY_VERIFY,
+    path: "/user/profile/security/verify",
+    component: () => import("@/user/views/ProfileSecurityAccessView.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    name: RouteNames.USER.SECURITY,
+    path: "/user/profile/security",
+    component: () => import("@/user/views/ProfileSecurityView.vue"),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     name: RouteNames.USER.PROFILE,
     path: "/user/profile/:userId",
     component: () => import("@/user/views/ProfileView.vue"),
@@ -159,7 +175,12 @@ router.beforeEach(async (to, _from, next) => {
   const { alert } = useAlert();
 
   if (to.meta?.requiresAuth) {
-    await authStore.initializeAuth();
+    try {
+      await authStore.initializeAuth();
+    } catch (error) {
+      console.debug("Auth initialization failed during route navigation:", error);
+    }
+
     if (!authStore.isLoggedIn) {
       if (await alert("Error", "로그인이 필요한 서비스입니다.")) {
         return next({ name: RouteNames.AUTH.LOGIN });

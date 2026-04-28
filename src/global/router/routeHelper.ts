@@ -21,6 +21,8 @@ export const RouteNames = {
   USER: {
     PROFILE: "user_profile",
     PROFILE_UPDATE: "user_profile_update",
+    SECURITY_VERIFY: "user_security_verify",
+    SECURITY: "user_security",
   },
   CHAT: {
     LIST: "chat_list",
@@ -71,6 +73,8 @@ export const RouteHelper = {
       params: {userId: id.toString()},
     }),
     profileUpdate: () => ({name: RouteNames.USER.PROFILE_UPDATE}),
+    securityVerify: () => ({name: RouteNames.USER.SECURITY_VERIFY}),
+    security: () => ({name: RouteNames.USER.SECURITY}),
   },
   chat: {
     list: () => ({name: RouteNames.CHAT.LIST}),

@@ -1,52 +1,115 @@
 <template>
   <div class="main-container">
-    <!-- 로고 -->
     <div class="logo">
       <img src="@/assets/images/logo.png" alt="Marigold" />
       <h1>Marigold</h1>
     </div>
 
-    <!-- 로컬 회원가입 폼 -->
     <form @submit.prevent="handleLocalSignup" class="local-auth-form">
       <div class="form-title">이메일로 회원가입</div>
-      
-      <!-- 일반 에러 메시지 표시 영역 -->
+
       <div v-if="generalError" class="general-error-msg">
         {{ generalError }}
       </div>
-      
+
       <div class="input-group">
-        <input type="email" v-model="signupDto.email" placeholder="이메일" required :class="{ 'is-invalid': getFieldError('email') }" />
-<!--        <input type="email" v-model="signupDto.email" placeholder="이메일" :class="{ 'is-invalid': getFieldError('email') }" />-->
-        <span class="error-msg" v-if="getFieldError('email')">{{ getFieldError('email') }}</span>
+        <input
+          v-model="signupDto.email"
+          type="email"
+          placeholder="이메일"
+          required
+          :class="{ 'is-invalid': getFieldError('email') }"
+        />
+        <span v-if="getFieldError('email')" class="error-msg">{{ getFieldError('email') }}</span>
       </div>
 
       <div class="input-group">
-        <input type="password" v-model="signupDto.password" placeholder="비밀번호" required :class="{ 'is-invalid': getFieldError('password') }" />
-<!--        <input type="password" v-model="signupDto.password" placeholder="비밀번호" :class="{ 'is-invalid': getFieldError('password') }" />-->
-        <span class="error-msg" v-if="getFieldError('password')">{{ getFieldError('password') }}</span>
+        <div class="password-wrapper">
+          <input
+            v-model="signupDto.password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="비밀번호"
+            required
+            :class="{ 'is-invalid': getFieldError('password') }"
+          />
+          <span class="toggle-password" @click="showPassword = !showPassword">
+            <img
+              v-if="!showPassword"
+              src="@/assets/images/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+              width="20"
+              height="20"
+              alt="비밀번호 표시"
+            />
+            <img
+              v-else
+              src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+              width="20"
+              height="20"
+              alt="비밀번호 숨기기"
+            />
+          </span>
+        </div>
+        <span v-if="!getFieldError('password')" class="hint-msg">8자 이상</span>
+        <span v-else class="error-msg">{{ getFieldError('password') }}</span>
       </div>
 
       <div class="input-group">
-        <input type="text" v-model="signupDto.nickname" placeholder="닉네임" required :class="{ 'is-invalid': getFieldError('nickname') }" />
-<!--        <input type="text" v-model="signupDto.nickname" placeholder="닉네임" :class="{ 'is-invalid': getFieldError('nickname') }" />-->
-        <span class="error-msg" v-if="getFieldError('nickname')">{{ getFieldError('nickname') }}</span>
+        <div class="password-wrapper">
+          <input
+            v-model="confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            placeholder="비밀번호 확인"
+            required
+            :class="{ 'is-invalid': getFieldError('confirmPassword') }"
+          />
+          <span class="toggle-password" @click="showConfirmPassword = !showConfirmPassword">
+            <img
+              v-if="!showConfirmPassword"
+              src="@/assets/images/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+              width="20"
+              height="20"
+              alt="비밀번호 확인 표시"
+            />
+            <img
+              v-else
+              src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+              width="20"
+              height="20"
+              alt="비밀번호 확인 숨기기"
+            />
+          </span>
+        </div>
+        <span v-if="!getFieldError('confirmPassword')" class="hint-msg">비밀번호를 한 번 더 입력하세요</span>
+        <span v-else class="error-msg">{{ getFieldError('confirmPassword') }}</span>
+      </div>
+
+      <div class="input-group">
+        <input
+          v-model="signupDto.nickname"
+          type="text"
+          placeholder="닉네임"
+          required
+          :class="{ 'is-invalid': getFieldError('nickname') }"
+        />
+        <span v-if="!getFieldError('nickname')" class="hint-msg">
+          3자 이상, 12자 이하 (영문, 한글, 숫자 사용)
+        </span>
+        <span v-else class="error-msg">{{ getFieldError('nickname') }}</span>
       </div>
 
       <button type="submit" class="btn-local-auth">회원가입 완료</button>
     </form>
 
-    <!-- 뒤로가기 -->
     <p class="back-btn" @click="goBack">뒤로가기</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useAuthStore } from '@/auth/stores/auth';
-import router from '@/global/router';
-import { useAlert } from '@/global/composables/useAlert';
-import { RouteHelper, RouteNames } from '@/global/router/routeHelper';
+import { ref } from "vue";
+import { useAuthStore } from "@/auth/stores/auth";
+import { useAlert } from "@/global/composables/useAlert";
+import router from "@/global/router";
+import { RouteHelper } from "@/global/router/routeHelper";
 
 interface FieldError {
   field: string;
@@ -56,29 +119,53 @@ interface FieldError {
 const authStore = useAuthStore();
 const { toast } = useAlert();
 
-const signupDto = ref({ email: '', password: '', nickname: '' });
+const signupDto = ref({ email: "", password: "", nickname: "" });
+const confirmPassword = ref("");
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 const fieldErrors = ref<FieldError[]>([]);
-const generalError = ref<string>('');
+const generalError = ref("");
 
 const getFieldError = (field: string) => {
-  const error = fieldErrors.value.find(e => e.field === field);
-  return error ? error.message : '';
+  const error = fieldErrors.value.find((item) => item.field === field);
+  return error ? error.message : "";
+};
+
+const validateSignupForm = () => {
+  const errors: FieldError[] = [];
+
+  if (signupDto.value.password.length < 8) {
+    errors.push({ field: "password", message: "비밀번호는 8자 이상이어야 합니다." });
+  }
+
+  if (!confirmPassword.value) {
+    errors.push({ field: "confirmPassword", message: "비밀번호 확인을 입력해 주세요." });
+  } else if (signupDto.value.password !== confirmPassword.value) {
+    errors.push({ field: "confirmPassword", message: "비밀번호 확인이 일치하지 않습니다." });
+  }
+
+  fieldErrors.value = errors;
+  return errors.length === 0;
 };
 
 const handleLocalSignup = async () => {
-  // 에러 초기화
   fieldErrors.value = [];
-  generalError.value = '';
+  generalError.value = "";
+
+  if (!validateSignupForm()) {
+    return;
+  }
 
   try {
     await authStore.localSignup(signupDto.value);
     toast.info("회원가입 성공. 로그인 해주세요.");
-    router.push(RouteHelper.auth.login());
+    confirmPassword.value = "";
+    await router.push(RouteHelper.auth.login());
   } catch (error: any) {
     const errorResponse = error.response?.data;
 
     fieldErrors.value = errorResponse?.errors || [];
-
+    generalError.value = errorResponse?.message || "";
     console.log("errorResponse : ", errorResponse);
   }
 };
@@ -89,7 +176,6 @@ function goBack() {
 </script>
 
 <style scoped>
-/* 전체 화면 중앙 정렬 */
 div.main-container {
   display: flex;
   flex-direction: column;
@@ -100,8 +186,7 @@ div.main-container {
   background-color: white;
 }
 
-/* 로고 영역 */
-div.main-container>div.logo {
+div.main-container > div.logo {
   margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
@@ -109,19 +194,18 @@ div.main-container>div.logo {
   justify-content: center;
 }
 
-div.logo>img {
+div.logo > img {
   width: 8rem;
   height: 8rem;
   margin-bottom: 0.5rem;
 }
 
-div.logo>h1 {
+div.logo > h1 {
   font-size: 1.5rem;
   font-weight: bold;
   color: #b45309;
 }
 
-/* 로컬 인증 폼 스타일 */
 .local-auth-form {
   display: flex;
   flex-direction: column;
@@ -137,7 +221,6 @@ div.logo>h1 {
   color: #4b5563;
 }
 
-/* 인풋 그룹 및 에러 메시지 */
 .input-group {
   display: flex;
   flex-direction: column;
@@ -153,6 +236,31 @@ div.logo>h1 {
   box-sizing: border-box;
 }
 
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password:hover {
+  color: #374151;
+}
+
 .local-auth-form input:focus {
   outline: none;
   border-color: #b45309;
@@ -164,6 +272,13 @@ div.logo>h1 {
 
 .error-msg {
   color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-left: 0.25rem;
+}
+
+.hint-msg {
+  color: #6b7280;
   font-size: 0.75rem;
   margin-top: 0.25rem;
   margin-left: 0.25rem;
@@ -189,11 +304,11 @@ div.logo>h1 {
   align-items: center;
   justify-content: center;
 }
+
 .btn-local-auth:hover {
   background-color: #92400e;
 }
 
-/* 뒤로가기 텍스트 */
 p.back-btn {
   font-size: 0.875rem;
   color: #4b5563;

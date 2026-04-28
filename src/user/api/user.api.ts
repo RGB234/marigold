@@ -1,6 +1,10 @@
 import api from "../../global/api";
 import type { ApiResponse } from "@/global/types/common";
-import type { UserInfoDto } from "@/user/types/user";
+import type {
+    RegisterEmailPasswordDto,
+    UserInfoDto,
+    UserSecurityInfoDto,
+} from "@/user/types/user";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 유저 프로필 조회
@@ -20,7 +24,24 @@ export const getUserProfile = async (userId: string): Promise<UserInfoDto> => {
 
 // 유저 프로필 수정
 export const updateUserProfile = async (formData: FormData): Promise<void> => {
-    await api.patch<ApiResponse<void>>("/user", formData);
+    await api.patch<ApiResponse<void>>("/user", formData, {
+        handledErrorStatuses: [400],
+    });
+};
+
+export const getUserSecurityInfo = async (): Promise<UserSecurityInfoDto> => {
+    const { data: apiResponse } = await api.get<ApiResponse<UserSecurityInfoDto>>("/user/security");
+    const securityInfo = apiResponse.data;
+
+    if (!securityInfo) {
+        throw new Error("보안 설정 정보를 불러오지 못했습니다.");
+    }
+
+    return securityInfo;
+};
+
+export const registerEmailPassword = async (payload: RegisterEmailPasswordDto): Promise<void> => {
+    await api.post<ApiResponse<void>>("/user/credentials", payload, { skipAlert: true });
 };
 
 // 유저 삭제

@@ -14,7 +14,7 @@
         <div v-if="isMenuOpen" class="dropdown-menu">
           <div class="menu-header" @click="handleNavigation(RouteHelper.user.profile(userId))">
             <UserProfileLink class="app-profile-link" :userId="userInfo.id" :nickname="userInfo.nickname"
-              :imageUrl="userInfo.imageUrl" :showImage="true" imageSize="2.5rem" />
+              :imageUrl="userInfo.imageUrl" :status="userInfo.status" :showImage="true" imageSize="2.5rem" />
           </div>
 
           <div class="divider"></div>
@@ -62,10 +62,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
-import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
-import { RouteHelper, RouteNames } from "@/global/router/routeHelper.ts";
+import { RouteHelper } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
 import { getUserProfile } from "./user/api/user.api";
 import { UserInfoDto } from "./user/types/user";
@@ -78,7 +77,6 @@ const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const userId = computed(() => authStore.userId);
-const { alert } = useAlert();
 
 // 드롭다운 메뉴 상태 관리
 const isMenuOpen = ref(false);
@@ -87,7 +85,8 @@ const menuContainer = ref<HTMLElement | null>(null);
 const userInfo = ref<UserInfoDto>({
   id: '',
   nickname: '',
-  imageUrl: ''
+  imageUrl: '',
+  status: 'ACTIVE'
 });
 
 const toggleMenu = () => {

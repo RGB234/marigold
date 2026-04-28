@@ -9,11 +9,14 @@
     </section>
 
     <section v-if="isMyProfile" class="account-section">
-      <h3 class="section-title">
-        계정 관리
-      </h3>
-      <div class="account-delete-btn clickable" @click="openDeleteModal">
-        계정 삭제
+      <h3 class="section-title">계정 관리</h3>
+      <div class="account-action-list">
+        <button class="account-action-button" type="button" @click="goToSecurityAccess">
+          보안
+        </button>
+        <button class="account-action-button is-danger" type="button" @click="openDeleteModal">
+          계정 삭제
+        </button>
       </div>
     </section>
 
@@ -62,12 +65,7 @@ const targetUserId = computed(() => {
 
 // 내 프로필인지 여부 판별
 const isMyProfile = computed(() => {
-  // 1. MyProfile 라우트인 경우
-  if (route.name === 'MyProfile') return true;
-  // 2. 현재 로그인한 사용자의 ID와 대상 ID가 일치하는 경우
-  if (authStore.userId && targetUserId.value === authStore.userId) return true;
-
-  return false;
+  return Boolean(authStore.userId && targetUserId.value === authStore.userId);
 });
 
 // 모달 관련 상태
@@ -108,6 +106,11 @@ const fetchUserProfile = async (userId: string) => {
 
 const goToProfileEdit = () => {
   router.push(RouteHelper.user.profileUpdate());
+}
+
+const goToSecurityAccess = () => {
+  const securityUrl = router.resolve(RouteHelper.user.securityVerify()).href;
+  window.open(securityUrl, '_blank');
 }
 
 const openDeleteModal = () => {
@@ -197,14 +200,37 @@ section {
   color: #2196f3;
 }
 
-.account-delete-btn {
-  font-size: 16px;
-  font-weight: bold;
-  margin-top: 20px;
+.account-action-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.account-delete-btn:hover {
-  color: #2196f3;
+.account-action-button {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e1ded4;
+  background: #fffdf8;
+  color: #4f422c;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.account-action-button:hover {
+  transform: translateY(-1px);
+  border-color: #d6c094;
+  box-shadow: 0 8px 18px rgba(108, 84, 35, 0.08);
+}
+
+.account-action-button.is-danger {
+  color: #c53a2f;
+  border-color: #f0cbc7;
+  background: #fff7f6;
 }
 
 /* 1. 프로필 영역 스타일 */

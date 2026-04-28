@@ -22,6 +22,8 @@ const roomId = computed(() => {
   return Array.isArray(id) ? id[0] : id;
 });
 const currentUserId = computed(() => authStore.userId);
+const getStompAuthHeaders = (): Record<string, string> =>
+  authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {};
 
 const messages = ref<ChatMessageDto[]>([]);
 const newMessage = ref('');
@@ -59,6 +61,7 @@ const connectWebSocket = () => {
 
   stompClient = new Client({
     webSocketFactory: () => new SockJS(`${apiBase}/ws`),
+    connectHeaders: getStompAuthHeaders(),
     debug: (str) => {
       console.log(str);
     },
@@ -123,6 +126,7 @@ const sendMessage = () => {
 
   stompClient.publish({
     destination: '/pub/chat/message',
+    headers: getStompAuthHeaders(),
     body: JSON.stringify(messageDto),
   });
 

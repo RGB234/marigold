@@ -9,7 +9,13 @@
     <!-- 로컬 로그인 폼 -->
     <form @submit.prevent="handleLocalLogin" class="local-auth-form">
       <input type="email" v-model="loginDto.email" placeholder="이메일" required />
-      <input type="password" v-model="loginDto.password" placeholder="비밀번호" required />
+      <div class="password-wrapper">
+        <input :type="showPassword ? 'text' : 'password'" v-model="loginDto.password" placeholder="비밀번호" required />
+        <span class="toggle-password" @click="showPassword = !showPassword">
+          <img v-if="!showPassword" src="@/assets/images/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" width="20" height="20" alt="비밀번호 표시" />
+          <img v-else src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" width="20" height="20" alt="비밀번호 숨김" />
+        </span>
+      </div>
       <button type="submit" class="btn-local-auth">이메일로 로그인</button>
     </form>
 
@@ -44,6 +50,7 @@ const authStore = useAuthStore();
 const { toast, alert } = useAlert();
 
 const loginDto = ref({ email: '', password: '' });
+const showPassword = ref(false);
 
 interface Provider {
   name: ProviderInfo;
@@ -129,6 +136,35 @@ div.logo>h1 {
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.password-wrapper input {
+  margin-bottom: 0;
+  padding-right: 2.5rem;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password:hover {
+  color: #374151;
 }
 
 .local-auth-form input:focus {

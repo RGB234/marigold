@@ -6,19 +6,24 @@ import {
   AdoptionCandidateResponse,
   CompleteAdoptionRequest,
   AdoptionPostResponse,
+  AdoptionCommentResponse,
 } from "@/adoption/types/adoptionPost";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 type TSID = string;
 
 // 생성
 export const createAdoptionPost = async (formData: FormData): Promise<ApiResponse<{ id: number }>> => {
-  const {data: apiResponse} = await api.post<ApiResponse<{ id: number }>>("/adoption", formData);
+  const {data: apiResponse} = await api.post<ApiResponse<{ id: number }>>("/adoption", formData, {
+    handledErrorStatuses: [400],
+  });
   return apiResponse;
 };
 
 // 수정
 export const updateAdoptionPost = async (id: number | string, formData: FormData): Promise<void> => {
-  await api.patch<ApiResponse<void>>(`/adoption/${id}`, formData);
+  await api.patch<ApiResponse<void>>(`/adoption/${id}`, formData, {
+    handledErrorStatuses: [400],
+  });
 };
 
 // 삭제
@@ -123,4 +128,34 @@ export const completeAdoption = async (id: number | string, data: CompleteAdopti
 // 입양 완료 취소
 export const cancelCompleteAdoption = async (id: number | string): Promise<void> => {
   await api.post<ApiResponse<void>>(`/adoption/${id}/cancel-complete`);
+};
+
+// 댓글 목록 조회
+export const getAdoptionComments = async (postId: number | string): Promise<AdoptionCommentResponse[]> => {
+  const { data: apiResponse } = await api.get<ApiResponse<AdoptionCommentResponse[]>>(`/adoption/${postId}/comments`);
+  const comments = apiResponse.data || [];
+  
+  // 모든 작성자의 이미지가 없으면 기본 프로필로 설정
+  const setDefaultImage = (comment: AdoptionCommentResponse) => {
+    if (comment.writer && !comment.writer.imageUrl) {
+      comment.writer.imageUrl = defaultProfileImage;
+    }
+    if (comment.children && comment.children.length > 0) {
+      comment.children.forEach(setDefaultImage);
+    }
+  };
+  comments.forEach(setDefaultImage);
+  
+  return comments;
+};
+
+// 댓글 생성
+export const createAdoptionComment = async (postId: number | string, formData: FormData): Promise<ApiResponse<{ id: number }>> => {
+  const { data: apiResponse } = await api.post<ApiResponse<{ id: number }>>(`/adoption/${postId}/comments`, formData);
+  return apiResponse;
+};
+
+// 댓글 삭제
+export const deleteAdoptionComment = async (postId: number | string, commentId: number | string): Promise<void> => {
+  await api.delete<ApiResponse<void>>(`/adoption/${postId}/comments/${commentId}`);
 };
