@@ -32,7 +32,6 @@ async function handleOAuthCallback() {
   const errorParam = route.query.error;
   const descriptionParam = route.query.error_description;
   const authStatusParam = route.query.auth_status;
-  const accessTokenParam = route.query.access_token;
 
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
   const errorDescription = Array.isArray(descriptionParam)
@@ -41,9 +40,6 @@ async function handleOAuthCallback() {
   const authStatus = Array.isArray(authStatusParam)
     ? authStatusParam[0]
     : authStatusParam;
-  const accessToken = Array.isArray(accessTokenParam)
-    ? accessTokenParam[0]
-    : accessTokenParam;
 
   const pendingAuthState = getPendingAuthState();
   const redirectTo =
@@ -57,11 +53,10 @@ async function handleOAuthCallback() {
     return;
   }
 
-  if (accessToken) {
-    authStore.setAccessToken(accessToken);
-  }
-
-  const shouldRestoreAuth = Boolean(accessToken) || authStatus === "LINK_SUCCESS";
+  const shouldRestoreAuth =
+    authStatus === "LOGIN_SUCCESS" ||
+    authStatus === "SIGNUP_SUCCESS" ||
+    authStatus === "LINK_SUCCESS";
   if (shouldRestoreAuth) {
     try {
       await authStore.initializeAuth();
