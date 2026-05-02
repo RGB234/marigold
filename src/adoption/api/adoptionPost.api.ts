@@ -157,6 +157,17 @@ export const createAdoptionComment = async (postId: number | string, formData: F
   return apiResponse;
 };
 
+// 댓글 수정
+export const updateAdoptionComment = async (
+  postId: number | string,
+  commentId: number | string,
+  formData: FormData,
+): Promise<void> => {
+  await api.patch<ApiResponse<void>>(`/adoption/${postId}/comments/${commentId}`, formData, {
+    handledErrorStatuses: [400],
+  });
+};
+
 // 댓글 삭제
 export const deleteAdoptionComment = async (postId: number | string, commentId: number | string): Promise<void> => {
   await api.delete<ApiResponse<void>>(`/adoption/${postId}/comments/${commentId}`);

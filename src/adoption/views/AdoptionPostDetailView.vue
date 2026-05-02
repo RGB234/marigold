@@ -28,6 +28,7 @@ const detail = ref<AdoptionPostDetailResponse | null>(null);
 const candidates = ref<AdoptionCandidateResponse[]>([]);
 const showCandidateModal = ref(false);
 const selectedAdopterId = ref<string>('');
+const selectedImageUrl = ref<string | null>(null);
 
 // 로그인 상태 확인
 const isLoggedIn = computed(() => authStore.isLoggedIn);
@@ -188,6 +189,14 @@ const goBack = () => {
   router.push(RouteHelper.adoption.list());
 };
 
+const openImagePopup = (imageUrl: string) => {
+  selectedImageUrl.value = imageUrl;
+};
+
+const closeImagePopup = () => {
+  selectedImageUrl.value = null;
+};
+
 onMounted(async () => {
   const id = route.params.id;
   await fetchDetail(id);
@@ -241,7 +250,7 @@ onMounted(async () => {
         </div>
         <div class="image-container">
           <div v-for="imageUrl in detail.imageUrls" :key="imageUrl">
-            <img :src="imageUrl" alt="이미지" />
+            <img :src="imageUrl" alt="이미지" @click="openImagePopup(imageUrl)" />
           </div>
         </div>
         <div class="info-item">
@@ -317,6 +326,22 @@ onMounted(async () => {
         :canComment="canComment" 
       />
     </div>
+
+    <Teleport to="body">
+      <div v-if="selectedImageUrl" class="image-popup-overlay" @click.self="closeImagePopup">
+        <div class="image-popup-content">
+          <button
+            type="button"
+            class="image-popup-close"
+            aria-label="이미지 팝업 닫기"
+            @click="closeImagePopup"
+          >
+            X
+          </button>
+          <img :src="selectedImageUrl" alt="확대 이미지" class="image-popup-img" />
+        </div>
+      </div>
+    </Teleport>
 
     <!-- 입양자 선택 모달 -->
     <div v-if="showCandidateModal" class="modal-overlay">
@@ -533,17 +558,42 @@ onMounted(async () => {
   grid-column: span 2;
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 16px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  padding: 16px 16px 18px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #ff9800 #f1f1f1;
+}
+
+.image-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.image-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 999px;
+}
+
+.image-container::-webkit-scrollbar-thumb {
+  background: #ff9800;
+  border-radius: 999px;
+  border: 2px solid #f1f1f1;
+}
+
+.image-container::-webkit-scrollbar-thumb:hover {
+  background: #e68900;
 }
 
 .image-container>div {
-  flex: 0 0 auto;
-  max-width: 200px;
+  flex: 0 0 220px;
+  width: 220px;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
@@ -557,10 +607,61 @@ onMounted(async () => {
 
 .image-container img {
   width: 100%;
-  height: 200px;
+  height: 220px;
   object-fit: cover;
   display: block;
   cursor: pointer;
+}
+
+.image-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.image-popup-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(90vw, 1000px);
+  height: min(80vh, 760px);
+}
+
+.image-popup-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.image-popup-close {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #333;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.image-popup-close:hover {
+  background: #fff;
 }
 
 /* 특징 섹션 */
@@ -734,7 +835,8 @@ onMounted(async () => {
   }
 
   .image-container>div {
-    max-width: 100%;
+    flex-basis: min(78vw, 260px);
+    width: min(78vw, 260px);
   }
 
   .image-container img {

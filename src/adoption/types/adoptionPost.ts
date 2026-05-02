@@ -159,3 +159,9 @@ export interface AdoptionCommentCreateRequest {
   content: string;
   images: File[];
 }
+
+export interface AdoptionCommentUpdateRequest {
+  content: string;
+  removeImage?: boolean;
+  images?: File[];
+}

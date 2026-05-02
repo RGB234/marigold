@@ -115,7 +115,6 @@ onMounted(() => {
             </div>
 
             <div v-else class="empty-state">
-                <div class="empty-icon">💬</div>
                 <p>아직 이 글에 연결된 채팅이 없습니다.</p>
             </div>
         </div>
@@ -321,8 +320,4 @@ h3 {
     100% { transform: rotate(360deg); }
 }
 
-.empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-}
 </style>

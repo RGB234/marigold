@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { createAdoptionComment } from '@/adoption/api/adoptionPost.api';
 import { useAlert } from '@/global/composables/useAlert';
 
@@ -19,14 +19,36 @@ const content = ref('');
 const images = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
 const isSubmitting = ref(false);
+const MAX_IMAGE_COUNT = 1;
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+const imageAccept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+
+const isAllowedImageFile = (file: File) => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+
+  return (
+    allowedImageTypes.includes(file.type) ||
+    (file.type === '' && !!extension && allowedImageExtensions.includes(extension))
+  );
+};
 
 const handleImageChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   if (!target.files) return;
 
   const files = Array.from(target.files);
-  if (images.value.length + files.length > 8) {
-    toast.error('이미지는 최대 8개까지 첨부할 수 있습니다.');
+  const hasInvalidFile = files.some(file => !isAllowedImageFile(file));
+
+  if (hasInvalidFile) {
+    toast.error('JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.');
+    target.value = '';
+    return;
+  }
+
+  if (images.value.length + files.length > MAX_IMAGE_COUNT) {
+    toast.error(`이미지는 최대 ${MAX_IMAGE_COUNT}개까지 첨부할 수 있습니다.`);
+    target.value = '';
     return;
   }
 
@@ -92,14 +114,13 @@ const submitComment = async () => {
     </div>
     
     <div class="input-actions">
-      <label class="btn-upload" :class="{ disabled: images.length >= 8 || isSubmitting }">
-        이미지 첨부 ({{ images.length }}/8)
+      <label class="btn-upload" :class="{ disabled: images.length >= MAX_IMAGE_COUNT || isSubmitting }">
+        이미지 첨부 ({{ images.length }}/{{ MAX_IMAGE_COUNT }})
         <input 
           type="file" 
-          accept="image/*" 
-          multiple 
+          :accept="imageAccept"
           @change="handleImageChange" 
-          :disabled="images.length >= 8 || isSubmitting" 
+          :disabled="images.length >= MAX_IMAGE_COUNT || isSubmitting"
           hidden 
         />
       </label>
