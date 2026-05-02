@@ -16,7 +16,7 @@ export enum ProviderInfo {
   NAVER = "NAVER",
 }
 
-interface OAuthLoginOptions extends PendingAuthState {
+interface OAuthLoginOptions extends Partial<PendingAuthState> {
   action?: "link";
 }
 
@@ -97,7 +97,7 @@ export const useAuthStore = defineStore("auth", {
         ? {
             redirectTo: options.redirectTo,
             expectedUserId: options.expectedUserId ?? null,
-            grantSecurityAccess: options.grantSecurityAccess ?? false,
+            grantSecurityAccess: options.grantSecurityAccess,
           }
         : null;
 

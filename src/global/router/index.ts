@@ -2,7 +2,8 @@ import { useAuthStore } from "@/auth/stores/auth";
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import { useAlert } from "@/global/composables/useAlert";
-import { RouteNames } from "./routeHelper";
+import { hasSecurityAccess } from "@/user/utils/securityAccess";
+import { RouteHelper, RouteNames } from "./routeHelper";
 
 // 라우트 설정에 RouteRecordRaw 타입 적용
 const routes: Array<RouteRecordRaw> = [
@@ -127,6 +128,7 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/user/views/ProfileSecurityView.vue"),
     meta: {
       requiresAuth: true,
+      requiresRecentAuth: true,
     },
   },
   {
@@ -188,6 +190,16 @@ router.beforeEach(async (to, _from, next) => {
     }
 
     const roles = to.meta.roles;
+
+    if (to.meta?.requiresRecentAuth) {
+      const userId = authStore.userId;
+      if (!userId || !hasSecurityAccess(userId)) {
+        return next({
+          ...RouteHelper.user.securityVerify(),
+          replace: true,
+        });
+      }
+    }
 
     if (Array.isArray(roles) && roles.length > 0) {
       const hasAuthority = authStore.hasAnyAuthority(roles);

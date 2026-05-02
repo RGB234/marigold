@@ -19,7 +19,19 @@ export function getPendingAuthState(): PendingAuthState | null {
   }
 
   try {
-    return JSON.parse(rawValue) as PendingAuthState;
+    const state = JSON.parse(rawValue) as PendingAuthState & {
+      securityAccessGrantMode?: "route-only" | "route-and-action";
+    };
+
+    if (state.grantSecurityAccess || state.securityAccessGrantMode) {
+      return {
+        redirectTo: state.redirectTo,
+        expectedUserId: state.expectedUserId,
+        grantSecurityAccess: true,
+      };
+    }
+
+    return state;
   } catch {
     clearPendingAuthState();
     return null;

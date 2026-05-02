@@ -98,8 +98,10 @@ async function handleOAuthCallback() {
     return;
   }
 
-  if (pendingAuthState?.grantSecurityAccess && authStore.userId) {
-    grantSecurityAccess(authStore.userId);
+  if (authStore.userId) {
+    if (pendingAuthState?.grantSecurityAccess) {
+      grantSecurityAccess(authStore.userId);
+    }
   }
 
   clearPendingAuthState();

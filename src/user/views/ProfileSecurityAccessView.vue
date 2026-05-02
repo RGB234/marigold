@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
@@ -96,6 +96,7 @@ import {
 } from "@/user/utils/securityAccess";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const { alert, toast } = useAlert();
 
@@ -175,7 +176,7 @@ async function reauthenticateWithPassword() {
 
     grantSecurityAccess(authStore.userId);
     toast.success("재로그인이 확인되었습니다.");
-    await router.replace(RouteHelper.user.security());
+    await router.replace(getSecurityRouteAfterVerify());
   } catch (error) {
     console.error("Password reauthentication failed:", error);
     await alert("재로그인 실패", getErrorMessage(error, "비밀번호를 다시 확인해 주세요."));
@@ -190,10 +191,20 @@ function reauthenticateWithOAuth() {
   }
 
   authStore.login(securityInfo.value.providerInfo as ProviderInfo, {
-    redirectTo: router.resolve(RouteHelper.user.security()).href,
+    redirectTo: router.resolve(getSecurityRouteAfterVerify()).href,
     expectedUserId: authStore.userId,
     grantSecurityAccess: true,
   });
+}
+
+function getSecurityRouteAfterVerify() {
+  const intent = route.query.intent;
+  const query = intent === "delete" ? { intent } : undefined;
+
+  return {
+    ...RouteHelper.user.security(),
+    query,
+  };
 }
 
 async function goBackToProfile() {
@@ -222,9 +233,6 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 .security-card {
-  background:
-    linear-gradient(180deg, rgba(255, 250, 237, 0.92), rgba(255, 255, 255, 1) 28%),
-    #ffffff;
   border: 1px solid #ecd8af;
   border-radius: 24px;
   padding: 28px;

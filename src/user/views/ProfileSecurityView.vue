@@ -49,24 +49,74 @@
 
             <label class="field">
               <span>비밀번호</span>
-              <input
-                v-model="credentialForm.password"
-                type="password"
-                placeholder="8자 이상 비밀번호"
-                autocomplete="new-password"
-                required
-              />
+              <div class="password-input-wrapper">
+                <input
+                  v-model="credentialForm.password"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="8자 이상 비밀번호"
+                  autocomplete="new-password"
+                  required
+                />
+                <button
+                  class="password-toggle"
+                  type="button"
+                  :aria-label="showPassword ? '비밀번호 숨기기' : '비밀번호 표시'"
+                  @click="showPassword = !showPassword"
+                >
+                  <img
+                    v-if="!showPassword"
+                    src="@/assets/images/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <img
+                    v-else
+                    src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
             </label>
 
             <label class="field">
               <span>비밀번호 확인</span>
-              <input
-                v-model="credentialForm.confirmPassword"
-                type="password"
-                placeholder="비밀번호를 한 번 더 입력해 주세요"
-                autocomplete="new-password"
-                required
-              />
+              <div class="password-input-wrapper">
+                <input
+                  v-model="credentialForm.confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="비밀번호를 한 번 더 입력해 주세요"
+                  autocomplete="new-password"
+                  required
+                />
+                <button
+                  class="password-toggle"
+                  type="button"
+                  :aria-label="showConfirmPassword ? '비밀번호 확인 숨기기' : '비밀번호 확인 표시'"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <img
+                    v-if="!showConfirmPassword"
+                    src="@/assets/images/visibility_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <img
+                    v-else
+                    src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg"
+                    width="20"
+                    height="20"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
             </label>
 
             <p v-if="credentialError" class="error-text">{{ credentialError }}</p>
@@ -118,32 +168,89 @@
           </div>
         </section>
       </div>
+
+      <section v-if="!isLoading && securityInfo" class="panel danger-panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-label">Danger Zone</p>
+            <h2>계정 삭제</h2>
+          </div>
+        </div>
+
+        <p class="helper-text">
+          계정을 삭제하면 프로필과 개인정보가 비식별 처리되며 복구할 수 없습니다.
+        </p>
+
+        <button class="danger-button" type="button" @click="openDeleteModal">
+          계정 삭제
+        </button>
+      </section>
     </section>
+
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="modal-content">
+        <h3>계정 삭제</h3>
+        <p class="warning-text">계정을 삭제하면 복구할 수 없습니다.</p>
+        <p class="instruction-text">
+          삭제하시려면 아래 문구를 똑같이 입력해 주세요.<br>
+          <strong>"계정을 삭제하겠습니다"</strong>
+        </p>
+        <input
+          v-model="deleteConfirmationInput"
+          type="text"
+          placeholder="계정을 삭제하겠습니다"
+          class="confirm-input"
+          @keyup.enter="confirmDelete"
+        />
+        <div class="modal-actions">
+          <button class="cancel-btn" type="button" @click="closeDeleteModal">취소</button>
+          <button
+            class="confirm-delete-btn"
+            type="button"
+            :disabled="!isDeleteConfirmed || isDeletingAccount"
+            @click="confirmDelete"
+          >
+            {{ isDeletingAccount ? "삭제 중..." : "삭제하기" }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import axios from "axios";
-import { onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, reactive, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import {
+  deleteUser,
   getUserSecurityInfo,
   registerEmailPassword,
 } from "@/user/api/user.api";
 import type { LinkedOAuthProvider, UserSecurityInfoDto } from "@/user/types/user";
-import { hasSecurityAccess } from "@/user/utils/securityAccess";
+import {
+  clearSecurityAccess,
+  hasSecurityAccess,
+} from "@/user/utils/securityAccess";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const { alert, toast } = useAlert();
 
 const isLoading = ref(true);
 const isSubmittingCredentials = ref(false);
+const isDeletingAccount = ref(false);
 const securityInfo = ref<UserSecurityInfoDto | null>(null);
 const credentialError = ref("");
+const showDeleteModal = ref(false);
+const deleteConfirmationInput = ref("");
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const DELETE_CONFIRM_TEXT = "계정을 삭제하겠습니다";
 
 const credentialForm = reactive({
   email: "",
@@ -151,13 +258,16 @@ const credentialForm = reactive({
   confirmPassword: "",
 });
 
-onMounted(async () => {
-  if (!authStore.userId || !hasSecurityAccess(authStore.userId)) {
-    await router.replace(RouteHelper.user.securityVerify());
-    return;
-  }
+const isDeleteConfirmed = computed(() => {
+  return deleteConfirmationInput.value === DELETE_CONFIRM_TEXT;
+});
 
+onMounted(async () => {
   await fetchSecurityInfo();
+
+  if (route.query.intent === "delete" && securityInfo.value) {
+    openDeleteModal();
+  }
 });
 
 async function fetchSecurityInfo() {
@@ -179,6 +289,10 @@ async function submitEmailPassword() {
     return;
   }
 
+  if (!(await ensureSecurityAccess())) {
+    return;
+  }
+
   isSubmittingCredentials.value = true;
 
   try {
@@ -192,6 +306,11 @@ async function submitEmailPassword() {
     await fetchSecurityInfo();
   } catch (error) {
     console.error("Failed to register local credentials:", error);
+    if (isRecentAuthRequiredError(error)) {
+      await handleRecentAuthRequired();
+      return;
+    }
+
     credentialError.value = getErrorMessage(
       error,
       "이메일 로그인 정보 등록에 실패했습니다.",
@@ -201,17 +320,63 @@ async function submitEmailPassword() {
   }
 }
 
-function startOAuthLink(provider: ProviderInfo) {
-  if (!authStore.userId) {
+async function startOAuthLink(provider: ProviderInfo) {
+  const userId = await ensureSecurityAccess();
+  if (!userId) {
     return;
   }
 
   authStore.login(provider, {
     action: "link",
     redirectTo: router.resolve(RouteHelper.user.security()).href,
-    expectedUserId: authStore.userId,
+    expectedUserId: userId,
     grantSecurityAccess: true,
   });
+}
+
+function openDeleteModal() {
+  showDeleteModal.value = true;
+  deleteConfirmationInput.value = "";
+}
+
+function closeDeleteModal() {
+  if (isDeletingAccount.value) {
+    return;
+  }
+
+  showDeleteModal.value = false;
+  deleteConfirmationInput.value = "";
+}
+
+async function confirmDelete() {
+  if (!isDeleteConfirmed.value || isDeletingAccount.value) {
+    return;
+  }
+
+  if (!(await ensureSecurityAccess())) {
+    return;
+  }
+
+  isDeletingAccount.value = true;
+
+  try {
+    await deleteUser();
+    toast.success("계정이 삭제되었습니다.");
+    await authStore.logout();
+    await router.replace(RouteHelper.home());
+  } catch (error) {
+    console.error("Failed to delete account:", error);
+    if (isRecentAuthRequiredError(error)) {
+      await handleRecentAuthRequired();
+      return;
+    }
+
+    toast.error(getErrorMessage(error, "계정 삭제 중 오류가 발생했습니다."));
+  } finally {
+    isDeletingAccount.value = false;
+    showDeleteModal.value = false;
+    deleteConfirmationInput.value = "";
+  }
 }
 
 function validateCredentialForm() {
@@ -239,6 +404,36 @@ function resetCredentialForm() {
   credentialForm.password = "";
   credentialForm.confirmPassword = "";
   credentialError.value = "";
+  showPassword.value = false;
+  showConfirmPassword.value = false;
+}
+
+async function ensureSecurityAccess() {
+  const userId = authStore.userId;
+  if (!userId) {
+    await router.replace(RouteHelper.auth.login());
+    return null;
+  }
+
+  if (hasSecurityAccess(userId)) {
+    return userId;
+  }
+
+  await alert(
+    "인증 필요",
+    "보안 설정을 변경하려면 다시 인증해 주세요.",
+  );
+  await router.replace(RouteHelper.user.securityVerify());
+  return null;
+}
+
+async function handleRecentAuthRequired() {
+  clearSecurityAccess();
+  await alert(
+    "인증 필요",
+    "보안 설정을 변경하려면 다시 인증해 주세요.",
+  );
+  await router.replace(RouteHelper.user.securityVerify());
 }
 
 function getProviderLabel(provider: LinkedOAuthProvider) {
@@ -252,6 +447,13 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 
   return fallbackMessage;
 }
+
+function isRecentAuthRequiredError(error: unknown) {
+  return (
+    axios.isAxiosError(error) &&
+    error.response?.data?.errorCode === "AUTH_RECENT_AUTH_REQUIRED"
+  );
+}
 </script>
 
 <style scoped>
@@ -262,9 +464,6 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 .security-shell {
-  background:
-    radial-gradient(circle at top right, rgba(252, 235, 186, 0.65), transparent 32%),
-    linear-gradient(180deg, #fffef8 0%, #ffffff 100%);
   border: 1px solid #ead9b2;
   border-radius: 28px;
   padding: 28px;
@@ -304,6 +503,12 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.danger-panel {
+  margin-top: 18px;
+  border-color: #f0cbc7;
+  background: #fff8f7;
 }
 
 .panel,
@@ -412,6 +617,37 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
   box-shadow: 0 0 0 4px rgba(187, 130, 18, 0.12);
 }
 
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  box-sizing: border-box;
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+  opacity: 0.72;
+}
+
 .error-text {
   margin: 0;
   color: #cb3d34;
@@ -420,7 +656,8 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 
 .primary-button,
 .outline-button,
-.oauth-button {
+.oauth-button,
+.danger-button {
   border: none;
   border-radius: 999px;
   font-weight: 700;
@@ -432,7 +669,8 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 }
 
 .primary-button,
-.oauth-button {
+.oauth-button,
+.danger-button {
   padding: 14px 18px;
 }
 
@@ -462,10 +700,105 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
   color: #231f20;
 }
 
+.danger-button {
+  margin-top: 18px;
+  background: #c53a2f;
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(151, 48, 39, 0.14);
+}
+
 .primary-button:not(:disabled):hover,
 .outline-button:hover,
-.oauth-button:hover {
+.oauth-button:hover,
+.danger-button:hover {
   transform: translateY(-1px);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-content {
+  width: min(100%, 520px);
+  box-sizing: border-box;
+  border-radius: 20px;
+  background: #ffffff;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 24px 56px rgba(48, 31, 15, 0.24);
+}
+
+.modal-content h3 {
+  margin: 0 0 12px;
+  color: #2f2512;
+  font-size: 24px;
+}
+
+.warning-text {
+  margin: 0 0 12px;
+  color: #c53a2f;
+  font-weight: 700;
+}
+
+.instruction-text {
+  margin: 0 0 20px;
+  color: #5f4e34;
+  line-height: 1.6;
+}
+
+.confirm-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #e0c6c2;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fffafa;
+  font-size: 15px;
+  text-align: center;
+}
+
+.confirm-input:focus {
+  outline: none;
+  border-color: #c53a2f;
+  box-shadow: 0 0 0 4px rgba(197, 58, 47, 0.12);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cancel-btn,
+.confirm-delete-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.cancel-btn {
+  border: 1px solid #ded1bb;
+  background: #ffffff;
+  color: #5d4a2e;
+}
+
+.confirm-delete-btn {
+  background: #c53a2f;
+  color: #ffffff;
+}
+
+.confirm-delete-btn:disabled {
+  background: #d8d0ce;
+  cursor: not-allowed;
 }
 
 @media (max-width: 860px) {

@@ -143,6 +143,13 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      if (errorResponse.errorCode === "AUTH_RECENT_AUTH_REQUIRED") {
+        const { clearSecurityAccess } = await import("@/user/utils/securityAccess");
+        clearSecurityAccess();
+        await router.replace(RouteHelper.user.securityVerify());
+        return Promise.reject(error);
+      }
+
       if (!skipAlert) {
         switch (errorResponse.status) {
           case 400:

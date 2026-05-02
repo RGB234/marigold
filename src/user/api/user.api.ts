@@ -46,5 +46,5 @@ export const registerEmailPassword = async (payload: RegisterEmailPasswordDto): 
 
 // 유저 삭제
 export const deleteUser = async (): Promise<void> => {
-    await api.delete<ApiResponse<void>>("/user/delete");
+    await api.delete<ApiResponse<void>>("/user/delete", { skipAlert: true });
 };

@@ -16,6 +16,7 @@ import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoptio
 import { RouteHelper } from "@/global/router/routeHelper.ts";
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import AdoptionCommentList from '@/adoption/components/AdoptionCommentList.vue';
+import axios from "axios";
 
 const route = useRoute();
 const router = useRouter();
@@ -64,12 +65,12 @@ const formatDate = (dateString: string) => {
 const fetchDetail = async (id: string | string[]) => {
   try {
     const data = await getAdoptionPostDetail(Array.isArray(id) ? id[0] : id);
-    if (data.deleted) {
+    detail.value = data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 410) {
       router.replace(RouteHelper.adoption.deleted());
       return;
     }
-    detail.value = data;
-  } catch (error) {
     router.push(RouteHelper.adoption.list());
   }
 };

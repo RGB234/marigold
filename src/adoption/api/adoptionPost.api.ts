@@ -51,7 +51,9 @@ export const getAdoptionPostSummary = async (id: number | string): Promise<Adopt
 
 // 상세보기
 export const getAdoptionPostDetail = async (id: number | string): Promise<AdoptionPostDetailResponse> => {
-  const {data : apiResponse} = await api.get<ApiResponse<AdoptionPostDetailResponse>>(`/adoption/${id}`);
+  const {data : apiResponse} = await api.get<ApiResponse<AdoptionPostDetailResponse>>(`/adoption/${id}`, {
+    handledErrorStatuses: [410],
+  });
   const detail = apiResponse.data;
 
   if (!detail) {
