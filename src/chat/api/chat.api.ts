@@ -41,6 +41,24 @@ export const getChatRoomMessages = async (roomId: Long_String): Promise<ChatMess
   return apiResponse.data;
 };
 
+export const createChatFileMessage = async (roomId: Long_String, formData: FormData): Promise<ChatMessageDto> => {
+  const {data: apiResponse} = await api.post<ApiResponse<ChatMessageDto>>(`/chat/rooms/${roomId}/messages/files`, formData, {
+    handledErrorStatuses: [400],
+  });
+  if (!apiResponse.data) {
+    throw new Error("파일 메시지 전송 중 오류가 발생했습니다.");
+  }
+  return apiResponse.data;
+};
+
+export const getChatAttachmentDownloadUrl = async (roomId: Long_String, attachmentId: Long_String): Promise<string> => {
+  const {data: apiResponse} = await api.get<ApiResponse<string>>(`/chat/rooms/${roomId}/attachments/${attachmentId}/download-url`);
+  if (!apiResponse.data) {
+    throw new Error("파일 다운로드 URL을 불러오지 못했습니다.");
+  }
+  return apiResponse.data;
+};
+
 export const leaveChatRoom = async (roomId: Long_String): Promise<void> => {
   await api.delete(`/chat/rooms/${roomId}/leave`);
 };

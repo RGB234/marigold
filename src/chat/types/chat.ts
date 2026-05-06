@@ -19,7 +19,17 @@ export interface ChatMessageDto {
     senderNickname: string;
     senderImageUrl: string;
     message: string;
+    messageType: 'TEXT' | 'FILE';
+    attachments: ChatAttachmentDto[];
     createdAt: string;
+}
+
+export interface ChatAttachmentDto {
+    id: TSID_String;
+    originalFileName: string;
+    contentType: string;
+    fileSize: number;
+    downloadUrl: string;
 }
 
 export type ChatRoomPageResponse = PageResponse<ChatRoomDto>;

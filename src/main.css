@@ -87,3 +87,9 @@ body,
     font-weight: 400;
 }
 
+.mdi::before,
+.mdi-set {
+    font-family: "Material Design Icons" !important;
+    font-weight: normal !important;
+}
+
