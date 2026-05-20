@@ -230,6 +230,11 @@ import {
   getUserSecurityInfo,
   registerEmailPassword,
 } from "@/user/api/user.api";
+import {
+  validateEmail,
+  validatePassword,
+  validatePasswordConfirmation,
+} from "@/global/validation/validators";
 import type { LinkedOAuthProvider, UserSecurityInfoDto } from "@/user/types/user";
 import {
   clearSecurityAccess,
@@ -328,7 +333,7 @@ async function startOAuthLink(provider: ProviderInfo) {
 
   authStore.login(provider, {
     action: "link",
-    redirectTo: router.resolve(RouteHelper.user.security()).href,
+    redirectTo: router.resolve(RouteHelper.user.security()).fullPath,
     expectedUserId: userId,
     grantSecurityAccess: true,
   });
@@ -380,23 +385,13 @@ async function confirmDelete() {
 }
 
 function validateCredentialForm() {
-  if (!credentialForm.email) {
-    return "이메일을 입력해 주세요.";
-  }
-
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentialForm.email)) {
-    return "올바른 이메일 형식을 입력해 주세요.";
-  }
-
-  if (credentialForm.password.length < 8) {
-    return "비밀번호는 8자 이상이어야 합니다.";
-  }
-
-  if (credentialForm.password !== credentialForm.confirmPassword) {
-    return "비밀번호 확인이 일치하지 않습니다.";
-  }
-
-  return "";
+  return (
+    validateEmail(credentialForm.email)?.message ||
+    validatePassword(credentialForm.password)?.message ||
+    validatePasswordConfirmation(credentialForm.password, credentialForm.confirmPassword)
+      ?.message ||
+    ""
+  );
 }
 
 function resetCredentialForm() {

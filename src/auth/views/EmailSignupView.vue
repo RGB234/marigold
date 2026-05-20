@@ -92,7 +92,7 @@
           :class="{ 'is-invalid': getFieldError('nickname') }"
         />
         <span v-if="!getFieldError('nickname')" class="hint-msg">
-          3자 이상, 12자 이하 (영문, 한글, 숫자 사용)
+          2자 이상, 12자 이하 (영문, 한글, 숫자 사용)
         </span>
         <span v-else class="error-msg">{{ getFieldError('nickname') }}</span>
       </div>
@@ -110,11 +110,14 @@ import { useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
 import router from "@/global/router";
 import { RouteHelper } from "@/global/router/routeHelper";
-
-interface FieldError {
-  field: string;
-  message: string;
-}
+import type { ValidationError } from "@/global/validation/validators";
+import {
+  compactValidationErrors,
+  validateEmail,
+  validateNickname,
+  validatePassword,
+  validatePasswordConfirmation,
+} from "@/global/validation/validators";
 
 const authStore = useAuthStore();
 const { toast } = useAlert();
@@ -123,7 +126,7 @@ const signupDto = ref({ email: "", password: "", nickname: "" });
 const confirmPassword = ref("");
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
-const fieldErrors = ref<FieldError[]>([]);
+const fieldErrors = ref<ValidationError[]>([]);
 const generalError = ref("");
 
 const getFieldError = (field: string) => {
@@ -132,17 +135,12 @@ const getFieldError = (field: string) => {
 };
 
 const validateSignupForm = () => {
-  const errors: FieldError[] = [];
-
-  if (signupDto.value.password.length < 8) {
-    errors.push({ field: "password", message: "비밀번호는 8자 이상이어야 합니다." });
-  }
-
-  if (!confirmPassword.value) {
-    errors.push({ field: "confirmPassword", message: "비밀번호 확인을 입력해 주세요." });
-  } else if (signupDto.value.password !== confirmPassword.value) {
-    errors.push({ field: "confirmPassword", message: "비밀번호 확인이 일치하지 않습니다." });
-  }
+  const errors = compactValidationErrors([
+    validateEmail(signupDto.value.email),
+    validatePassword(signupDto.value.password),
+    validatePasswordConfirmation(signupDto.value.password, confirmPassword.value),
+    validateNickname(signupDto.value.nickname),
+  ]);
 
   fieldErrors.value = errors;
   return errors.length === 0;

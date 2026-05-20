@@ -45,9 +45,10 @@ import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
 import { RouteHelper } from '@/global/router/routeHelper';
+import { validateEmail } from '@/global/validation/validators';
 
 const authStore = useAuthStore();
-const { toast, alert } = useAlert();
+const { alert } = useAlert();
 
 const loginDto = ref({ email: '', password: '' });
 const showPassword = ref(false);
@@ -65,6 +66,17 @@ const providers = ref<Provider[]>([
 ]);
 
 const handleLocalLogin = async () => {
+  const emailError = validateEmail(loginDto.value.email);
+  if (emailError) {
+    await alert("로그인 실패", emailError.message);
+    return;
+  }
+
+  if (!loginDto.value.password) {
+    await alert("로그인 실패", "비밀번호는 필수입니다.");
+    return;
+  }
+
   try {
     await authStore.localLogin(loginDto.value);
     router.push(RouteHelper.home());

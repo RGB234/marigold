@@ -55,6 +55,7 @@ import { RouteHelper } from '@/global/router/routeHelper';
 import type { ErrorDetail } from '@/global/types/common';
 import { extractApiErrorResponse } from '@/global/utils/apiError';
 import { convertToFormData } from '@/global/utils/objectUtils';
+import { validateImageFiles, validateNickname } from '@/global/validation/validators';
 import { getUserProfile, updateUserProfile } from '@/user/api/user.api';
 
 interface ProfileForm {
@@ -139,14 +140,13 @@ const handleFileChange = (event: Event) => {
         return;
     }
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-        errors.image = 'JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.';
-        return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-        errors.image = '파일 크기는 5MB 이하여야 합니다.';
+    const imageError = validateImageFiles([file], {
+        field: 'image',
+        minCount: 0,
+        maxCount: 1,
+    });
+    if (imageError) {
+        errors.image = imageError.message;
         return;
     }
 
@@ -174,20 +174,12 @@ const resetImageToDefault = () => {
     }
 };
 
-const isValidNickname = (nickname: string) => {
-    if (!nickname) {
-        return false;
-    }
-
-    const pattern = /^[가-힣a-zA-Z0-9]{2,12}$/;
-    return pattern.test(nickname);
-};
-
 const submitForm = async () => {
     resetErrors();
 
-    if (!isValidNickname(form.nickname)) {
-        errors.nickname = '닉네임은 2자 이상 12자 이하의 한글, 영문, 숫자만 사용할 수 있습니다.';
+    const nicknameError = validateNickname(form.nickname);
+    if (nicknameError) {
+        errors.nickname = nicknameError.message;
         return;
     }
 

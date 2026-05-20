@@ -147,10 +147,11 @@ import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractApiErrorResponse } from "@/global/utils/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
+import { validationPolicy } from "@/global/validation/validationPolicy";
+import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
 
-const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
-const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
-const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE);
+const MAX_IMAGE_COUNT = validationPolicy.adoptionPost.images.maxCount;
+const MIN_IMAGE_COUNT = validationPolicy.adoptionPost.images.minCount;
 
 interface ImageToKeep {
   url: string;
@@ -277,27 +278,15 @@ const handleImageChange = (event: Event) => {
   }
 
   const selectedFiles = Array.from(target.files);
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-  for (const file of selectedFiles) {
-    if (!allowedTypes.includes(file.type)) {
-      errors.images = "JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.";
-      clearFileInput();
-      return;
-    }
-  }
-
-  for (const file of selectedFiles) {
-    if (file.size > MAX_FILE_SIZE) {
-      errors.images = `파일 크기는 최대 ${MAX_FILE_SIZE}MB까지 가능합니다. (${file.name})`;
-      clearFileInput();
-      return;
-    }
-  }
-
-  const mergedImages = [...form.imagesToKeep, ...form.images, ...selectedFiles];
-  if (mergedImages.length < MIN_IMAGE_COUNT || mergedImages.length > MAX_IMAGE_COUNT) {
-    errors.images = `이미지는 최소 ${MIN_IMAGE_COUNT}개, 최대 ${MAX_IMAGE_COUNT}개까지 업로드 가능합니다.`;
+  const imageError = validateImageFiles(selectedFiles, {
+    field: "images",
+    minCount: MIN_IMAGE_COUNT,
+    maxCount: MAX_IMAGE_COUNT,
+    existingCount: form.imagesToKeep.length + form.images.length,
+  });
+  if (imageError) {
+    errors.images = imageError.message;
     clearFileInput();
     return;
   }
@@ -334,6 +323,13 @@ const removeImage = (index: number) => {
 
 const handleSubmit = async () => {
   resetErrors();
+  const imageCount = form.imagesToKeep.length + form.images.length;
+  const localErrors = validateAdoptionPostForm(form, imageCount);
+  if (localErrors.length > 0) {
+    applyFieldErrors(localErrors);
+    return;
+  }
+
   const formData = convertToFormData(form);
 
   try {

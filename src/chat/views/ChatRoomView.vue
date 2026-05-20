@@ -19,6 +19,8 @@ import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/Ado
 import NoImage from '@/assets/images/no-image.jpeg';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import { useAlert } from '@/global/composables/useAlert';
+import { validationPolicy } from '@/global/validation/validationPolicy';
+import { formatFileSize, validateChatAttachmentFiles } from '@/global/validation/validators';
 
 const route = useRoute();
 const router = useRouter();
@@ -47,10 +49,8 @@ const isConnectionFailed = ref(false);
 const isSending = ref(false);
 const retryCount = ref(0);
 const MAX_RETRIES = 5;
-const MAX_FILE_COUNT = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const MAX_TOTAL_FILE_SIZE = 30 * 1024 * 1024;
-const allowedFileExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx', 'xlsx', 'pptx', 'txt', 'csv', 'hwpx'];
+const MAX_FILE_COUNT = validationPolicy.chatAttachment.maxCount;
+const allowedFileExtensions = validationPolicy.chatAttachment.allowedExtensions;
 const fileAccept = allowedFileExtensions.map((extension) => `.${extension}`).join(',');
 const canSend = computed(() => newMessage.value.trim() !== '' || selectedFiles.value.length > 0);
 
@@ -132,14 +132,6 @@ const retryConnect = () => {
   connectWebSocket();
 };
 
-const getFileExtension = (fileName: string) => fileName.split('.').pop()?.toLowerCase() ?? '';
-
-const formatFileSize = (size: number) => {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
-};
-
 const isImageAttachment = (attachment: ChatAttachmentDto) => attachment.contentType?.startsWith('image/') ?? false;
 
 const openAttachmentPreview = (attachment: ChatAttachmentDto) => {
@@ -187,33 +179,9 @@ const handleFileChange = (event: Event) => {
   const files = Array.from(target.files);
   const nextFiles = [...selectedFiles.value, ...files];
 
-  if (nextFiles.length > MAX_FILE_COUNT) {
-    toast.error(`파일은 최대 ${MAX_FILE_COUNT}개까지 첨부할 수 있습니다.`);
-    target.value = '';
-    return;
-  }
-
-  const invalidFile = files.find((file) => {
-    const extension = getFileExtension(file.name);
-    return file.size <= 0 || !allowedFileExtensions.includes(extension);
-  });
-
-  if (invalidFile) {
-    toast.error('지원하지 않는 파일 형식입니다.');
-    target.value = '';
-    return;
-  }
-
-  const oversizedFile = files.find((file) => file.size > MAX_FILE_SIZE);
-  if (oversizedFile) {
-    toast.error(`파일 1개는 ${formatFileSize(MAX_FILE_SIZE)} 이하여야 합니다.`);
-    target.value = '';
-    return;
-  }
-
-  const totalSize = nextFiles.reduce((sum, file) => sum + file.size, 0);
-  if (totalSize > MAX_TOTAL_FILE_SIZE) {
-    toast.error(`첨부 파일 총 용량은 ${formatFileSize(MAX_TOTAL_FILE_SIZE)} 이하여야 합니다.`);
+  const fileError = validateChatAttachmentFiles(files, selectedFiles.value);
+  if (fileError) {
+    toast.error(fileError.message);
     target.value = '';
     return;
   }

@@ -155,10 +155,11 @@ import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractApiErrorResponse } from "@/global/utils/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
+import { validationPolicy } from "@/global/validation/validationPolicy";
+import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
 
-const MAX_IMAGE_COUNT = Number(import.meta.env.VITE_MAX_IMAGE_COUNT);
-const MIN_IMAGE_COUNT = Number(import.meta.env.VITE_MIN_IMAGE_COUNT);
-const MAX_FILE_SIZE = Number(import.meta.env.VITE_MAX_FILE_SIZE);
+const MAX_IMAGE_COUNT = validationPolicy.adoptionPost.images.maxCount;
+const MIN_IMAGE_COUNT = validationPolicy.adoptionPost.images.minCount;
 
 interface AdoptionForm {
   species: Species | string;
@@ -240,34 +241,22 @@ const handleImageChange = (event: Event) => {
     return;
   }
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
   const newFiles = Array.from(target.files);
 
-  for (const file of newFiles) {
-    if (!allowedTypes.includes(file.type)) {
-      errors.images = "JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.";
-      clearFileInput();
-      return;
-    }
-  }
-
-  for (const file of newFiles) {
-    if (file.size > MAX_FILE_SIZE) {
-      errors.images = `파일 크기는 최대 ${MAX_FILE_SIZE}MB까지 가능합니다. (${file.name})`;
-      clearFileInput();
-      return;
-    }
-  }
-
-  const mergedImages = [...form.images, ...newFiles];
-  if (mergedImages.length < MIN_IMAGE_COUNT || mergedImages.length > MAX_IMAGE_COUNT) {
-    errors.images = `이미지는 최소 ${MIN_IMAGE_COUNT}개, 최대 ${MAX_IMAGE_COUNT}개까지 업로드 가능합니다.`;
+  const imageError = validateImageFiles(newFiles, {
+    field: "images",
+    minCount: MIN_IMAGE_COUNT,
+    maxCount: MAX_IMAGE_COUNT,
+    existingCount: form.images.length,
+  });
+  if (imageError) {
+    errors.images = imageError.message;
     clearFileInput();
     return;
   }
 
   errors.images = "";
-  form.images = mergedImages;
+  form.images = [...form.images, ...newFiles];
 
   newFiles.forEach((file) => {
     imagePreviews.value.push(URL.createObjectURL(file));
@@ -294,6 +283,12 @@ const removeImage = (index: number) => {
 
 const handleSubmit = async () => {
   resetFieldErrors();
+  const localErrors = validateAdoptionPostForm(form, form.images.length);
+  if (localErrors.length > 0) {
+    applyFieldErrors(localErrors);
+    return;
+  }
+
   const formData = convertToFormData({ ...form }) as FormData;
 
   try {

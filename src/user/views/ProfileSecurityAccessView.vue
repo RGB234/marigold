@@ -191,7 +191,7 @@ function reauthenticateWithOAuth() {
   }
 
   authStore.login(securityInfo.value.providerInfo as ProviderInfo, {
-    redirectTo: router.resolve(getSecurityRouteAfterVerify()).href,
+    redirectTo: router.resolve(getSecurityRouteAfterVerify()).fullPath,
     expectedUserId: authStore.userId,
     grantSecurityAccess: true,
   });

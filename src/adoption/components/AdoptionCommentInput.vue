@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { createAdoptionComment } from '@/adoption/api/adoptionPost.api';
 import { useAlert } from '@/global/composables/useAlert';
+import { validationPolicy } from '@/global/validation/validationPolicy';
+import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
 
 const props = defineProps<{
   postId: string | number;
@@ -19,35 +21,23 @@ const content = ref('');
 const images = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
 const isSubmitting = ref(false);
-const MAX_IMAGE_COUNT = 1;
-const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-const imageAccept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
-
-const isAllowedImageFile = (file: File) => {
-  const extension = file.name.split('.').pop()?.toLowerCase();
-
-  return (
-    allowedImageTypes.includes(file.type) ||
-    (file.type === '' && !!extension && allowedImageExtensions.includes(extension))
-  );
-};
+const MAX_IMAGE_COUNT = validationPolicy.comment.images.maxCount;
+const MIN_IMAGE_COUNT = validationPolicy.comment.images.minCount;
+const imageAccept = validationPolicy.image.allowedExtensions.map(extension => `.${extension}`).join(',');
 
 const handleImageChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
   if (!target.files) return;
 
   const files = Array.from(target.files);
-  const hasInvalidFile = files.some(file => !isAllowedImageFile(file));
-
-  if (hasInvalidFile) {
-    toast.error('JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.');
-    target.value = '';
-    return;
-  }
-
-  if (images.value.length + files.length > MAX_IMAGE_COUNT) {
-    toast.error(`이미지는 최대 ${MAX_IMAGE_COUNT}개까지 첨부할 수 있습니다.`);
+  const imageError = validateImageFiles(files, {
+    field: 'images',
+    minCount: MIN_IMAGE_COUNT,
+    maxCount: MAX_IMAGE_COUNT,
+    existingCount: images.value.length,
+  });
+  if (imageError) {
+    toast.error(imageError.message);
     target.value = '';
     return;
   }
@@ -67,8 +57,9 @@ const removeImage = (index: number) => {
 };
 
 const submitComment = async () => {
-  if (!content.value.trim()) {
-    toast.error('댓글 내용을 입력해주세요.');
+  const contentError = validateCommentContent(content.value);
+  if (contentError) {
+    toast.error(contentError.message);
     return;
   }
 
@@ -104,7 +95,13 @@ const submitComment = async () => {
 
 <template>
   <div class="comment-input-container">
-    <textarea v-model="content" placeholder="댓글을 입력하세요..." :disabled="isSubmitting" class="comment-textarea"></textarea>
+    <textarea
+      v-model="content"
+      placeholder="댓글을 입력하세요..."
+      :disabled="isSubmitting"
+      :maxlength="validationPolicy.comment.content.maxLength"
+      class="comment-textarea"
+    ></textarea>
     
     <div class="image-previews" v-if="imagePreviews.length > 0">
       <div v-for="(preview, index) in imagePreviews" :key="index" class="preview-item">

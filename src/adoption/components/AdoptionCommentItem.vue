@@ -6,6 +6,8 @@ import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import { useAuthStore } from '@/auth/stores/auth';
 import { deleteAdoptionComment, updateAdoptionComment } from '@/adoption/api/adoptionPost.api';
 import { useAlert } from '@/global/composables/useAlert';
+import { validationPolicy } from '@/global/validation/validationPolicy';
+import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
 
 const props = defineProps<{
   comment: AdoptionCommentResponse;
@@ -31,9 +33,7 @@ const editImage = ref<File | null>(null);
 const editImagePreview = ref<string | null>(null);
 const removeImageOnEdit = ref(false);
 const editImageInputRef = ref<HTMLInputElement | null>(null);
-const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-const imageAccept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+const imageAccept = validationPolicy.image.allowedExtensions.map(extension => `.${extension}`).join(',');
 
 const isMyComment = computed(() => {
   return authStore.userId === props.comment.writer?.id;
@@ -107,15 +107,6 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const isAllowedImageFile = (file: File) => {
-  const extension = file.name.split('.').pop()?.toLowerCase();
-
-  return (
-    allowedImageTypes.includes(file.type) ||
-    (file.type === '' && !!extension && allowedImageExtensions.includes(extension))
-  );
-};
-
 const clearEditImageInput = () => {
   if (editImageInputRef.value) {
     editImageInputRef.value.value = '';
@@ -170,8 +161,13 @@ const handleEditImageChange = (e: Event) => {
     return;
   }
 
-  if (!isAllowedImageFile(file)) {
-    toast.error('JPG, JPEG, PNG, WebP 형식의 이미지만 업로드 가능합니다.');
+  const imageError = validateImageFiles([file], {
+    field: 'images',
+    minCount: validationPolicy.comment.images.minCount,
+    maxCount: validationPolicy.comment.images.maxCount,
+  });
+  if (imageError) {
+    toast.error(imageError.message);
     clearEditImageInput();
     return;
   }
@@ -192,8 +188,9 @@ const removeEditImage = () => {
 };
 
 const submitEdit = async () => {
-  if (!editContent.value.trim()) {
-    toast.error('댓글 내용을 입력해주세요.');
+  const contentError = validateCommentContent(editContent.value);
+  if (contentError) {
+    toast.error(contentError.message);
     return;
   }
 
@@ -270,7 +267,7 @@ onBeforeUnmount(() => {
           v-model="editContent"
           class="comment-edit-textarea"
           :disabled="isUpdating"
-          maxlength="1000"
+          :maxlength="validationPolicy.comment.content.maxLength"
         ></textarea>
         <div class="comment-edit-image-area">
           <div v-if="editImagePreviewUrl" class="comment-edit-image-preview">

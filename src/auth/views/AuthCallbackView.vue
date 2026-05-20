@@ -43,7 +43,7 @@ async function handleOAuthCallback() {
 
   const pendingAuthState = getPendingAuthState();
   const redirectTo =
-    pendingAuthState?.redirectTo ?? router.resolve(RouteHelper.home()).href;
+    pendingAuthState?.redirectTo ?? router.resolve(RouteHelper.home()).fullPath;
 
   if (errorCode) {
     clearPendingAuthState();
