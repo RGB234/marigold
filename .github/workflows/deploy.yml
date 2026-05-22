@@ -27,7 +27,6 @@ jobs:
         with:
           repository: RGB234/marigold_server
           path: backend-source
-          token: ${{ secrets.CHECKOUT_TOKEN }}
           sparse-checkout: |
             src/main/resources/validation-policy.json
           sparse-checkout-cone-mode: false

@@ -7,7 +7,7 @@
     "prod": "vite --mode prod",
     "build:dev": "vite build --mode dev",
     "build:prod": "vite build --mode prod",
-    "preview": "vite preview",
+    "preview": "vite preview --port 8000",
     "check:validation-policy": "node scripts/check-validation-policy.mjs",
     "test:unit": "vitest",
     "test:unit:ui": "vitest --ui",
