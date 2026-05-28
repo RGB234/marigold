@@ -20,6 +20,12 @@ interface OAuthLoginOptions extends Partial<PendingAuthState> {
   action?: "link";
 }
 
+interface AuthStatusResponse {
+  userId: string | null;
+  authorities: string[];
+  refreshTokenPresent: boolean;
+}
+
 /*
   HttpOnly Cookie를 사용하여 인증 상태 관리
   프론트엔드 UI 업데이트를 위한 최소한의 인증 정보를 백엔드에 요청해서 저장
@@ -55,12 +61,15 @@ export const useAuthStore = defineStore("auth", {
     // 로그인 상태 초기화 (App.vue 호출시 인증 상태 확인)
     async initializeAuth() : Promise<boolean> {  
       try {
-        // 새로고침 직후 등 메모리에 토큰이 없을 때 silent refresh 시도
-        if (!this.accessToken) {
-          await this.silentRefresh();
-        }
+        let {data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status");
 
-        const {data: apiResponse} = await api.get<ApiResponse<{ userId: string, authorities: string[] }>>("/auth/status");
+        // 메모리 토큰은 없지만 refresh cookie가 있는 경우에만 세션을 복구합니다.
+        if (!this.accessToken && apiResponse.data?.refreshTokenPresent) {
+          const refreshed = await this.silentRefresh();
+          if (refreshed) {
+            ({data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status"));
+          }
+        }
         console.log("AUTH STATUS RESPONSE", apiResponse);
 
         // 전역 상태 업데이트

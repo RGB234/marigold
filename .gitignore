@@ -4,9 +4,20 @@ node_modules
 
 
 # local env files
+.env
 .env.local
 .env.*.local
 .env.*
+!.env.example
+
+# Secret material
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+.aws/
+.ssh/
 
 # Log files
 npm-debug.log*
