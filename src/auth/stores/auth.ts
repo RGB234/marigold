@@ -61,6 +61,7 @@ export const useAuthStore = defineStore("auth", {
     // 로그인 상태 초기화 (App.vue 호출시 인증 상태 확인)
     async initializeAuth() : Promise<boolean> {  
       try {
+
         let {data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status");
 
         // 메모리 토큰은 없지만 refresh cookie가 있는 경우에만 세션을 복구합니다.

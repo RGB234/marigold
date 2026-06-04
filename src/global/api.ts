@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/global/types/common";
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
+import Cookies from "js-cookie";
 import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import router from "@/global/router";
@@ -34,6 +35,10 @@ const redirectToLoginIfProtectedRoute = () => {
 
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_API_V1_BASE;
+const CSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";
+const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
+const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+let csrfTokenCache: string | null = null;
 
 // Axios 인스턴스 생성
 const api: AxiosInstance = axios.create({
@@ -56,6 +61,12 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${authStore.accessToken}`;
     }
 
+    const method = config.method?.toUpperCase();
+    const csrfToken = csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME);
+    if (method && CSRF_PROTECTED_METHODS.has(method) && csrfToken) {
+      config.headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
+    }
+
     return config;
   },
   (error) => {
@@ -72,6 +83,7 @@ api.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
+    csrfTokenCache = response.headers[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
     return response;
   },
   async (error: AxiosError<ApiResponse<unknown>>) => {
@@ -80,6 +92,8 @@ api.interceptors.response.use(
 
     const { alert } = useAlert();
     const errorResponse = error.response?.data;
+    csrfTokenCache =
+      error.response?.headers?.[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
     const originalRequest = error.config as any; // 인터셉터에서 config 재사용을 위해 캐스팅
     const skipAlert = originalRequest?.skipAlert;
     const handledErrorStatuses: number[] = originalRequest?.handledErrorStatuses ?? [];
