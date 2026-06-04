@@ -68,7 +68,7 @@ const flattenedComments = computed<FlattenedCommentItem[]>(() => {
 
 <template>
   <div class="comment-section">
-    <h3>댓글</h3>
+    <h3>입양 후 근황</h3>
 
     <!-- 댓글 목록 -->
     <div v-if="loading" class="loading">
