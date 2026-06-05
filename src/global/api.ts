@@ -35,8 +35,8 @@ const redirectToLoginIfProtectedRoute = () => {
 
 // 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_API_V1_BASE;
-const CSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";
-const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
+export const CSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";
+export const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfTokenCache: string | null = null;
 

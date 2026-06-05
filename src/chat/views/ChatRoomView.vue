@@ -3,8 +3,10 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import Cookies from 'js-cookie';
 
 import { useAuthStore } from '@/auth/stores/auth';
+import { CSRF_TOKEN_COOKIE_NAME, CSRF_TOKEN_HEADER_NAME } from '@/global/api';
 import {
   getChatRoomMessages,
   getChatRoom,
@@ -31,8 +33,19 @@ const roomId = computed(() => {
   return Array.isArray(id) ? id[0] : id;
 });
 const currentUserId = computed(() => authStore.userId);
-const getStompAuthHeaders = (): Record<string, string> =>
-  authStore.accessToken ? { Authorization: `Bearer ${authStore.accessToken}` } : {};
+const getStompAuthHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  const csrfToken = Cookies.get(CSRF_TOKEN_COOKIE_NAME);
+
+  if (authStore.accessToken) {
+    headers.Authorization = `Bearer ${authStore.accessToken}`;
+  }
+  if (csrfToken) {
+    headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
+  }
+
+  return headers;
+};
 
 const messages = ref<ChatMessageDto[]>([]);
 const newMessage = ref('');
