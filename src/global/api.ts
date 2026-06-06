@@ -40,6 +40,10 @@ export const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfTokenCache: string | null = null;
 
+export const getCsrfToken = (): string | null => {
+  return csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME) ?? null;
+};
+
 // Axios 인스턴스 생성
 const api: AxiosInstance = axios.create({
   baseURL: apiBase,
@@ -62,7 +66,7 @@ api.interceptors.request.use(
     }
 
     const method = config.method?.toUpperCase();
-    const csrfToken = csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME);
+    const csrfToken = getCsrfToken();
     if (method && CSRF_PROTECTED_METHODS.has(method) && csrfToken) {
       config.headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
     }

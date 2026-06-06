@@ -3,10 +3,9 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import Cookies from 'js-cookie';
 
 import { useAuthStore } from '@/auth/stores/auth';
-import { CSRF_TOKEN_COOKIE_NAME, CSRF_TOKEN_HEADER_NAME } from '@/global/api';
+import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/api';
 import {
   getChatRoomMessages,
   getChatRoom,
@@ -35,7 +34,7 @@ const roomId = computed(() => {
 const currentUserId = computed(() => authStore.userId);
 const getStompAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {};
-  const csrfToken = Cookies.get(CSRF_TOKEN_COOKIE_NAME);
+  const csrfToken = getCsrfToken();
 
   if (authStore.accessToken) {
     headers.Authorization = `Bearer ${authStore.accessToken}`;
@@ -262,8 +261,7 @@ const fetchPostDetail = async () => {
   try {
     const room = await getChatRoom(roomId.value);
     chatRoom.value = room;
-    const postInfoData = await getAdoptionPostSummary(room.postId.toString());
-    postInfo.value = postInfoData;
+    postInfo.value = await getAdoptionPostSummary(room.postId.toString());
   } catch (error) {
     console.error('Failed to fetch post detail:', error);
   }
@@ -279,8 +277,7 @@ onMounted(async () => {
   await fetchPostDetail();
 
   try {
-    const initialMessages = await getChatRoomMessages(roomId.value);
-    messages.value = initialMessages;
+    messages.value = await getChatRoomMessages(roomId.value);
     scrollToBottom();
   } catch (error) {
     console.error('Failed to fetch messages:', error);
@@ -556,29 +553,9 @@ onUnmounted(() => {
   max-width: 80%;
 }
 
-.my-message {
-  align-self: flex-end;
-  align-items: flex-end;
-}
-
-.other-message {
-  align-self: flex-start;
-}
-
 .sender-profile {
   margin-bottom: 4px;
   margin-left: 4px;
-}
-
-:deep(.sender-profile .nickname) {
-  font-size: 12px;
-  color: #666;
-  font-weight: 400;
-}
-
-:deep(.sender-profile .profile-img) {
-  width: 28px !important;
-  height: 28px !important;
 }
 
 .message-bubble {
