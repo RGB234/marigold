@@ -553,9 +553,29 @@ onUnmounted(() => {
   max-width: 80%;
 }
 
+.my-message {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.other-message {
+  align-self: flex-start;
+}
+
 .sender-profile {
   margin-bottom: 4px;
   margin-left: 4px;
+}
+
+:deep(.sender-profile .nickname) {
+  font-size: 12px;
+  color: #666;
+  font-weight: 400;
+}
+
+:deep(.sender-profile .profile-img) {
+  width: 28px !important;
+  height: 28px !important;
 }
 
 .message-bubble {
