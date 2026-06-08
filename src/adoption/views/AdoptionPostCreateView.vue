@@ -309,8 +309,6 @@ const handleSubmit = async () => {
       }
       return;
     }
-
-    console.error("입양글 작성 중 오류 발생:", error);
   }
 };
 

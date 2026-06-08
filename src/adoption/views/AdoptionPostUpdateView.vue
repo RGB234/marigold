@@ -265,8 +265,7 @@ const handleFetchAdoption = async () => {
     });
 
     imagePreviews.value = data.imageUrls?.length ? [...data.imageUrls] : [];
-  } catch (error) {
-    console.error(error);
+  } catch {
     await router.push(RouteHelper.adoption.list());
   }
 };
@@ -341,9 +340,7 @@ const handleSubmit = async () => {
   } catch (error: unknown) {
     const apiError = extractApiErrorResponse(error);
 
-    if (!applyFieldErrors(apiError?.errors)) {
-      console.error("입양글 수정 중 오류 발생:", error);
-    }
+    applyFieldErrors(apiError?.errors);
   }
 };
 

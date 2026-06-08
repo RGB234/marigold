@@ -5,6 +5,7 @@ import { useAlert } from "@/global/composables/useAlert";
 import { useLoadingStore } from "@/global/stores/loading";
 import router from "@/global/router";
 import {RouteHelper} from "@/global/router/routeHelper.ts";
+import { logger } from "@/global/logger";
 
 // Axios Request Config 확장을 통해 커스텀 속성(skipAlert) 추가
 declare module 'axios' {
@@ -103,7 +104,7 @@ api.interceptors.response.use(
     const handledErrorStatuses: number[] = originalRequest?.handledErrorStatuses ?? [];
 
     if (errorResponse) {
-      console.error(
+      logger.error(
         `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
       );
       
@@ -172,25 +173,20 @@ api.interceptors.response.use(
         switch (errorResponse.status) {
           case 400:
             await alert("400 Bad Request", "잘못된 요청입니다");
-            console.debug(errorResponse.message);
             break;
           case 401:
             await alert("401 Unauthorized", "인증 필요");
-            console.debug(errorResponse.message);
             redirectToLoginIfProtectedRoute();
             break;
           case 404:
             await alert("404 Not Found", "페이지를 찾을 수 없습니다");
-            console.debug(errorResponse.message);
             router.back();
             break;
           case 500:
             await alert("500 Internal Server Error", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            console.debug(errorResponse.message);
             break;
           default:
             await alert("Error " + errorResponse.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            console.debug(errorResponse.message);
             break;
         }
       } else {
@@ -210,7 +206,6 @@ api.interceptors.response.use(
     } else {
       if (!skipAlert) {
         await alert("Error " + error.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-        console.debug(error.message);
       }
     }
 

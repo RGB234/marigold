@@ -164,7 +164,6 @@ const handleLocalSignup = async () => {
 
     fieldErrors.value = errorResponse?.errors || [];
     generalError.value = errorResponse?.message || "";
-    console.log("errorResponse : ", errorResponse);
   }
 };
 

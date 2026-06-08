@@ -23,8 +23,8 @@ const fetchComments = async () => {
   loading.value = true;
   try {
     comments.value = await getAdoptionComments(props.postId);
-  } catch (error) {
-    console.error("댓글 목록을 불러오는 중 오류 발생:", error);
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   } finally {
     loading.value = false;
   }

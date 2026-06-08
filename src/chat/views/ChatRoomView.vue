@@ -6,6 +6,7 @@ import SockJS from 'sockjs-client';
 
 import { useAuthStore } from '@/auth/stores/auth';
 import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/api';
+import { logger } from '@/global/logger';
 import {
   getChatRoomMessages,
   getChatRoom,
@@ -91,16 +92,12 @@ const connectWebSocket = () => {
   stompClient = new Client({
     webSocketFactory: () => new SockJS(`${apiBase}/ws`),
     connectHeaders: getStompAuthHeaders(),
-    debug: (str) => {
-      console.log(str);
-    },
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
   });
 
   stompClient.onConnect = () => {
-    console.log('WebSocket 연결됨');
     retryCount.value = 0;
     isReconnecting.value = false;
     isConnectionFailed.value = false;
@@ -113,11 +110,11 @@ const connectWebSocket = () => {
   };
 
   stompClient.onStompError = (frame) => {
-    console.error('STOMP error: ' + frame.headers['message']);
+    logger.error('STOMP error: ' + frame.headers['message']);
   };
 
   stompClient.onWebSocketError = (event) => {
-    console.error('WebSocket error:', event);
+    logger.error('WebSocket error:', event);
   };
 
   stompClient.onWebSocketClose = () => {
@@ -125,13 +122,10 @@ const connectWebSocket = () => {
     if (isManualDisconnect) return;
 
     retryCount.value += 1;
-    console.log(`WebSocket 연결 끊김 (${retryCount.value}/${MAX_RETRIES}회 재시도)`);
-
     if (retryCount.value >= MAX_RETRIES) {
       stompClient?.deactivate();
       isReconnecting.value = false;
       isConnectionFailed.value = true;
-      console.warn('최대 재연결 횟수 초과. 재시도를 중단합니다.');
     } else {
       isReconnecting.value = true;
     }
@@ -167,8 +161,7 @@ const downloadAttachment = async (attachment: ChatAttachmentDto) => {
   try {
     const downloadUrl = await getChatAttachmentDownloadUrl(roomId.value, attachment.id);
     triggerDownload(downloadUrl, attachment.originalFileName);
-  } catch (error) {
-    console.error('Failed to download attachment:', error);
+  } catch {
     toast.error('파일 다운로드 중 오류가 발생했습니다.');
   }
 };
@@ -238,8 +231,7 @@ const sendFileMessage = async () => {
     }
     newMessage.value = '';
     clearSelectedFiles();
-  } catch (error) {
-    console.error('Failed to send file message:', error);
+  } catch {
     toast.error('파일 전송 중 오류가 발생했습니다.');
   } finally {
     isSending.value = false;
@@ -262,8 +254,8 @@ const fetchPostDetail = async () => {
     const room = await getChatRoom(roomId.value);
     chatRoom.value = room;
     postInfo.value = await getAdoptionPostSummary(room.postId.toString());
-  } catch (error) {
-    console.error('Failed to fetch post detail:', error);
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   }
 };
 
@@ -279,8 +271,8 @@ onMounted(async () => {
   try {
     messages.value = await getChatRoomMessages(roomId.value);
     scrollToBottom();
-  } catch (error) {
-    console.error('Failed to fetch messages:', error);
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   }
   connectWebSocket();
 });

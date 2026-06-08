@@ -33,8 +33,7 @@ const fetchMyAdoptions = async (page = 0) => {
         const data: AdoptionPostPageResponse = await getAdoptionPostListByAdopter(userId, { page, size: 10 });
         myAdoptionInfoList.value = data.content || [];
         totalServerPages.value = data.page.totalPages ?? 1;
-    } catch (error) {
-        console.error("입양 목록 조회 중 오류 발생:", error);
+    } catch {
         myAdoptionInfoList.value = [];
     } finally {
         loading.value = false;

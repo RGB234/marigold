@@ -5,15 +5,20 @@ import vuetify from 'vite-plugin-vuetify'
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
-export default defineConfig({
+export default defineConfig( ({mode}) => ({
     plugins: [vue(), vuetify({ autoImport: true }), cloudflare()],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-
     server: {
         port: 8000
-    }
-})
+    },
+    esbuild: {
+        pure:
+            mode === "production"
+                ? ["console.log", "console.debug", "console.info"]
+                : [],
+    },
+}))

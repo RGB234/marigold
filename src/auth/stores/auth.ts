@@ -71,7 +71,6 @@ export const useAuthStore = defineStore("auth", {
             ({data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status"));
           }
         }
-        console.log("AUTH STATUS RESPONSE", apiResponse);
 
         // 전역 상태 업데이트
         this.id = apiResponse.data!.userId || null;
@@ -79,7 +78,6 @@ export const useAuthStore = defineStore("auth", {
         
         return true;
       } catch (error) {
-        console.error("❌ 인증 상태 확인 실패:", error);
         // 에러 발생 시 인증되지 않은 것으로 처리
         this.resetAuthState();
         throw error;
@@ -95,8 +93,7 @@ export const useAuthStore = defineStore("auth", {
           return true;
         }
         return false;
-      } catch (error) {
-        console.debug("Silent refresh failed (e.g., refresh token expired or missing)");
+      } catch {
         this.resetAuthState();
         return false;
       }
@@ -144,7 +141,7 @@ export const useAuthStore = defineStore("auth", {
 
     async localLogin(dto: any): Promise<boolean> {
       try {
-        // 로그인 에러는 컴포넌트에서 직접 표시하기 위해 skipAlert 사용
+        // 로그인 에러는 호출한 컴포넌트에서 직접 처리 위해 skipAlert 사용
         const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/login", dto, { skipAlert: true });
         
         if (response.data?.data?.accessToken) {
@@ -154,42 +151,33 @@ export const useAuthStore = defineStore("auth", {
         await this.initializeAuth();
         return true;
       } catch (error) {
-        console.error("Local login failed:", error);
         throw error;
       }
     },
 
     async localSignup(dto: any): Promise<boolean> {
       try {
-        // 회원가입 에러 역시 컴포넌트에서 직접 핸들링
+        // 회원가입 에러 호출한 컴포넌트에서 직접 핸들링
         await api.post<ApiResponse<void>>("/auth/signup", dto, { skipAlert: true });
         return true;
       } catch (error) {
-        console.error("Local signup failed:", error);
         throw error;
       }
     },
 
     async logout() : Promise<boolean> {
-      try{
-        await this.reoveToken();
-        return true;
-      } catch (err) {
-        // 토큰이 만료되거나 하여 로그아웃 시 요구하는 인증이 실패한 경우
-        console.error("서버 로그아웃 요청 실패. : ", err);
-        return false;
-      } finally {
-        // 백엔드 서버와 무관하게 클라이언트 로그아웃 보장
-        console.log("클라이언트 로그아웃 수행.");
-        this.resetAuthState();
-      }
+      const success = await this.requestLogout();
+
+      this.resetAuthState();
+      return success;
     },
 
-    async reoveToken(): Promise<boolean> {
+    async requestLogout(): Promise<boolean> {
       try {
         await api.post<ApiResponse<void>>("/auth/logout");
         return true;
-      } catch (err) {
+      } catch {
+        // 토큰이 만료되거나 하여 로그아웃 시 요구하는 인증이 실패한 경우
         return false;
       }
     },

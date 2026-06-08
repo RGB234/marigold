@@ -179,8 +179,8 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta?.requiresAuth) {
     try {
       await authStore.initializeAuth();
-    } catch (error) {
-      console.debug("Auth initialization failed during route navigation:", error);
+    } catch {
+      // 인증 초기화 실패는 아래 로그인 상태 검사에서 처리합니다.
     }
 
     if (!authStore.isLoggedIn) {

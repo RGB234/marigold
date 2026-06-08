@@ -60,8 +60,7 @@ async function handleOAuthCallback() {
   if (shouldRestoreAuth) {
     try {
       await authStore.initializeAuth();
-    } catch (error) {
-      console.error("OAuth callback auth restore failed:", error);
+    } catch {
       clearPendingAuthState();
       clearSecurityAccess();
       await alert("로그인 필요", "인증 정보를 복구하지 못했습니다. 다시 로그인해 주세요.");

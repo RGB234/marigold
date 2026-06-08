@@ -280,8 +280,7 @@ async function fetchSecurityInfo() {
 
   try {
     securityInfo.value = await getUserSecurityInfo();
-  } catch (error) {
-    console.error("Failed to fetch security info:", error);
+  } catch {
     securityInfo.value = null;
   } finally {
     isLoading.value = false;
@@ -310,7 +309,6 @@ async function submitEmailPassword() {
     resetCredentialForm();
     await fetchSecurityInfo();
   } catch (error) {
-    console.error("Failed to register local credentials:", error);
     if (isRecentAuthRequiredError(error)) {
       await handleRecentAuthRequired();
       return;
@@ -370,7 +368,6 @@ async function confirmDelete() {
     await authStore.logout();
     await router.replace(RouteHelper.home());
   } catch (error) {
-    console.error("Failed to delete account:", error);
     if (isRecentAuthRequiredError(error)) {
       await handleRecentAuthRequired();
       return;

@@ -129,8 +129,8 @@ const handleSearch = async (page = 0) => {
 
     totalServerPages.value = data.page.totalPages ?? 1;
     totalElements.value = data.page.totalElements ?? 0;
-  } catch (error) {
-    console.error("검색 중 오류 발생:", error);
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   }
 };
 

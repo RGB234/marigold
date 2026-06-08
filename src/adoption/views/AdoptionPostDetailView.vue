@@ -95,8 +95,7 @@ const deletePost = async () => {
     await deleteAdoptionPost(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
     toast.success('게시글이 삭제되었습니다.');
     router.push(RouteHelper.home());
-  } catch (error) {
-    console.error("게시글 삭제 중 오류 발생:", error);
+  } catch {
     toast.error("게시글 삭제 중 오류가 발생했습니다.");
   }
 };
@@ -107,8 +106,7 @@ const handleStatusChange = async (status: AdoptionPostStatus) => {
     await updateAdoptionPostStatus(detail.value.id, status);
     detail.value.status = status;
     toast.success(`상태가 '${getAdoptionStatusLabel(status)}'(으)로 변경되었습니다.`);
-  } catch (error) {
-    console.error("상태 변경 오류:", error);
+  } catch {
     toast.error("상태 변경 중 오류가 발생했습니다.");
   }
 };
@@ -124,8 +122,7 @@ const handleCompleteAdoptionClick = async () => {
     candidates.value = data;
     selectedAdopterId.value = '';
     showCandidateModal.value = true;
-  } catch (error) {
-    console.error(error);
+  } catch {
     toast.error("후보자 목록을 불러오는 데 실패했습니다.");
   }
 };
@@ -141,8 +138,7 @@ const confirmCompleteAdoption = async () => {
     toast.success("입양 완료 처리되었습니다.");
     showCandidateModal.value = false;
     await fetchDetail(detail.value.id.toString());
-  } catch (error) {
-    console.error(error);
+  } catch {
     toast.error("입양 완료 처리 중 오류가 발생했습니다.");
   }
 };
@@ -154,8 +150,7 @@ const handleCancelCompleteAdoption = async () => {
       await cancelCompleteAdoption(detail.value.id);
       toast.success("입양 완료가 취소되었습니다.");
       await fetchDetail(detail.value.id.toString());
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("입양 완료 취소 중 오류가 발생했습니다.");
     }
   }
@@ -173,8 +168,7 @@ const handleChatRequest = async () => {
     const chatRoom = await getOrCreateChatRoom(adoptionInfoId, writerId);
 
     router.push(RouteHelper.chat.room(chatRoom.id.toString()));
-  } catch (error) {
-    console.log(error);
+  } catch {
     toast.error("채팅방 생성 중 오류가 발생했습니다.");
   }
 };

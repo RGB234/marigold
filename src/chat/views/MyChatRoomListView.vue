@@ -25,8 +25,8 @@ const fetchRooms = async () => {
       direction: 'DESC' 
     });
     allRooms.value = response.content || [];
-  } catch (error) {
-    console.error(error);
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   } finally {
     loading.value = false;
   }

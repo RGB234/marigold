@@ -63,10 +63,8 @@ const userInfo = ref<UserInfo>({
 // 데이터 불러오기
 const fetchUserProfile = async (userId: string) => {
   try {
-    const data = await getUserProfile(userId); // nickname, imageUrl
-    userInfo.value = data;
+    userInfo.value = await getUserProfile(userId);
   } catch (error) {
-    console.error("프로필 조회 중 오류 발생:", error);
     toast.error("프로필 조회 중 오류가 발생했습니다.");
     throw error;
   }

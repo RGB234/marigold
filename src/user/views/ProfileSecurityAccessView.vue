@@ -137,8 +137,7 @@ async function fetchSecurityInfo() {
 
   try {
     securityInfo.value = await getUserSecurityInfo();
-  } catch (error) {
-    console.error("Failed to fetch security info:", error);
+  } catch {
     securityInfo.value = null;
   } finally {
     isLoading.value = false;
@@ -178,7 +177,6 @@ async function reauthenticateWithPassword() {
     toast.success("재로그인이 확인되었습니다.");
     await router.replace(getSecurityRouteAfterVerify());
   } catch (error) {
-    console.error("Password reauthentication failed:", error);
     await alert("재로그인 실패", getErrorMessage(error, "비밀번호를 다시 확인해 주세요."));
   } finally {
     isSubmittingPassword.value = false;

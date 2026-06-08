@@ -32,8 +32,7 @@ const fetchData = async () => {
         
         postDetail.value = detailData;
         candidates.value = candidatesData;
-    } catch (error) {
-        console.error("데이터 조회 중 오류 발생:", error);
+    } catch {
         toast.error("데이터를 불러오는 중 오류가 발생했습니다.");
     } finally {
         loading.value = false;
@@ -45,8 +44,7 @@ const goToChatRoom = async (candidateId: string) => {
         // 기존 채팅방 조회 (또는 생성)
         const chatRoom = await getOrCreateChatRoom(adoptionPostId, candidateId);
         router.push(RouteHelper.chat.room(chatRoom.id.toString()));
-    } catch (error) {
-        console.error("채팅방 이동 중 오류 발생:", error);
+    } catch {
         toast.error("채팅방 이동 중 오류가 발생했습니다.");
     }
 };

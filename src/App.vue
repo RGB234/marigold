@@ -94,8 +94,8 @@ const toggleMenu = () => {
 };
 
 // 메뉴 외부 클릭 시 닫기
-const closeMenu = (e: MouseEvent) => {
-  if (menuContainer.value && !menuContainer.value.contains(e.target as Node)) {
+const closeMenu = (event: MouseEvent) => {
+  if (menuContainer.value && !menuContainer.value.contains(event.target as Node)) {
     isMenuOpen.value = false;
   }
 };
@@ -118,10 +118,9 @@ watch(
     if (newUserId) {
       // 로그인이 되어 새로운 userId가 들어오면 프로필 정보를 가져옴
       try {
-        const data = await getUserProfile(newUserId);
-        userInfo.value = data;
-      } catch (error) {
-        console.error("유저 프로필 조회 실패:", error);
+        userInfo.value = await getUserProfile(newUserId);
+      } catch {
+        // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
       }
     } else {
       // 로그아웃되어 userId가 null이 되면 프로필 정보 초기화
@@ -134,11 +133,7 @@ watch(
 onMounted(async () => {
   document.addEventListener('click', closeMenu);
   // 새로고침 등 앱 초기화 시 로그인 상태를 복구합니다 (쿠키의 Refresh Token 활용)
-  try {
-    await authStore.initializeAuth();
-  } catch (error) {
-    console.debug("앱 초기화 시 인증 상태 복구 실패", error);
-  }
+  await authStore.initializeAuth();
 });
 
 onUnmounted(() => {

@@ -111,8 +111,8 @@ const handleFetchUserProfile = async () => {
         const data = await getUserProfile(userId.value);
         form.nickname = data.nickname;
         previewUrl.value = data.imageUrl || defaultProfileImage;
-    } catch (error) {
-        console.error('사용자 정보를 불러오는데 실패했습니다.', error);
+    } catch {
+        // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
     }
 };
 
@@ -195,9 +195,7 @@ const submitForm = async () => {
     } catch (error: unknown) {
         const apiError = extractApiErrorResponse(error);
 
-        if (!applyFieldErrors(apiError?.errors)) {
-            console.error('프로필 수정 중 오류 발생:', error);
-        }
+        applyFieldErrors(apiError?.errors);
     } finally {
         isSubmitting.value = false;
     }

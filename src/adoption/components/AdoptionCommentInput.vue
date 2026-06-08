@@ -84,8 +84,7 @@ const submitComment = async () => {
     imagePreviews.value = [];
     
     emit('comment-created');
-  } catch (error) {
-    console.error(error);
+  } catch {
     toast.error('댓글 등록 중 오류가 발생했습니다.');
   } finally {
     isSubmitting.value = false;
