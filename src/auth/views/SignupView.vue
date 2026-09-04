@@ -38,7 +38,7 @@ import {ProviderInfo, useAuthStore } from '@/auth/stores/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
-import { RouteHelper, RouteNames } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/global/router/routeHelper';
 
 interface Provider {
   name: ProviderInfo;

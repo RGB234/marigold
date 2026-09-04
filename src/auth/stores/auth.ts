@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
-import { validBASE32 } from "@/global/utils/validators";
 import api from "@/global/api";
 import { ApiResponse } from "@/global/types/common";
 import {TSID_String} from "@/global/types/common.ts";
+import { validateTsid } from "@/global/validation/validators";
 import {
   clearPendingAuthState,
   savePendingAuthState,
@@ -41,7 +41,7 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     // 로그인 여부 확인
     isLoggedIn: (state) => {
-      return validBASE32(state.id) && !!state.accessToken;
+      return validateTsid(state.id) && !!state.accessToken;
     },
     userId: (state) => state.id, // String format TSID
     // 권한 목록
