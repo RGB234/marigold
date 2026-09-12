@@ -297,7 +297,7 @@ const handleSubmit = async () => {
 
     toast.success("입양글 작성이 완료되었습니다.");
     if (createdPostId) {
-      await router.push(RouteHelper.adoption.detail(createdPostId.toString()));
+      await router.push(RouteHelper.adoption.detail(createdPostId));
     }
   } catch (error: unknown) {
     const apiError = extractApiErrorResponse(error);

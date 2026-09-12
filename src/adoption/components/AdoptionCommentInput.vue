@@ -4,10 +4,11 @@ import { createAdoptionComment } from '@/adoption/api/adoptionPost.api';
 import { useAlert } from '@/global/composables/useAlert';
 import { validationPolicy } from '@/global/validation/validationPolicy';
 import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
+import type { Long_String } from '@/global/types/common';
 
 const props = defineProps<{
-  postId: string | number;
-  parentId?: string | number;
+  postId: Long_String;
+  parentId?: Long_String;
 }>();
 
 const emit = defineEmits<{

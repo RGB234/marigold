@@ -13,7 +13,7 @@
 
 | 위치 | 민감도 | 이유 | 취급 기준 |
 | --- | --- | --- | --- |
-| `.env.dev` | 높음 | 로컬 API/OAuth URL이 들어감 | Git에 커밋하지 않음 |
+| `.env.local` | 높음 | 로컬 API/OAuth URL이 들어감 | Git에 커밋하지 않음 |
 | `.env.prod` | 중간-높음 | 현재 Git 추적 대상이며 프로덕션 URL이 들어감 | secret 금지, 변경 리뷰 필요 |
 | `VITE_API_V1_BASE` | 중간 | REST API base URL | 공개 가능 URL만 사용 |
 | `VITE_BACKEND_URL` | 중간 | SockJS/STOMP 연결 URL | 공개 가능 URL만 사용 |
@@ -34,7 +34,7 @@
 
 ## 현재 저장소 상태에서 확인한 점
 
-- `.env.dev`는 `.gitignore` 규칙상 무시됩니다.
+- `.env.local`은 `.gitignore` 규칙상 무시됩니다.
 - `.env.prod`는 Git에 추적되고 있습니다.
 - `.env.prod`의 값이 secret이면 안 됩니다. Vite 환경변수는 브라우저 번들에서 노출될 수 있습니다.
 - `.wrangler`와 `.dev.vars*`는 `.gitignore`에 포함되어 있습니다.

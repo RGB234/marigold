@@ -57,6 +57,10 @@ const goBack = () => {
     router.back();
 };
 
+const handleImageError = (event: Event) => {
+    (event.target as HTMLImageElement).src = NoImage;
+};
+
 onMounted(() => {
     fetchData();
 });
@@ -81,7 +85,7 @@ onMounted(() => {
             <!-- <div v-if="postDetail" class="post-summary" @click="goToPostDetail"> -->
             <div v-if="postDetail" class="post-summary">
                 <div class="summary-img">
-                    <img :src="postDetail.imageUrls?.[0] || NoImage" alt="썸네일" />
+                    <img :src="postDetail.imageUrls?.[0] || NoImage" alt="썸네일" @error="handleImageError" />
                 </div>
                 <div class="summary-info">
                     <div class="summary-status-row">
@@ -106,7 +110,7 @@ onMounted(() => {
                     @click="goToChatRoom(candidate.id)"
                 >
                     <div class="candidate-profile">
-                        <img :src="candidate.imageUrl || NoImage" alt="프로필" class="candidate-img" />
+                        <img :src="candidate.imageUrl || NoImage" alt="프로필" class="candidate-img" @error="handleImageError" />
                         <span class="candidate-nickname">{{ candidate.nickname }}</span>
                     </div>
                 </div>

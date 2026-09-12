@@ -51,6 +51,10 @@ const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR');
 };
 
+const handleImageError = (event: Event) => {
+    (event.target as HTMLImageElement).src = NoImage;
+};
+
 // 페이지네이션 바에 표시될 페이지 번호 목록 (0-indexed)
 const visiblePages = computed(() => {
   const half = Math.floor(visiblePageCount / 2);
@@ -79,7 +83,7 @@ onMounted(() => {
             <div class="card-grid">
                 <div v-for="item in myAdoptionInfoList" :key="item.id" class="card" @click="goToDetail(item.id)">
                     <div class="card-image">
-                        <img :src="item.imageUrl || NoImage" alt="" class="thumb" />
+                        <img :src="item.imageUrl || NoImage" alt="" class="thumb" @error="handleImageError" />
                     </div>
 
                     <div class="card-body">

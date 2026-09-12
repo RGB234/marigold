@@ -65,7 +65,7 @@ export interface AdoptionPostResponse {
   age: number;
   sex: Sex;
   area: string;
-  imageUrl: string;
+  imageUrl: ImageUrl | null;
   status: AdoptionPostStatus;
   createdAt: ISO8601DateString;
   isDeleted: boolean;
@@ -114,7 +114,7 @@ export interface AdoptionPostDetailResponse {
   neutering: Neutering;
   features: string;
   imageFileNames: string[];
-  imageUrls: ImageUrl[];
+  imageUrls: Array<ImageUrl | null>;
   status: AdoptionPostStatus;
   adopter?: {
     id: TSID_String;

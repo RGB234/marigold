@@ -36,7 +36,7 @@
   <div class="card-container">
     <div v-for="(card, index) in visibleCards" :key="index" class="card" @click="handleCardClick(card)">
       <div class="card-image">
-        <img :src="card.imageUrl" alt="대표이미지" class="thumb" />
+        <img :src="card.imageUrl || NoImage" alt="대표이미지" class="thumb" @error="handleImageError" />
       </div>
 
       <div class="card-body">
@@ -91,6 +91,7 @@ import { getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
 import { cleanParams } from "@/global/utils/objectUtils";
 import { getAdoptionPostList } from "@/adoption/api/adoptionPost.api";
 import { RouteHelper } from "@/global/router/routeHelper";
+import NoImage from "@/assets/images/no-image.jpeg";
 import {
   AdoptionPostResponse,
   AdoptionPostPageResponse
@@ -161,6 +162,10 @@ const handleWrite = () => {
 // 카드 클릭 시 상세 페이지로 이동
 const handleCardClick = (card: any) => {
   router.push(RouteHelper.adoption.detail(card.id));
+};
+
+const handleImageError = (event: Event) => {
+  (event.target as HTMLImageElement).src = NoImage;
 };
 
 onMounted(async () => {

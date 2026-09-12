@@ -17,6 +17,7 @@ import { RouteHelper } from "@/global/router/routeHelper.ts";
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import AdoptionCommentList from '@/adoption/components/AdoptionCommentList.vue';
 import axios from "axios";
+import NoImage from "@/assets/images/no-image.jpeg";
 
 const route = useRoute();
 const router = useRouter();
@@ -183,7 +184,16 @@ const goBack = () => {
   router.push(RouteHelper.adoption.list());
 };
 
-const openImagePopup = (imageUrl: string) => {
+const getPostImageSrc = (imageUrl: string | null) => imageUrl || NoImage;
+
+const handlePostImageError = (index: number) => {
+  if (detail.value) {
+    detail.value.imageUrls[index] = null;
+  }
+};
+
+const openImagePopup = (imageUrl: string | null) => {
+  if (!imageUrl) return;
   selectedImageUrl.value = imageUrl;
 };
 
@@ -243,8 +253,13 @@ onMounted(async () => {
           <span class="value">{{ detail.title }}</span>
         </div>
         <div class="image-container">
-          <div v-for="imageUrl in detail.imageUrls" :key="imageUrl">
-            <img :src="imageUrl" alt="이미지" @click="openImagePopup(imageUrl)" />
+          <div v-for="(imageUrl, index) in detail.imageUrls" :key="detail.imageFileNames[index] ?? index">
+            <img
+              :src="getPostImageSrc(imageUrl)"
+              alt="이미지"
+              @click="openImagePopup(imageUrl)"
+              @error="handlePostImageError(index)"
+            />
           </div>
         </div>
         <div class="info-item">

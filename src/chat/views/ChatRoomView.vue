@@ -69,6 +69,7 @@ const canSend = computed(() => newMessage.value.trim() !== '' || selectedFiles.v
 
 let stompClient: Client | null = null;
 let isManualDisconnect = false;
+let isUnmounted = false;
 
 const scrollToBottom = async () => {
   await nextTick();
@@ -78,18 +79,16 @@ const scrollToBottom = async () => {
 };
 
 const connectWebSocket = () => {
+  if (isUnmounted || !chatRoom.value) return;
+
   const apiBase = import.meta.env.VITE_BACKEND_URL;
 
-  if (stompClient) {
-    stompClient.deactivate();
-  }
-
-  isManualDisconnect = false;
   isConnectionFailed.value = false;
   isReconnecting.value = false;
   retryCount.value = 0;
 
-  stompClient = new Client({
+  const previousClient = stompClient;
+  const client = new Client({
     webSocketFactory: () => new SockJS(`${apiBase}/ws`),
     connectHeaders: getStompAuthHeaders(),
     reconnectDelay: 5000,
@@ -97,33 +96,46 @@ const connectWebSocket = () => {
     heartbeatOutgoing: 4000,
   });
 
-  stompClient.onConnect = () => {
+  stompClient = client;
+  if (previousClient) {
+    previousClient.reconnectDelay = 0;
+    void previousClient.deactivate();
+  }
+  isManualDisconnect = false;
+
+  client.onConnect = () => {
+    if (isUnmounted || stompClient !== client) return;
+
     retryCount.value = 0;
     isReconnecting.value = false;
     isConnectionFailed.value = false;
 
-    stompClient?.subscribe(`/sub/chat/room/${roomId.value}`, (message) => {
+    client.subscribe(`/sub/chat/room/${roomId.value}`, (message) => {
       const receivedMessage: ChatMessageDto = JSON.parse(message.body);
       messages.value.push(receivedMessage);
       scrollToBottom();
     });
   };
 
-  stompClient.onStompError = (frame) => {
+  client.onStompError = (frame) => {
     logger.error('STOMP error: ' + frame.headers['message']);
   };
 
-  stompClient.onWebSocketError = (event) => {
+  client.onWebSocketError = (event) => {
     logger.error('WebSocket error:', event);
   };
 
-  stompClient.onWebSocketClose = () => {
+  client.onWebSocketClose = () => {
+    if (stompClient !== client) return;
     // 수동 종료(페이지 이탈 등)는 재시도 카운트에서 제외
-    if (isManualDisconnect) return;
+    if (isManualDisconnect || isConnectionFailed.value) return;
 
     retryCount.value += 1;
     if (retryCount.value >= MAX_RETRIES) {
-      stompClient?.deactivate();
+      isManualDisconnect = true;
+      client.reconnectDelay = 0;
+      stompClient = null;
+      void client.deactivate();
       isReconnecting.value = false;
       isConnectionFailed.value = true;
     } else {
@@ -131,7 +143,7 @@ const connectWebSocket = () => {
     }
   };
 
-  stompClient.activate();
+  client.activate();
 };
 
 const retryConnect = () => {
@@ -249,13 +261,20 @@ const sendMessage = async () => {
   sendTextMessage();
 };
 
-const fetchPostDetail = async () => {
+const fetchPostDetail = async (): Promise<boolean> => {
   try {
     const room = await getChatRoom(roomId.value);
+    const post = await getAdoptionPostSummary(room.postId.toString());
+    if (isUnmounted) return false;
+
     chatRoom.value = room;
-    postInfo.value = await getAdoptionPostSummary(room.postId.toString());
+    postInfo.value = post;
+    return true;
   } catch {
+    chatRoom.value = null;
+    postInfo.value = null;
     // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    return false;
   }
 };
 
@@ -265,21 +284,37 @@ const goToPostDetail = () => {
   }
 };
 
+const handleImageError = (event: Event) => {
+  (event.target as HTMLImageElement).src = NoImage;
+};
+
 onMounted(async () => {
-  await fetchPostDetail();
+  isUnmounted = false;
+
+  const loaded = await fetchPostDetail();
+  if (!loaded || isUnmounted) return;
 
   try {
     messages.value = await getChatRoomMessages(roomId.value);
     scrollToBottom();
   } catch {
     // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    return;
   }
+
+  if (isUnmounted) return;
   connectWebSocket();
 });
 
 onUnmounted(() => {
+  isUnmounted = true;
   isManualDisconnect = true;
-  stompClient?.deactivate();
+  const client = stompClient;
+  stompClient = null;
+  if (client) {
+    client.reconnectDelay = 0;
+    void client.deactivate();
+  }
 });
 </script>
 
@@ -288,7 +323,7 @@ onUnmounted(() => {
     <div class="chat-header">
       <div v-if="postInfo" class="post-summary" @click="goToPostDetail">
         <div class="summary-img">
-          <img :src="postInfo.imageUrl as string || NoImage" alt="썸네일" />
+          <img :src="postInfo.imageUrl || NoImage" alt="썸네일" @error="handleImageError" />
         </div>
         <div class="summary-info">
           <div class="summary-status-row">

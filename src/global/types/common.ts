@@ -15,6 +15,8 @@ export type TSID_Long = string;
 
 export type Long_String = string;
 
+export type ImageUrl = string;
+
 /**
  * ISO 8601 날짜 문자열 (예: "2024-01-01T12:00:00Z")
  */

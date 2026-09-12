@@ -4,9 +4,10 @@ import { getAdoptionComments } from '@/adoption/api/adoptionPost.api';
 import { AdoptionCommentResponse } from '@/adoption/types/adoptionPost.ts';
 import AdoptionCommentItem from './AdoptionCommentItem.vue';
 import AdoptionCommentInput from './AdoptionCommentInput.vue';
+import type { Long_String } from '@/global/types/common';
 
 const props = defineProps<{
-  postId: string | number;
+  postId: Long_String;
   canComment: boolean;
 }>();
 

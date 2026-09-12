@@ -8,10 +8,11 @@ import { deleteAdoptionComment, updateAdoptionComment } from '@/adoption/api/ado
 import { useAlert } from '@/global/composables/useAlert';
 import { validationPolicy } from '@/global/validation/validationPolicy';
 import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
+import type { Long_String } from '@/global/types/common';
 
 const props = defineProps<{
   comment: AdoptionCommentResponse;
-  postId: string | number;
+  postId: Long_String;
   canComment: boolean;
   depth: number;
   parentLabel: string | null;

@@ -85,7 +85,12 @@
           <div class="image-upload-area">
             <div class="image-preview-container">
               <div v-for="(preview, index) in imagePreviews" :key="index" class="image-preview">
-                <img :src="preview" :alt="`미리보기 ${index + 1}`" @click="openLightbox(index)" />
+                <img
+                  :src="preview"
+                  :alt="`미리보기 ${index + 1}`"
+                  @click="openLightbox(index)"
+                  @error="handlePreviewError(index)"
+                />
                 <button
                   type="button"
                   class="remove-image"
@@ -149,6 +154,7 @@ import { extractApiErrorResponse } from "@/global/utils/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
+import NoImage from "@/assets/images/no-image.jpeg";
 
 const MAX_IMAGE_COUNT = validationPolicy.adoptionPost.images.maxCount;
 const MIN_IMAGE_COUNT = validationPolicy.adoptionPost.images.minCount;
@@ -213,6 +219,13 @@ const closeLightbox = () => {
 
 const getRouteId = () => (Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
 
+const handlePreviewError = (index: number) => {
+  imagePreviews.value[index] = NoImage;
+  if (index < form.imagesToKeep.length) {
+    form.imagesToKeep[index].url = NoImage;
+  }
+};
+
 const resetErrors = () => {
   Object.keys(errors).forEach((key) => {
     errors[key] = "";
@@ -248,6 +261,11 @@ const handleFetchAdoption = async () => {
       return;
     }
 
+    const existingImages = data.imageFileNames?.map((fileName, index) => ({
+      fileName,
+      url: data.imageUrls?.[index] || NoImage,
+    })) ?? [];
+
     Object.assign(form, {
       species: data.species,
       title: data.title,
@@ -258,13 +276,10 @@ const handleFetchAdoption = async () => {
       neutering: data.neutering,
       features: data.features,
       images: [],
-      imagesToKeep: data.imageFileNames?.map((fileName, index) => ({
-        fileName,
-        url: data.imageUrls[index],
-      })) ?? [],
+      imagesToKeep: existingImages,
     });
 
-    imagePreviews.value = data.imageUrls?.length ? [...data.imageUrls] : [];
+    imagePreviews.value = existingImages.map((image) => image.url);
   } catch {
     await router.push(RouteHelper.adoption.list());
   }
