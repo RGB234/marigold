@@ -29,7 +29,7 @@ export interface ChatAttachmentDto {
     originalFileName: string;
     contentType: string;
     fileSize: number;
-    downloadUrl: string;
+    viewUrl: string;
 }
 
 export type ChatRoomPageResponse = PageResponse<ChatRoomDto>;

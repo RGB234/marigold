@@ -83,8 +83,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { SpeciesLabels, SpeciesOptions } from "@/adoption/enums/Species";
 import { SexLabels, SexOptions } from "@/adoption/enums/Sex";
 import { getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
@@ -102,6 +102,7 @@ import {
 // ==========================================
 
 const router = useRouter();
+const route = useRoute();
 
 const searchResult = ref<AdoptionPostResponse[]>();
 const searchFilters = ref<{ species?: string; sex?: string }>({
@@ -118,8 +119,29 @@ const totalServerPages = ref(1); // 서버에서 반환한 총 페이지 수
 const totalElements = ref(0);    // 서버에서 반환한 총 아이템 수
 const visiblePageCount = 10;     // 페이지네이션 바에 표시할 페이지 버튼 수
 
+const getRoutePageNumber = () => {
+  const rawPage = Array.isArray(route.query.page) ? route.query.page[0] : route.query.page;
+  const page = Number(rawPage);
+
+  return Number.isInteger(page) && page > 0 ? page : 1;
+};
+
+const getRoutePage = () => {
+  return getRoutePageNumber() - 1;
+};
+
+const replaceRoutePage = async (pageNumber: number) => {
+  await router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      page: String(pageNumber),
+    },
+  });
+};
+
 // page를 인자로 받아 서버에서 해당 페이지 데이터를 불러옴
-const handleSearch = async (page = 0) => {
+const fetchSearchResult = async (page = 0): Promise<number | null> => {
   currentPage.value = page;
   searchResult.value = [];
   try {
@@ -130,9 +152,30 @@ const handleSearch = async (page = 0) => {
 
     totalServerPages.value = data.page.totalPages ?? 1;
     totalElements.value = data.page.totalElements ?? 0;
+
+    return totalServerPages.value;
   } catch {
     // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    return null;
   }
+};
+
+const handleSearch = async (page = 0) => {
+  const maxPage = Math.max(totalServerPages.value - 1, 0);
+  const nextPage = Math.min(Math.max(0, page), maxPage);
+
+  if (route.query.page !== undefined && getRoutePage() === nextPage) {
+    await fetchSearchResult(nextPage);
+    return;
+  }
+
+  await router.push({
+    path: route.path,
+    query: {
+      ...route.query,
+      page: String(nextPage + 1),
+    },
+  });
 };
 
 // 검색 필터 변경 후 1페이지부터 재검색
@@ -168,9 +211,25 @@ const handleImageError = (event: Event) => {
   (event.target as HTMLImageElement).src = NoImage;
 };
 
-onMounted(async () => {
-  await handleSearch(0); // 초기 로드 시 첫 페이지 검색
-});
+watch(
+  () => route.query.page,
+  async () => {
+    const pageNumber = getRoutePageNumber();
+
+    if (route.query.page !== undefined && String(route.query.page) !== String(pageNumber)) {
+      await replaceRoutePage(pageNumber);
+      return;
+    }
+
+    const totalPages = await fetchSearchResult(pageNumber - 1);
+    const lastPage = Math.max(totalPages ?? pageNumber, 1);
+
+    if (pageNumber > lastPage) {
+      await replaceRoutePage(lastPage);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <style lang="css" scoped>

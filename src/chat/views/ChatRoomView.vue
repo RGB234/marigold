@@ -362,7 +362,7 @@ onUnmounted(() => {
           <div v-if="msg.attachments?.length" class="attachments">
             <div
               v-for="attachment in msg.attachments"
-              :key="attachment.id || attachment.downloadUrl"
+              :key="attachment.id || attachment.viewUrl"
               class="attachment-item"
               role="button"
               tabindex="0"
@@ -373,7 +373,7 @@ onUnmounted(() => {
               <span v-if="isImageAttachment(attachment)" class="attachment-preview-frame">
                 <img
                   class="attachment-preview"
-                  :src="attachment.downloadUrl"
+                  :src="attachment.viewUrl"
                   :alt="attachment.originalFileName"
                 />
               </span>
@@ -424,7 +424,7 @@ onUnmounted(() => {
           </div>
           <img
             v-if="isImageAttachment(selectedAttachment)"
-            :src="selectedAttachment.downloadUrl"
+            :src="selectedAttachment.viewUrl"
             :alt="selectedAttachment.originalFileName"
             class="chat-attachment-popup-img"
           />
