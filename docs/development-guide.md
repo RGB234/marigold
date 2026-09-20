@@ -6,7 +6,7 @@
 - 한 번만 쓰는 코드를 성급하게 `global`로 올리지 않습니다.
 - API 호출은 공통 Axios 인스턴스 `api`를 사용합니다.
 - 라우터 이동은 `RouteHelper`를 우선 사용합니다.
-- validation 기준은 `validation-policy.json`에서 시작합니다.
+- validation 정책의 기준은 백엔드 Java 상수 `ValidationPolicy`이며, 프론트엔드는 `validation-policy.json` 사본을 사용합니다.
 - 환경변수 값, token, cookie, 다운로드 URL 등 민감 값은 로그와 문서에 남기지 않습니다.
 
 ## 새 화면 추가
@@ -15,7 +15,7 @@
 2. [../src/global/router/index.ts](../src/global/router/index.ts)에 route를 추가합니다.
 3. [../src/global/router/routeHelper.ts](../src/global/router/routeHelper.ts)에 helper를 추가합니다.
 4. 인증이 필요하면 `meta.requiresAuth`를 명시합니다.
-5. 보안 재인증이 필요하면 `meta.requiresRecentAuth`를 명시합니다.
+5. 보안 재인증이 필요하면 `meta.requiresAuth: true`와 `meta.requiresRecentAuth: true`를 함께 명시합니다.
 
 ## 새 API 추가
 
@@ -35,16 +35,18 @@ await api.patch<ApiResponse<void>>("/resource/1", payload, {
 
 ## validation 추가
 
-1. 정책 값은 [../src/global/validation/validation-policy.json](../src/global/validation/validation-policy.json)에 추가합니다.
-2. 구현은 [../src/global/validation/validators.ts](../src/global/validation/validators.ts)에 둡니다.
-3. [../src/global/validation/validators.test.ts](../src/global/validation/validators.test.ts)에 테스트를 추가합니다.
-4. 백엔드와 공유되는 정책이면 `npm run check:validation-policy`를 실행합니다.
+1. 백엔드 Java 상수 `ValidationPolicy`를 변경하고 `back/src/main/resources/validation-policy.json`을 맞춥니다.
+2. 백엔드 JSON을 [../src/global/validation/validation-policy.json](../src/global/validation/validation-policy.json)에 반영합니다.
+3. 구현은 [../src/global/validation/validators.ts](../src/global/validation/validators.ts)에 두고, [../src/global/validation/validators.test.ts](../src/global/validation/validators.test.ts)에 관련 테스트를 추가합니다.
+4. 백엔드에서 `./gradlew test --tests '*ValidationPolicyContractTest'`, 프론트엔드에서 `npm run check:validation-policy`를 실행합니다.
+
+프론트 검사는 두 JSON만 비교하므로 백엔드 계약 테스트도 필요합니다. 기본적으로 `front`와 `back`이 형제 디렉터리에 있어야 하며, 다른 배치에서는 `VALIDATION_POLICY_SOURCE`로 백엔드 JSON 경로를 지정합니다.
 
 ## 인증이 필요한 기능
 
 보호 라우트는 `requiresAuth`로 처리합니다. API 함수 내부에서 로그인 여부를 다시 판단하지 않습니다. 401과 refresh 처리는 공통 interceptor에 맡깁니다.
 
-최근 인증이 필요한 기능은 `requiresRecentAuth`를 사용합니다. 현재 사용 예시는 `/user/profile/security`입니다.
+최근 인증이 필요한 기능은 `requiresAuth: true`와 `requiresRecentAuth: true`를 함께 사용합니다. `roles` 검사도 `requiresAuth: true`인 경우에만 실행합니다. 현재 최근 인증 사용 예시는 `/user/profile/security`입니다.
 
 ## 파일 업로드 기능
 

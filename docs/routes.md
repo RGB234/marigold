@@ -7,8 +7,10 @@
 | meta | 의미 |
 | --- | --- |
 | `requiresAuth: true` | 로그인 필요 |
-| `requiresRecentAuth: true` | 최근 보안 인증 필요 |
-| `roles` | 권한 목록 중 하나 필요 |
+| `requiresRecentAuth: true` | `requiresAuth: true`일 때 최근 보안 인증 필요 |
+| `roles` | `requiresAuth: true`일 때 비어 있지 않은 권한 목록 중 하나 필요 |
+
+`requiresRecentAuth` 또는 `roles`만 설정하면 해당 검사가 실행되지 않습니다. 예를 들어 최근 인증이 필요한 라우트에는 `meta: { requiresAuth: true, requiresRecentAuth: true }`를 지정합니다.
 
 ## 라우트 목록
 

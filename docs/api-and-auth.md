@@ -45,11 +45,12 @@ CSRF token은 `XSRF-TOKEN` cookie 또는 응답 헤더 캐시에서 읽습니다
 
 - `loadingStore.stop()` 호출
 - API 에러를 개발 모드 console에 기록
-- 401이면 refresh token으로 access token 갱신 시도
+- 401이면 refresh token으로 access token 갱신 시도. refresh 요청 자체와 이미 재시도한 요청은 제외
 - refresh 성공 시 원 요청 재시도
 - refresh 실패 시 인증 상태 초기화 후 보호 라우트에서는 로그인 화면으로 이동
-- `handledErrorStatuses`에 포함된 상태 코드는 전역 alert 전에 caller에게 반환
-- `skipAlert`가 있으면 전역 alert를 생략
+- 위의 401 갱신 처리 후, `handledErrorStatuses`에 포함된 상태 코드는 이후의 전역 alert·라우팅 처리 전에 caller에게 반환. 따라서 401을 지정해도 refresh 시도는 생략하지 않음
+- 이후 `AUTH_RECENT_AUTH_REQUIRED`이면 최근 인증 상태를 지우고 보안 인증 화면으로 이동
+- `skipAlert`는 전역 alert를 생략하며, refresh나 라우팅을 생략하는 옵션은 아님. 로그인 요청을 제외하고 401은 보호 라우트에서 로그인 화면으로, 404는 이전 화면으로 이동할 수 있음
 
 ## 토큰 갱신 queue
 
