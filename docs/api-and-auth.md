@@ -2,16 +2,7 @@
 
 ## 환경변수
 
-REST API와 OAuth/채팅 연결은 다음 Vite 환경변수를 사용합니다.
-
-| 키 | 사용 위치 | 설명 |
-| --- | --- | --- |
-| `VITE_API_V1_BASE` | `src/global/api.ts` | Axios base URL |
-| `VITE_BACKEND_URL` | `src/chat/views/ChatRoomView.vue` | SockJS 연결 URL 기준 |
-| `VITE_API_OAUTH2_KAKAO` | `src/auth/stores/auth.ts` | Kakao OAuth 시작 URL |
-| `VITE_API_OAUTH2_NAVER` | `src/auth/stores/auth.ts` | Naver OAuth 시작 URL |
-
-`VITE_*` 값은 브라우저에서 볼 수 있으므로 secret으로 취급하면 안 됩니다.
+변수 목록과 로딩 규칙은 [설정 안내](configuration.md)를 봅니다. 이 문서는 프론트 호출·상태 관리 구현을 설명하며, 서버의 토큰·쿠키 계약은 백엔드 저장소의 `docs/auth-flow.md`, 상세 요청·응답은 OpenAPI를 기준으로 합니다.
 
 ## Axios 인스턴스
 

@@ -62,33 +62,16 @@ OAuth 로그인은 Kakao/Naver 시작 URL로 브라우저를 이동시키고, ca
 
 라우트 정의는 [../src/global/router/index.ts](../src/global/router/index.ts)에 있습니다. 라우트 이동 객체는 [../src/global/router/routeHelper.ts](../src/global/router/routeHelper.ts)의 `RouteHelper`를 우선 사용합니다.
 
-전역 가드는 다음을 처리합니다.
-
-- `meta.requiresAuth` 라우트 진입 전 인증 상태 초기화
-- 미로그인 사용자의 로그인 화면 이동
-- `meta.requiresRecentAuth` 라우트의 최근 인증 여부 확인
-- `meta.roles`가 있는 경우 권한 검사
+전역 가드의 인증·최근 인증·권한 검사 조건과 라우트 목록은 [라우트 문서](routes.md)를 기준으로 합니다.
 
 ## API 흐름
 
 모든 REST 호출은 [../src/global/api.ts](../src/global/api.ts)의 Axios 인스턴스를 사용합니다.
 
-요청 시:
-
-- 전역 로딩 시작
-- access token이 있으면 `Authorization: Bearer ...` 추가
-- 변경 요청(`POST`, `PUT`, `PATCH`, `DELETE`)에는 CSRF token이 있으면 `X-CSRF-TOKEN` 추가
-
-응답 시:
-
-- 전역 로딩 종료
-- 응답 헤더의 CSRF token을 캐시
-- 401 응답이면 refresh 시도 후 원 요청 재시도
-- refresh 중 들어온 요청은 queue에 넣었다가 새 access token으로 재시도
-- 상태 코드별 전역 alert 또는 caller 처리
+이 인스턴스가 전역 로딩, 인증·CSRF 헤더, 토큰 갱신과 오류 처리를 담당합니다. 재시도 조건과 queue 동작은 [API와 인증](api-and-auth.md)을 봅니다.
 
 ## Validation
 
-Validation 기준은 [../src/global/validation/validation-policy.json](../src/global/validation/validation-policy.json)에 있고, 구현은 [../src/global/validation/validators.ts](../src/global/validation/validators.ts)에 있습니다.
+검증 정책의 원본은 백엔드 Java `ValidationPolicy`입니다. 프론트의 [validation-policy.json](../src/global/validation/validation-policy.json)은 공유 계약 사본이며, 적용 코드는 [validators.ts](../src/global/validation/validators.ts)에 있습니다.
 
-백엔드 정책과 맞춰야 하는 값은 JSON 정책 파일을 기준으로 수정합니다. 관련 검사는 `npm run check:validation-policy`와 `npm run test:unit`으로 확인합니다.
+변경 순서와 백엔드·프론트 검사 방법은 [개발 가이드](development-guide.md)의 validation 절을 따릅니다.

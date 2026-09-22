@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const frontPolicyPath = resolve(scriptDir, "../src/global/validation/validation-policy.json");
 const backPolicyPath = resolve(
-  process.env.VALIDATION_POLICY_SOURCE ?? "../back/src/main/resources/validation-policy.json",
+  process.env.VALIDATION_POLICY_SOURCE ?? resolve(scriptDir, "../../back/src/main/resources/validation-policy.json"),
 );
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));

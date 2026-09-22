@@ -1,5 +1,7 @@
 # 개발 가이드
 
+설정 준비는 [설정 안내](configuration.md), 변경별 문서 갱신 규칙은 [문서 목차](README.md)를 따릅니다.
+
 ## 기본 원칙
 
 - 기능별 코드는 해당 기능 디렉터리에 둡니다.
@@ -40,7 +42,9 @@ await api.patch<ApiResponse<void>>("/resource/1", payload, {
 3. 구현은 [../src/global/validation/validators.ts](../src/global/validation/validators.ts)에 두고, [../src/global/validation/validators.test.ts](../src/global/validation/validators.test.ts)에 관련 테스트를 추가합니다.
 4. 백엔드에서 `./gradlew test --tests '*ValidationPolicyContractTest'`, 프론트엔드에서 `npm run check:validation-policy`를 실행합니다.
 
-프론트 검사는 두 JSON만 비교하므로 백엔드 계약 테스트도 필요합니다. 기본적으로 `front`와 `back`이 형제 디렉터리에 있어야 하며, 다른 배치에서는 `VALIDATION_POLICY_SOURCE`로 백엔드 JSON 경로를 지정합니다.
+프론트 검사는 두 JSON만 비교하므로 백엔드 계약 테스트도 필요합니다. 기본적으로 `front`와 `back`이 형제 디렉터리에 있어야 하며, 다른 배치에서는 `VALIDATION_POLICY_SOURCE`로 백엔드 JSON 경로를 지정합니다. 기본 경로는 실행 디렉터리가 아닌 스크립트 위치를 기준으로 합니다. 명시한 상대 경로는 실행 디렉터리 기준입니다.
+
+프론트 단독 CI의 문서·설정 검사는 백엔드를 요구하지 않습니다. 공유 정책 변경 시 PR에 비교한 백엔드 커밋을 기록하고, 그 커밋을 체크아웃한 환경에서 두 계약 검사를 실행합니다. 백엔드 접근 권한·기준 커밋 없이 프론트 사본만 비교하는 검사를 계약 검증으로 간주하지 않습니다.
 
 ## 인증이 필요한 기능
 

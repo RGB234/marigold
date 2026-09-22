@@ -13,8 +13,8 @@
 
 | 위치 | 민감도 | 이유 | 취급 기준 |
 | --- | --- | --- | --- |
-| `.env.local` | 높음 | 로컬 API/OAuth URL이 들어감 | Git에 커밋하지 않음 |
-| `.env.prod` | 중간-높음 | 현재 Git 추적 대상이며 프로덕션 URL이 들어감 | secret 금지, 변경 리뷰 필요 |
+| `.env.dev.local`, `.env.local` | 환경설정 | 개인별 공개 API/OAuth URL | Git 제외, secret 금지 |
+| `.env.prod` | 환경설정 | Git으로 관리하는 운영 공개 URL | secret 금지, 변경 리뷰 필요 |
 | `VITE_API_V1_BASE` | 중간 | REST API base URL | 공개 가능 URL만 사용 |
 | `VITE_BACKEND_URL` | 중간 | SockJS/STOMP 연결 URL | 공개 가능 URL만 사용 |
 | `VITE_API_OAUTH2_KAKAO` | 중간 | OAuth 시작 URL | client secret 포함 금지 |
@@ -30,15 +30,12 @@
 | 채팅 첨부 파일 | 높음 | 사용자 파일과 다운로드 URL | 파일명/URL/미리보기 로그 금지 |
 | 입양글/댓글 이미지 | 중간-높음 | 사용자 업로드 이미지 | 원본 URL/파일명 로그 금지 |
 | 사용자 프로필 | 중간 | 닉네임, 이미지, 상태 | 필요 최소 표시 |
-| Wrangler 설정/로컬 파일 | 높음 | 배포 인증 또는 로컬 worker 상태 포함 가능 | `.wrangler`, `.dev.vars*` 커밋 금지 |
+| `wrangler.jsonc` | 환경설정 | Git으로 관리하는 배포 설정 | secret 금지, 변경 리뷰 필요 |
+| `.wrangler`, `.dev.vars*` | 높음 | 로컬 상태 또는 실제 환경값 포함 가능 | Git 제외. `.dev.vars.example`은 비밀값 없는 예제만 허용 |
 
 ## 현재 저장소 상태에서 확인한 점
 
-- `.env.local`은 `.gitignore` 규칙상 무시됩니다.
-- `.env.prod`는 Git에 추적되고 있습니다.
-- `.env.prod`의 값이 secret이면 안 됩니다. Vite 환경변수는 브라우저 번들에서 노출될 수 있습니다.
-- `.wrangler`와 `.dev.vars*`는 `.gitignore`에 포함되어 있습니다.
-- secret material 패턴(`*.pem`, `*.key`, `*.p12`, `*.jks`, `*.keystore`)은 `.gitignore`에 포함되어 있습니다.
+환경파일의 역할과 우선순위는 [설정 안내](configuration.md), 제외 패턴은 [.gitignore](../.gitignore)가 기준입니다. 공개 URL 자체를 인증 비밀값과 혼동하지 않습니다. `.gitignore`는 이미 추적 중인 파일을 추적 해제하지 않으므로 커밋 대상도 확인합니다.
 
 ## 인증 관련 민감 흐름
 
@@ -56,7 +53,7 @@ Access token은 [../src/auth/stores/auth.ts](../src/auth/stores/auth.ts)의 Pini
 
 ### 최근 보안 인증
 
-[../src/user/utils/securityAccess.ts](../src/user/utils/securityAccess.ts)는 `sessionStorage`에 최근 인증 상태를 저장합니다. 저장 값에는 사용자 id, 부여 시각, 로컬 token이 포함됩니다. TTL은 5분입니다.
+[../src/user/utils/securityAccess.ts](../src/user/utils/securityAccess.ts)는 `sessionStorage`에 사용자 id, 부여 시각, 로컬에서 생성한 token을 저장합니다. TTL은 해당 코드가 기준입니다. 이 값은 화면 접근 흐름에 사용하며 서버 인증의 증거가 아닙니다. 민감 API의 최근 인증 여부는 백엔드가 별도로 검증합니다.
 
 ## 로깅 기준
 
