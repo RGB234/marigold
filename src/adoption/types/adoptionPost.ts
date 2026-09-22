@@ -81,7 +81,7 @@ export type AdoptionPostPageResponse = PageResponse<AdoptionPostResponse>;
  */
 export interface AdoptionPostWithChatResponse {
   adoptionPost: AdoptionPostResponse;
-  chatRoomId: Long_String;
+  chatRoomId: TSID_String;
   receiverId: TSID_String;
   receiverNickname: string;
   chatCreatedAt: ISO8601DateString;

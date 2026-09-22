@@ -15,6 +15,7 @@ import {
 } from '@/chat/api/chat.api';
 import { getAdoptionPostSummary } from '@/adoption/api/adoptionPost.api';
 import type { ChatAttachmentDto, ChatMessageDto, ChatRoomDto } from '@/chat/types/chat';
+import { chatDestinations } from '@/chat/chatDestinations';
 import type { AdoptionPostResponse } from '@/adoption/types/adoptionPost';
 import { RouteHelper } from '@/global/router/routeHelper';
 import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
@@ -90,7 +91,6 @@ const connectWebSocket = () => {
   const previousClient = stompClient;
   const client = new Client({
     webSocketFactory: () => new SockJS(`${apiBase}/ws`),
-    connectHeaders: getStompAuthHeaders(),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
@@ -103,6 +103,22 @@ const connectWebSocket = () => {
   }
   isManualDisconnect = false;
 
+  client.beforeConnect = async () => {
+    // 자동 재연결도 매번 새 토큰과 최신 CSRF 헤더로 CONNECT합니다.
+    const refreshed = await authStore.silentRefresh();
+    if (isUnmounted || stompClient !== client || isManualDisconnect) return;
+    if (!refreshed || !authStore.accessToken) {
+      isManualDisconnect = true;
+      isReconnecting.value = false;
+      isConnectionFailed.value = true;
+      client.reconnectDelay = 0;
+      void client.deactivate();
+      void router.replace(RouteHelper.auth.login());
+      return;
+    }
+    client.connectHeaders = getStompAuthHeaders();
+  };
+
   client.onConnect = () => {
     if (isUnmounted || stompClient !== client) return;
 
@@ -110,7 +126,7 @@ const connectWebSocket = () => {
     isReconnecting.value = false;
     isConnectionFailed.value = false;
 
-    client.subscribe(`/sub/chat/room/${roomId.value}`, (message) => {
+    client.subscribe(chatDestinations.room(roomId.value), (message) => {
       const receivedMessage: ChatMessageDto = JSON.parse(message.body);
       messages.value.push(receivedMessage);
       scrollToBottom();
@@ -217,8 +233,7 @@ const sendTextMessage = () => {
   };
 
   stompClient.publish({
-    destination: '/pub/chat/message',
-    headers: getStompAuthHeaders(),
+    destination: chatDestinations.messageSend,
     body: JSON.stringify(messageDto),
   });
 

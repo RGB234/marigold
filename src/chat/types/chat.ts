@@ -25,7 +25,7 @@ export interface ChatMessageDto {
 }
 
 export interface ChatAttachmentDto {
-    id: TSID_String;
+    id: Long_String;
     originalFileName: string;
     contentType: string;
     fileSize: number;

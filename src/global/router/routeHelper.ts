@@ -1,4 +1,4 @@
-import {Long_String, TSID_Long, TSID_String} from "@/global/types/common.ts";
+import {Long_String, TSID_String} from "@/global/types/common.ts";
 
 export const RouteNames = {
   HOME: "Home",
@@ -78,7 +78,7 @@ export const RouteHelper = {
   },
   chat: {
     list: () => ({name: RouteNames.CHAT.LIST}),
-    room: (roomId: TSID_Long) => ({
+    room: (roomId: TSID_String) => ({
       name: RouteNames.CHAT.ROOM,
       params: {roomId: roomId},
       // params: {roomId: roomId},

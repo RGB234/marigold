@@ -1,8 +1,8 @@
 import api from "@/global/api";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
-import {ApiResponse, Long_String, PageableParams} from "@/global/types/common.ts";
+import {ApiResponse, Long_String, PageableParams, TSID_String} from "@/global/types/common.ts";
 
-export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: Long_String): Promise<ChatRoomDto> => {
+export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: TSID_String): Promise<ChatRoomDto> => {
   const {data: apiResponse} = await api.post<ApiResponse<ChatRoomDto>>(`/chat/rooms`, {adoptionPostId, receiverId});
   if (!apiResponse.data) {
     throw new Error("채팅방 생성 중 오류가 발생했습니다.");
@@ -14,7 +14,7 @@ export interface ChatRoomSearchParams extends PageableParams {
   type?: 'writer' | 'inquirer'; // 'all'도 요청가능하지만 사용하지 않는다.
 }
 
-export const getChatRoom = async (roomId: Long_String): Promise<ChatRoomDto> => {
+export const getChatRoom = async (roomId: TSID_String): Promise<ChatRoomDto> => {
   const {data: apiResponse} = await api.get<ApiResponse<ChatRoomDto>>(`/chat/rooms/${roomId}`);
   if (!apiResponse.data) {
     throw new Error("채팅방 데이터를 불러오지 못했습니다.");
@@ -33,7 +33,7 @@ export const getMyChatRooms = async (params?: ChatRoomSearchParams): Promise<Cha
   return page;
 };
 
-export const getChatRoomMessages = async (roomId: Long_String): Promise<ChatMessageDto[]> => {
+export const getChatRoomMessages = async (roomId: TSID_String): Promise<ChatMessageDto[]> => {
   const {data: apiResponse} = await api.get<ApiResponse<ChatMessageDto[]>>(`/chat/rooms/${roomId}/messages`);
   if (!apiResponse.data) {
     throw new Error("채팅방 메시지 데이터를 불러오지 못했습니다.");
@@ -41,7 +41,7 @@ export const getChatRoomMessages = async (roomId: Long_String): Promise<ChatMess
   return apiResponse.data;
 };
 
-export const createChatFileMessage = async (roomId: Long_String, formData: FormData): Promise<ChatMessageDto> => {
+export const createChatFileMessage = async (roomId: TSID_String, formData: FormData): Promise<ChatMessageDto> => {
   const {data: apiResponse} = await api.post<ApiResponse<ChatMessageDto>>(`/chat/rooms/${roomId}/messages/files`, formData, {
     handledErrorStatuses: [400],
   });
@@ -51,7 +51,7 @@ export const createChatFileMessage = async (roomId: Long_String, formData: FormD
   return apiResponse.data;
 };
 
-export const getChatAttachmentDownloadUrl = async (roomId: Long_String, attachmentId: Long_String): Promise<string> => {
+export const getChatAttachmentDownloadUrl = async (roomId: TSID_String, attachmentId: Long_String): Promise<string> => {
   const {data: apiResponse} = await api.get<ApiResponse<string>>(`/chat/rooms/${roomId}/attachments/${attachmentId}/download-url`);
   if (!apiResponse.data) {
     throw new Error("파일 다운로드 URL을 불러오지 못했습니다.");
@@ -59,6 +59,6 @@ export const getChatAttachmentDownloadUrl = async (roomId: Long_String, attachme
   return apiResponse.data;
 };
 
-export const leaveChatRoom = async (roomId: Long_String): Promise<void> => {
+export const leaveChatRoom = async (roomId: TSID_String): Promise<void> => {
   await api.delete(`/chat/rooms/${roomId}/leave`);
 };

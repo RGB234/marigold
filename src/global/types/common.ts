@@ -11,7 +11,6 @@ export type UUID = string;
  * TSID (Time-Sorted Unique Identifier) 문자열
  */
 export type TSID_String = string; // crockford base32
-export type TSID_Long = string;
 
 export type Long_String = string;
 
