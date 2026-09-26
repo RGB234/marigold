@@ -233,10 +233,6 @@ onMounted(async () => {
         <div class="meta-info">
           <UserProfileLink :userId="detail.writer?.id" :nickname="detail.writer?.nickname"
             :imageUrl="detail.writer?.imageUrl" :status="detail.writer?.status" :showImage="true" />
-          <!-- <span class="divider">|</span>
-          <span>등록일: {{ formatDate(detail.createdAt) }}</span>
-          <span class="divider">|</span>
-          <span>수정일: {{ formatDate(detail.modifiedAt) }}</span> -->
           <div class="meta-info-date">
             <span>등록일: {{ formatDate(detail.createdAt) }}</span>
             <span class="divider">|</span>
@@ -412,6 +408,7 @@ onMounted(async () => {
 /* 컨테이너 */
 .detail-container {
   max-width: 800px;
+  min-width: max-content;
   margin: 20px auto;
   padding: 40px 20px;
   background-color: #fff;
@@ -568,7 +565,7 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   flex-wrap: nowrap;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 16px 16px 18px;
   background-color: #fff;
   border-radius: 8px;
