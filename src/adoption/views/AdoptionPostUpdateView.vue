@@ -150,7 +150,7 @@ import { Species } from "@/adoption/enums/Species";
 import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
-import { extractApiErrorResponse } from "@/global/utils/apiError";
+import { extractProblemDetail } from "@/global/utils/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -353,9 +353,9 @@ const handleSubmit = async () => {
     toast.success("입양글 수정이 완료되었습니다.");
     await router.push(RouteHelper.adoption.detail(routeId));
   } catch (error: unknown) {
-    const apiError = extractApiErrorResponse(error);
+    const problem = extractProblemDetail(error);
 
-    applyFieldErrors(apiError?.errors);
+    applyFieldErrors(problem?.errors);
   }
 };
 

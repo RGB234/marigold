@@ -153,7 +153,7 @@ import { Species } from "@/adoption/enums/Species";
 import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
-import { extractApiErrorResponse } from "@/global/utils/apiError";
+import { extractProblemDetail } from "@/global/utils/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -293,19 +293,19 @@ const handleSubmit = async () => {
 
   try {
     const response = await createAdoptionPost(formData);
-    const createdPostId = response.data?.id;
+    const createdPostId = response.id;
 
     toast.success("입양글 작성이 완료되었습니다.");
     if (createdPostId) {
       await router.push(RouteHelper.adoption.detail(createdPostId));
     }
   } catch (error: unknown) {
-    const apiError = extractApiErrorResponse(error);
+    const problem = extractProblemDetail(error);
 
-    if (apiError) {
-      const hasFieldErrors = applyFieldErrors(apiError.errors);
-      if (!hasFieldErrors && apiError.message) {
-        toast.error(apiError.message);
+    if (problem) {
+      const hasFieldErrors = applyFieldErrors(problem.errors);
+      if (!hasFieldErrors && problem.detail) {
+        toast.error(problem.detail);
       }
       return;
     }

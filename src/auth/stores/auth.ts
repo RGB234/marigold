@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import api from "@/global/api";
-import { ApiResponse } from "@/global/types/common";
 import {TSID_String} from "@/global/types/common.ts";
 import { validateTsid } from "@/global/validation/validators";
 import {
@@ -62,19 +61,19 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() : Promise<boolean> {  
       try {
 
-        let {data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status");
+        let {data: authStatus} = await api.get<AuthStatusResponse>("/auth/status");
 
         // 메모리 토큰은 없지만 refresh cookie가 있는 경우에만 세션을 복구합니다.
-        if (!this.accessToken && apiResponse.data?.refreshTokenPresent) {
+        if (!this.accessToken && authStatus.refreshTokenPresent) {
           const refreshed = await this.silentRefresh();
           if (refreshed) {
-            ({data: apiResponse} = await api.get<ApiResponse<AuthStatusResponse>>("/auth/status"));
+            ({data: authStatus} = await api.get<AuthStatusResponse>("/auth/status"));
           }
         }
 
         // 전역 상태 업데이트
-        this.id = apiResponse.data!.userId || null;
-        this.authorities = apiResponse.data!.authorities || [];
+        this.id = authStatus.userId || null;
+        this.authorities = authStatus.authorities || [];
         
         return true;
       } catch (error) {
@@ -86,10 +85,10 @@ export const useAuthStore = defineStore("auth", {
     
     async silentRefresh(): Promise<boolean> {
       try {
-        const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/refresh", {}, { skipAlert: true });
+        const response = await api.post<{ accessToken: string }>("/auth/refresh", {}, { skipAlert: true });
         
-        if (response.data?.data?.accessToken) {
-          this.setAccessToken(response.data.data.accessToken);
+        if (response.data.accessToken) {
+          this.setAccessToken(response.data.accessToken);
           return true;
         }
         return false;
@@ -142,10 +141,10 @@ export const useAuthStore = defineStore("auth", {
     async localLogin(dto: any): Promise<boolean> {
       try {
         // 로그인 에러는 호출한 컴포넌트에서 직접 처리 위해 skipAlert 사용
-        const response = await api.post<ApiResponse<{ accessToken: string }>>("/auth/login", dto, { skipAlert: true });
+        const response = await api.post<{ accessToken: string }>("/auth/login", dto, { skipAlert: true });
         
-        if (response.data?.data?.accessToken) {
-          this.setAccessToken(response.data.data.accessToken);
+        if (response.data.accessToken) {
+          this.setAccessToken(response.data.accessToken);
         }
         
         await this.initializeAuth();
@@ -158,7 +157,7 @@ export const useAuthStore = defineStore("auth", {
     async localSignup(dto: any): Promise<boolean> {
       try {
         // 회원가입 에러 호출한 컴포넌트에서 직접 핸들링
-        await api.post<ApiResponse<void>>("/auth/signup", dto, { skipAlert: true });
+        await api.post<void>("/auth/signup", dto, { skipAlert: true });
         return true;
       } catch (error) {
         throw error;
@@ -174,7 +173,7 @@ export const useAuthStore = defineStore("auth", {
 
     async requestLogout(): Promise<boolean> {
       try {
-        await api.post<ApiResponse<void>>("/auth/logout");
+        await api.post<void>("/auth/logout");
         return true;
       } catch {
         // 토큰이 만료되거나 하여 로그아웃 시 요구하는 인증이 실패한 경우

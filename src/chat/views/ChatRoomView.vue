@@ -15,6 +15,7 @@ import {
 } from '@/chat/api/chat.api';
 import { getAdoptionPostSummary } from '@/adoption/api/adoptionPost.api';
 import type { ChatAttachmentDto, ChatMessageDto, ChatRoomDto } from '@/chat/types/chat';
+import { parseStompErrorResponse } from '@/chat/types/stomp';
 import { chatDestinations } from '@/chat/chatDestinations';
 import type { AdoptionPostResponse } from '@/adoption/types/adoptionPost';
 import { RouteHelper } from '@/global/router/routeHelper';
@@ -63,6 +64,12 @@ const isConnectionFailed = ref(false);
 const isSending = ref(false);
 const retryCount = ref(0);
 const MAX_RETRIES = 5;
+const RETRYABLE_CONNECT_ERROR_CODES = new Set([
+  'AUTH_UNAUTHORIZED',
+  'AUTH_ACCESS_DENIED',
+  'AUTH_TOKEN_INVALID',
+  'AUTH_TOKEN_EXPIRED',
+]);
 const MAX_FILE_COUNT = validationPolicy.chatAttachment.maxCount;
 const allowedFileExtensions = validationPolicy.chatAttachment.allowedExtensions;
 const fileAccept = allowedFileExtensions.map((extension) => `.${extension}`).join(',');
@@ -126,6 +133,20 @@ const connectWebSocket = () => {
     isReconnecting.value = false;
     isConnectionFailed.value = false;
 
+    client.subscribe(chatDestinations.errorQueue, (message) => {
+      const error = parseStompErrorResponse(message.body);
+      if (error) {
+        logger.warn(
+          `[STOMP Message Error] code: ${error.errorCode} | command: ${error.command} | message: ${error.message}`,
+        );
+        toast.error(error.message);
+        return;
+      }
+
+      logger.error('Invalid STOMP error payload:', message.body);
+      toast.error('메시지를 처리하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    });
+
     client.subscribe(chatDestinations.room(roomId.value), (message) => {
       const receivedMessage: ChatMessageDto = JSON.parse(message.body);
       messages.value.push(receivedMessage);
@@ -134,7 +155,24 @@ const connectWebSocket = () => {
   };
 
   client.onStompError = (frame) => {
-    logger.error('STOMP error: ' + frame.headers['message']);
+    const error = parseStompErrorResponse(frame.body);
+    logger.error(
+      `[Fatal STOMP Error] code: ${error?.errorCode ?? 'UNKNOWN'} | message: ${frame.headers['message']}`,
+    );
+    toast.error(
+      error?.message ?? frame.headers['message'] ?? '실시간 연결을 처리하는 중 오류가 발생했습니다.',
+    );
+
+    const retryable =
+      error?.errorCode === 'INTERNAL_SERVER_ERROR' ||
+      (error?.command === 'CONNECT' && RETRYABLE_CONNECT_ERROR_CODES.has(error.errorCode));
+    if (!retryable) {
+      isManualDisconnect = true;
+      isReconnecting.value = false;
+      isConnectionFailed.value = true;
+      client.reconnectDelay = 0;
+      void client.deactivate();
+    }
   };
 
   client.onWebSocketError = (event) => {

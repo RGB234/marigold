@@ -26,11 +26,9 @@ describe("auth store initialization", () => {
   it("does not refresh an anonymous session without a refresh token cookie", async () => {
     get.mockResolvedValueOnce({
       data: {
-        data: {
-          userId: null,
-          authorities: [],
-          refreshTokenPresent: false,
-        },
+        userId: null,
+        authorities: [],
+        refreshTokenPresent: false,
       },
     } as never);
 
@@ -44,27 +42,21 @@ describe("auth store initialization", () => {
     get
       .mockResolvedValueOnce({
         data: {
-          data: {
-            userId: null,
-            authorities: [],
-            refreshTokenPresent: true,
-          },
+          userId: null,
+          authorities: [],
+          refreshTokenPresent: true,
         },
       } as never)
       .mockResolvedValueOnce({
         data: {
-          data: {
-            userId: "01ARZ3NDEKTSV",
-            authorities: ["ROLE_PERSON"],
-            refreshTokenPresent: true,
-          },
+          userId: "01ARZ3NDEKTSV",
+          authorities: ["ROLE_PERSON"],
+          refreshTokenPresent: true,
         },
       } as never);
     post.mockResolvedValueOnce({
       data: {
-        data: {
-          accessToken: "access-token",
-        },
+        accessToken: "access-token",
       },
     } as never);
 

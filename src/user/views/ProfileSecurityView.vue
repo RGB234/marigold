@@ -434,7 +434,7 @@ function getProviderLabel(provider: LinkedOAuthProvider) {
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message ?? fallbackMessage;
+    return error.response?.data?.detail ?? fallbackMessage;
   }
 
   return fallbackMessage;

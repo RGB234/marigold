@@ -30,7 +30,7 @@
 예시:
 
 ```ts
-await api.patch<ApiResponse<void>>("/resource/1", payload, {
+await api.patch<void>("/resource/1", payload, {
   handledErrorStatuses: [400],
 });
 ```

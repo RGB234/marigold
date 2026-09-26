@@ -22,14 +22,14 @@ export type ImageUrl = string;
 export type ISO8601DateString = string;
 
 /**
- * 백엔드 공통 응답 래퍼 인터페이스
+ * RFC 9457 Problem Details 오류 응답
  */
-export interface ApiResponse<T = void> {
-    success: boolean;
-    timestamp: string;
+export interface ProblemDetail {
+    type: string;
+    title: string;
     status: number;
-    message: string;
-    data?: T;
+    detail?: string;
+    instance?: string;
     errorCode?: string;
     errors?: Array<ErrorDetail>;
 }
@@ -71,17 +71,18 @@ export interface PageableParams {
 }
 
 /**
- * ApiResponse 타입 가드 함수
+ * ProblemDetail 타입 가드 함수
  */
-export function isApiResponse<T = unknown>(response: any): response is ApiResponse<T> {
+export function isProblemDetail(response: unknown): response is ProblemDetail {
     if (typeof response !== 'object' || response === null) {
         return false;
     }
 
+    const candidate = response as Record<string, unknown>;
     return (
-        'success' in response && typeof response.success === 'boolean' &&
-        'timestamp' in response && typeof response.timestamp === 'string' &&
-        'status' in response && typeof response.status === 'number' &&
-        'message' in response && typeof response.message === 'string'
+        typeof candidate.type === 'string' &&
+        typeof candidate.title === 'string' &&
+        typeof candidate.status === 'number' &&
+        (candidate.detail === undefined || typeof candidate.detail === 'string')
     );
 }

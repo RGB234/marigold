@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/global/types/common";
+import { isProblemDetail } from "@/global/types/common";
 import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 import { useAlert } from "@/global/composables/useAlert";
@@ -32,6 +32,15 @@ const redirectToLoginIfProtectedRoute = () => {
   if (router.currentRoute.value.meta?.requiresAuth) {
     router.push(RouteHelper.auth.login());
   }
+};
+
+const navigateBackOrHome = async () => {
+  if (typeof router.options.history.state.back === "string") {
+    router.back();
+    return;
+  }
+
+  await router.replace(RouteHelper.home());
 };
 
 // 환경변수로 API 기본 URL 설정
@@ -85,32 +94,33 @@ api.interceptors.request.use(
  * 응답 Interceptor
  */
 api.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse<unknown>>) => {
+  (response: AxiosResponse<unknown>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
     csrfTokenCache = response.headers[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
     return response;
   },
-  async (error: AxiosError<ApiResponse<unknown>>) => {
+  async (error: AxiosError<unknown>) => {
     const loadingStore = useLoadingStore();
     loadingStore.stop();
 
     const { alert } = useAlert();
-    const errorResponse = error.response?.data;
+    const status = error.response?.status;
+    const problem = isProblemDetail(error.response?.data) ? error.response.data : null;
     csrfTokenCache =
       error.response?.headers?.[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
     const originalRequest = error.config as any; // 인터셉터에서 config 재사용을 위해 캐스팅
     const skipAlert = originalRequest?.skipAlert;
     const handledErrorStatuses: number[] = originalRequest?.handledErrorStatuses ?? [];
 
-    if (errorResponse) {
+    if (status !== undefined) {
       logger.error(
-        `[API Error] status: ${errorResponse.status} | errorCode: ${errorResponse.errorCode} | message: ${errorResponse.message}`
+        `[API Error] status: ${status} | errorCode: ${problem?.errorCode ?? "UNKNOWN"} | detail: ${problem?.detail ?? ""}`
       );
       
       // 401 에러 발생 시 토큰 갱신 로직 (refresh 요청 자체에서 난 에러는 제외)
       // _retry 플래그를 통해 무한 루프 방지. "이제 재시도를 할 것이니 다음번에 또 에러가 나더라도 재시도하지 마라"는 표시
-      if (errorResponse.status === 401 && !originalRequest.url?.includes('/auth/refresh') && !originalRequest._retry) {
+      if (status === 401 && !originalRequest.url?.includes('/auth/refresh') && !originalRequest._retry) {
         // [A] 토큰 갱신을 시작하는 첫 번째 요청
         if (!isRefreshing) {
           isRefreshing = true;
@@ -158,11 +168,11 @@ api.interceptors.response.use(
       }
 
       // 특정 오류코드에 대해 전역 알림/라우팅이 처리하기 전에 호출자에게 되돌려서 페이지가 해당 에러를 처리함
-      if (handledErrorStatuses.includes(errorResponse.status)) {
+      if (handledErrorStatuses.includes(status)) {
         return Promise.reject(error);
       }
 
-      if (errorResponse.errorCode === "AUTH_RECENT_AUTH_REQUIRED") {
+      if (problem?.errorCode === "AUTH_RECENT_AUTH_REQUIRED") {
         const { clearSecurityAccess } = await import("@/user/utils/securityAccess");
         clearSecurityAccess();
         await router.replace(RouteHelper.user.securityVerify());
@@ -170,7 +180,7 @@ api.interceptors.response.use(
       }
 
       if (!skipAlert) {
-        switch (errorResponse.status) {
+        switch (status) {
           case 400:
             await alert("400 Bad Request", "잘못된 요청입니다");
             break;
@@ -180,25 +190,25 @@ api.interceptors.response.use(
             break;
           case 404:
             await alert("404 Not Found", "페이지를 찾을 수 없습니다");
-            router.back();
+            await navigateBackOrHome();
             break;
           case 500:
             await alert("500 Internal Server Error", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             break;
           default:
-            await alert("Error " + errorResponse.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            await alert("Error " + status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             break;
         }
       } else {
         // 인증 에러면서 skipAlert가 설정되어 있어도, 라우팅 처리는 필요한 경우
         // 단, 로그인 요청 등에서 발생한 에러는 자체 처리를 위해 자동 라우팅 방지
         if (!originalRequest.url?.includes('/auth/login')) {
-          switch(errorResponse.status) {
+          switch(status) {
             case 401:
               redirectToLoginIfProtectedRoute();
               break;
             case 404:
-              router.back();
+              await navigateBackOrHome();
               break;
           }
         }

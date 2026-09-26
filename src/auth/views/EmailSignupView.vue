@@ -163,7 +163,7 @@ const handleLocalSignup = async () => {
     const errorResponse = error.response?.data;
 
     fieldErrors.value = errorResponse?.errors || [];
-    generalError.value = errorResponse?.message || "";
+    generalError.value = errorResponse?.detail || "";
   }
 };
 

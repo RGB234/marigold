@@ -53,7 +53,7 @@ import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { RouteHelper } from '@/global/router/routeHelper';
 import type { ErrorDetail } from '@/global/types/common';
-import { extractApiErrorResponse } from '@/global/utils/apiError';
+import { extractProblemDetail } from '@/global/utils/apiError';
 import { convertToFormData } from '@/global/utils/objectUtils';
 import { validateImageFiles, validateNickname } from '@/global/validation/validators';
 import { getUserProfile, updateUserProfile } from '@/user/api/user.api';
@@ -193,9 +193,9 @@ const submitForm = async () => {
             await router.push(RouteHelper.user.profile(userId.value));
         }
     } catch (error: unknown) {
-        const apiError = extractApiErrorResponse(error);
+        const problem = extractProblemDetail(error);
 
-        applyFieldErrors(apiError?.errors);
+        applyFieldErrors(problem?.errors);
     } finally {
         isSubmitting.value = false;
     }
