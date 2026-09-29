@@ -1,78 +1,158 @@
-import { isProblemDetail } from "@/global/types/common";
-import axios, { type AxiosError, type AxiosInstance, type AxiosResponse } from "axios";
+import axios, {
+  type AxiosError,
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import Cookies from "js-cookie";
 import { useAlert } from "@/global/composables/useAlert";
-import { useLoadingStore } from "@/global/stores/loading";
-import router from "@/global/router";
-import {RouteHelper} from "@/global/router/routeHelper.ts";
+import { ErrorCodes } from "@/global/errorCodes";
 import { logger } from "@/global/logger";
+import { RefreshCoordinator } from "@/global/refreshCoordinator";
+import router from "@/global/router";
+import { RouteHelper } from "@/global/router/routeHelper";
+import { useLoadingStore } from "@/global/stores/loading";
+import { normalizeApiError, type AppError } from "@/global/utils/apiError";
 
-// Axios Request Config 확장을 통해 커스텀 속성(skipAlert) 추가
-declare module 'axios' {
+export type ApiErrorMode = "global" | "local";
+
+declare module "axios" {
   export interface AxiosRequestConfig {
-    skipAlert?: boolean;
-    handledErrorStatuses?: number[];
+    /** global이면 공통 알림, local이면 호출 화면이 직접 오류를 표현합니다. */
+    errorMode?: ApiErrorMode;
+    /** 인증 API처럼 401이어도 access token 갱신을 시도하지 않는 요청입니다. */
+    skipAuthRefresh?: boolean;
   }
 }
 
-// Token Refresh 관련 변수
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-const onRefreshed = (token: string) => {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  errorMode?: ApiErrorMode;
+  skipAuthRefresh?: boolean;
 };
 
-const addRefreshSubscriber = (cb: (token: string) => void) => {
-  refreshSubscribers.push(cb);
-};
-
-const redirectToLoginIfProtectedRoute = () => {
-  if (router.currentRoute.value.meta?.requiresAuth) {
-    router.push(RouteHelper.auth.login());
-  }
-};
-
-const navigateBackOrHome = async () => {
-  if (typeof router.options.history.state.back === "string") {
-    router.back();
-    return;
-  }
-
-  await router.replace(RouteHelper.home());
-};
-
-// 환경변수로 API 기본 URL 설정
 const apiBase = import.meta.env.VITE_API_V1_BASE;
 export const CSRF_TOKEN_COOKIE_NAME = "XSRF-TOKEN";
 export const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
 const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const REFRESHABLE_AUTH_ERRORS = new Set<string>([
+  ErrorCodes.AUTH_UNAUTHORIZED,
+  ErrorCodes.AUTH_TOKEN_INVALID,
+  ErrorCodes.AUTH_TOKEN_EXPIRED,
+]);
+const refreshCoordinator = new RefreshCoordinator<string>();
 let csrfTokenCache: string | null = null;
 
-export const getCsrfToken = (): string | null => {
-  return csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME) ?? null;
-};
+export const getCsrfToken = (): string | null =>
+  csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME) ?? null;
 
-// Axios 인스턴스 생성
 const api: AxiosInstance = axios.create({
   baseURL: apiBase,
-  withCredentials: true, // 쿠키/세션 포함
+  withCredentials: true,
 });
 
-/**
- * 요청 Interceptor
- */
-api.interceptors.request.use(
-  async (config) => {
-    const loadingStore = useLoadingStore();
-    loadingStore.start();
+const redirectToLoginIfProtectedRoute = () => {
+  if (router.currentRoute.value.meta?.requiresAuth) {
+    void router.push(RouteHelper.auth.login());
+  }
+};
 
-    // accessToken을 헤더에 추가
+const refreshAccessToken = (): Promise<string> =>
+  refreshCoordinator.run(async () => {
     const { useAuthStore } = await import("@/auth/stores/auth");
     const authStore = useAuthStore();
-    if (authStore.accessToken) {
-      config.headers.Authorization = `Bearer ${authStore.accessToken}`;
+    const refreshed = await authStore.silentRefresh();
+    if (refreshed && authStore.accessToken) {
+      return authStore.accessToken;
+    }
+
+    authStore.resetAuthState();
+    const { alert } = useAlert();
+    void alert("로그인 만료", "세션이 만료되었습니다. 다시 로그인해주세요.");
+    redirectToLoginIfProtectedRoute();
+    throw new Error("Session refresh failed");
+  });
+
+const shouldRefresh = (
+  error: AppError,
+  problemCode: string | undefined,
+  request: RetriableRequestConfig | undefined,
+): request is RetriableRequestConfig =>
+  error.type === "api" &&
+  error.status === 401 &&
+  !!request &&
+  !request._retry &&
+  !request.skipAuthRefresh &&
+  !request.url?.includes("/auth/refresh") &&
+  !!problemCode &&
+  REFRESHABLE_AUTH_ERRORS.has(problemCode);
+
+const presentGlobalError = async (error: AppError): Promise<void> => {
+  if (error.type === "cancelled") {
+    return;
+  }
+
+  const { alert } = useAlert();
+  if (error.type === "network") {
+    await alert("네트워크 오류", "서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.");
+    return;
+  }
+  if (error.type === "timeout") {
+    await alert("요청 시간 초과", "서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.");
+    return;
+  }
+  if (error.type === "unknown") {
+    await alert("오류", "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+    return;
+  }
+
+  const detail = error.problem?.detail;
+  if (error.problem?.errorCode === ErrorCodes.AUTH_RECENT_AUTH_REQUIRED) {
+    const { clearSecurityAccess } = await import("@/user/utils/securityAccess");
+    clearSecurityAccess();
+    await router.replace(RouteHelper.user.securityVerify());
+    return;
+  }
+
+  switch (error.status) {
+    case 400:
+      await alert("요청 확인", detail ?? "입력값 또는 요청 내용을 확인해주세요.");
+      break;
+    case 401:
+      await alert("인증 필요", detail ?? "로그인이 필요합니다.");
+      redirectToLoginIfProtectedRoute();
+      break;
+    case 403:
+      await alert("권한 없음", detail ?? "요청을 수행할 권한이 없습니다.");
+      break;
+    case 404:
+      await alert("찾을 수 없음", detail ?? "요청한 리소스를 찾을 수 없습니다.");
+      break;
+    case 409:
+      await alert("요청 충돌", detail ?? "현재 상태에서는 요청을 처리할 수 없습니다.");
+      break;
+    case 410:
+      await alert("삭제된 리소스", detail ?? "이미 삭제된 리소스입니다.");
+      break;
+    case 413:
+      await alert("업로드 제한 초과", detail ?? "업로드 가능한 크기를 초과했습니다.");
+      break;
+    default:
+      await alert(
+        error.status >= 500 ? "서버 오류" : `오류 ${error.status}`,
+        detail ?? "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      );
+  }
+};
+
+api.interceptors.request.use(
+  async (config) => {
+    useLoadingStore().start();
+
+    const { useAuthStore } = await import("@/auth/stores/auth");
+    const accessToken = useAuthStore().accessToken;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     const method = config.method?.toUpperCase();
@@ -80,148 +160,53 @@ api.interceptors.request.use(
     if (method && CSRF_PROTECTED_METHODS.has(method) && csrfToken) {
       config.headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
     }
-
     return config;
   },
   (error) => {
-    const loadingStore = useLoadingStore();
-    loadingStore.stop();
+    useLoadingStore().stop();
     return Promise.reject(error);
-  }
+  },
 );
 
-/**
- * 응답 Interceptor
- */
 api.interceptors.response.use(
   (response: AxiosResponse<unknown>) => {
-    const loadingStore = useLoadingStore();
-    loadingStore.stop();
+    useLoadingStore().stop();
     csrfTokenCache = response.headers[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
     return response;
   },
-  async (error: AxiosError<unknown>) => {
-    const loadingStore = useLoadingStore();
-    loadingStore.stop();
-
-    const { alert } = useAlert();
-    const status = error.response?.status;
-    const problem = isProblemDetail(error.response?.data) ? error.response.data : null;
+  async (axiosError: AxiosError<unknown>) => {
+    useLoadingStore().stop();
     csrfTokenCache =
-      error.response?.headers?.[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
-    const originalRequest = error.config as any; // 인터셉터에서 config 재사용을 위해 캐스팅
-    const skipAlert = originalRequest?.skipAlert;
-    const handledErrorStatuses: number[] = originalRequest?.handledErrorStatuses ?? [];
+      axiosError.response?.headers?.[CSRF_TOKEN_HEADER_NAME.toLowerCase()] ?? csrfTokenCache;
 
-    if (status !== undefined) {
+    const error = normalizeApiError(axiosError);
+    const request = axiosError.config as RetriableRequestConfig | undefined;
+    const problemCode = error.type === "api" ? error.problem?.errorCode : undefined;
+
+    if (error.type === "api") {
       logger.error(
-        `[API Error] status: ${status} | errorCode: ${problem?.errorCode ?? "UNKNOWN"} | detail: ${problem?.detail ?? ""}`
+        `[API Error] status=${error.status} errorCode=${problemCode ?? "UNKNOWN"} requestId=${error.problem?.requestId ?? "UNKNOWN"}`,
       );
-      
-      // 401 에러 발생 시 토큰 갱신 로직 (refresh 요청 자체에서 난 에러는 제외)
-      // _retry 플래그를 통해 무한 루프 방지. "이제 재시도를 할 것이니 다음번에 또 에러가 나더라도 재시도하지 마라"는 표시
-      if (status === 401 && !originalRequest.url?.includes('/auth/refresh') && !originalRequest._retry) {
-        // [A] 토큰 갱신을 시작하는 첫 번째 요청
-        if (!isRefreshing) {
-          isRefreshing = true;
-          try {
-            const { useAuthStore } = await import("@/auth/stores/auth");
-            const authStore = useAuthStore();
-            const refreshed = await authStore.silentRefresh();
-            
-            if (refreshed && authStore.accessToken) {
-              // 토큰 갱신 성공 
-              // 대기열에 있는 모든 요청들을 새로운 accessToken과 함께 재요청
-              isRefreshing = false;
-              onRefreshed(authStore.accessToken);
-              
-              originalRequest._retry = true;
-              originalRequest.headers.Authorization = `Bearer ${authStore.accessToken}`;
-              return api(originalRequest);
-            } else {
-              isRefreshing = false;
-              authStore.resetAuthState();
-              if (!skipAlert) await alert("로그인 만료", "세션이 만료되었습니다. 다시 로그인해주세요.");
-              redirectToLoginIfProtectedRoute();
-              return Promise.reject(error);
-            }
-          } catch (refreshError) {
-            isRefreshing = false;
-            const { useAuthStore } = await import("@/auth/stores/auth");
-            useAuthStore().resetAuthState();
-            redirectToLoginIfProtectedRoute();
-            return Promise.reject(refreshError);
-          }
-        }
-        
-        // [B] 이미 토큰 갱신 중일 때 들어온 다른 요청들
-        // 새로운 Promise를 생성해 대기열 큐에 넣고, 갱신이 완료되면 resolve 되도록 함
-        return new Promise((resolve) => { // 새로운 Promise를 반환하여 Pending 상태로 유지. resolve 호출되기 전까지 대기.
-          addRefreshSubscriber((token: string) => {
-            originalRequest._retry = true;
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            // [A] 부분을 보면, 갱신 완료 시 onRefreshed 함수가 실행되어 refreshSubscribers 큐 내부의 익명함수들이 실행
-            // 익명함수 내부에서 resolve 호출하여 Promise 완료 처리
-            resolve(api(originalRequest));
-          });
-        });
-      }
-
-      // 특정 오류코드에 대해 전역 알림/라우팅이 처리하기 전에 호출자에게 되돌려서 페이지가 해당 에러를 처리함
-      if (handledErrorStatuses.includes(status)) {
-        return Promise.reject(error);
-      }
-
-      if (problem?.errorCode === "AUTH_RECENT_AUTH_REQUIRED") {
-        const { clearSecurityAccess } = await import("@/user/utils/securityAccess");
-        clearSecurityAccess();
-        await router.replace(RouteHelper.user.securityVerify());
-        return Promise.reject(error);
-      }
-
-      if (!skipAlert) {
-        switch (status) {
-          case 400:
-            await alert("400 Bad Request", "잘못된 요청입니다");
-            break;
-          case 401:
-            await alert("401 Unauthorized", "인증 필요");
-            redirectToLoginIfProtectedRoute();
-            break;
-          case 404:
-            await alert("404 Not Found", "페이지를 찾을 수 없습니다");
-            await navigateBackOrHome();
-            break;
-          case 500:
-            await alert("500 Internal Server Error", "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            break;
-          default:
-            await alert("Error " + status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            break;
-        }
-      } else {
-        // 인증 에러면서 skipAlert가 설정되어 있어도, 라우팅 처리는 필요한 경우
-        // 단, 로그인 요청 등에서 발생한 에러는 자체 처리를 위해 자동 라우팅 방지
-        if (!originalRequest.url?.includes('/auth/login')) {
-          switch(status) {
-            case 401:
-              redirectToLoginIfProtectedRoute();
-              break;
-            case 404:
-              await navigateBackOrHome();
-              break;
-          }
-        }
-      }
     } else {
-      if (!skipAlert) {
-        await alert("Error " + error.status, "예기치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      logger.error(`[API Error] type=${error.type}`);
+    }
+
+    if (shouldRefresh(error, problemCode, request)) {
+      try {
+        const token = await refreshAccessToken();
+        request._retry = true;
+        request.headers.Authorization = `Bearer ${token}`;
+        return api(request);
+      } catch {
+        return Promise.reject(axiosError);
       }
     }
 
-    // 호출한 측에서 에러 객체를 그대로 활용할 수 있도록 리턴 (error.response.data에 접근 가능)
-    return Promise.reject(error);
-  }
+    if (request?.errorMode !== "local") {
+      await presentGlobalError(error);
+    }
+    return Promise.reject(axiosError);
+  },
 );
 
 export default api;

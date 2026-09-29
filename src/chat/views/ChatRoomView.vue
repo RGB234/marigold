@@ -7,6 +7,7 @@ import SockJS from 'sockjs-client';
 import { useAuthStore } from '@/auth/stores/auth';
 import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/api';
 import { logger } from '@/global/logger';
+import { ErrorCodes } from '@/global/errorCodes';
 import {
   getChatRoomMessages,
   getChatRoom,
@@ -65,10 +66,9 @@ const isSending = ref(false);
 const retryCount = ref(0);
 const MAX_RETRIES = 5;
 const RETRYABLE_CONNECT_ERROR_CODES = new Set([
-  'AUTH_UNAUTHORIZED',
-  'AUTH_ACCESS_DENIED',
-  'AUTH_TOKEN_INVALID',
-  'AUTH_TOKEN_EXPIRED',
+  ErrorCodes.AUTH_UNAUTHORIZED,
+  ErrorCodes.AUTH_TOKEN_INVALID,
+  ErrorCodes.AUTH_TOKEN_EXPIRED,
 ]);
 const MAX_FILE_COUNT = validationPolicy.chatAttachment.maxCount;
 const allowedFileExtensions = validationPolicy.chatAttachment.allowedExtensions;
@@ -164,7 +164,7 @@ const connectWebSocket = () => {
     );
 
     const retryable =
-      error?.errorCode === 'INTERNAL_SERVER_ERROR' ||
+      error?.errorCode === ErrorCodes.INTERNAL_SERVER_ERROR ||
       (error?.command === 'CONNECT' && RETRYABLE_CONNECT_ERROR_CODES.has(error.errorCode));
     if (!retryable) {
       isManualDisconnect = true;

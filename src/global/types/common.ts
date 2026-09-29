@@ -31,6 +31,7 @@ export interface ProblemDetail {
     detail?: string;
     instance?: string;
     errorCode?: string;
+    requestId?: string;
     errors?: Array<ErrorDetail>;
 }
 
@@ -56,6 +57,7 @@ export interface PageResponse<T> {
  * API 에러 발생 시 상세 필드 에러 정보
  */
 export interface ErrorDetail {
+    location?: "body" | "parameter" | string;
     field: string;
     message: string;
 }

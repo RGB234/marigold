@@ -224,6 +224,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
+import { ErrorCodes } from "@/global/errorCodes";
 import { RouteHelper } from "@/global/router/routeHelper";
 import {
   deleteUser,
@@ -443,7 +444,7 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 function isRecentAuthRequiredError(error: unknown) {
   return (
     axios.isAxiosError(error) &&
-    error.response?.data?.errorCode === "AUTH_RECENT_AUTH_REQUIRED"
+    error.response?.data?.errorCode === ErrorCodes.AUTH_RECENT_AUTH_REQUIRED
   );
 }
 </script>

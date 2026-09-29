@@ -28,7 +28,7 @@ export const getChatRoomMessages = async (roomId: TSID_String): Promise<ChatMess
 
 export const createChatFileMessage = async (roomId: TSID_String, formData: FormData): Promise<ChatMessageDto> => {
   const {data} = await api.post<ChatMessageDto>(`/chat/rooms/${roomId}/messages/files`, formData, {
-    handledErrorStatuses: [400],
+    errorMode: "local",
   });
   return data;
 };

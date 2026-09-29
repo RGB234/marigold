@@ -13,7 +13,7 @@ import defaultProfileImage from '@/assets/images/default-profile.png';
 // 생성
 export const createAdoptionPost = async (formData: FormData): Promise<{ id: Long_String }> => {
   const {data} = await api.post<{ id: Long_String }>("/adoption", formData, {
-    handledErrorStatuses: [400],
+    errorMode: "local",
   });
   return data;
 };
@@ -21,7 +21,7 @@ export const createAdoptionPost = async (formData: FormData): Promise<{ id: Long
 // 수정
 export const updateAdoptionPost = async (id: Long_String, formData: FormData): Promise<void> => {
   await api.patch<void>(`/adoption/${id}`, formData, {
-    handledErrorStatuses: [400],
+    errorMode: "local",
   });
 };
 
@@ -46,7 +46,7 @@ export const getAdoptionPostSummary = async (id: Long_String): Promise<AdoptionP
 // 상세보기
 export const getAdoptionPostDetail = async (id: Long_String): Promise<AdoptionPostDetailResponse> => {
   const {data: detail} = await api.get<AdoptionPostDetailResponse>(`/adoption/${id}`, {
-    handledErrorStatuses: [410],
+    errorMode: "local",
   });
 
   // 작성자 프로필 이미지
@@ -133,7 +133,7 @@ export const updateAdoptionComment = async (
   formData: FormData,
 ): Promise<void> => {
   await api.patch<void>(`/adoption/${postId}/comments/${commentId}`, formData, {
-    handledErrorStatuses: [400],
+    errorMode: "local",
   });
 };
 

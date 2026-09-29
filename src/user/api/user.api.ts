@@ -19,7 +19,7 @@ export const getUserProfile = async (userId: string): Promise<UserInfoDto> => {
 // 유저 프로필 수정
 export const updateUserProfile = async (formData: FormData): Promise<void> => {
     await api.patch<void>("/user", formData, {
-        handledErrorStatuses: [400],
+        errorMode: "local",
     });
 };
 
@@ -29,10 +29,10 @@ export const getUserSecurityInfo = async (): Promise<UserSecurityInfoDto> => {
 };
 
 export const registerEmailPassword = async (payload: RegisterEmailPasswordDto): Promise<void> => {
-    await api.post<void>("/user/credentials", payload, { skipAlert: true });
+    await api.post<void>("/user/credentials", payload, { errorMode: "local" });
 };
 
 // 유저 삭제
 export const deleteUser = async (): Promise<void> => {
-    await api.delete<void>("/user/delete", { skipAlert: true });
+    await api.delete<void>("/user/delete", { errorMode: "local" });
 };

@@ -63,7 +63,10 @@ describe("auth store initialization", () => {
     const authStore = useAuthStore();
     await authStore.initializeAuth();
 
-    expect(post).toHaveBeenCalledWith("/auth/refresh", {}, { skipAlert: true });
+    expect(post).toHaveBeenCalledWith("/auth/refresh", {}, {
+      errorMode: "local",
+      skipAuthRefresh: true,
+    });
     expect(get).toHaveBeenCalledTimes(2);
     expect(authStore.accessToken).toBe("access-token");
     expect(authStore.userId).toBe("01ARZ3NDEKTSV");

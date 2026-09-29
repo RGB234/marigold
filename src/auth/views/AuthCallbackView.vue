@@ -10,6 +10,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAlert } from "@/global/composables/useAlert";
 import { useAuthStore } from "@/auth/stores/auth";
 import { RouteHelper } from "@/global/router/routeHelper";
+import { ErrorCodes } from "@/global/errorCodes";
 import {
   clearPendingAuthState,
   getPendingAuthState,
@@ -24,19 +25,25 @@ const router = useRouter();
 const { alert } = useAlert();
 const authStore = useAuthStore();
 
+const oauthErrorMessages: Record<string, string> = {
+  [ErrorCodes.AUTH_OAUTH2_LOGIN_FAILURE]: "OAuth2 로그인에 실패했습니다.",
+  [ErrorCodes.AUTH_INVALID_PROVIDER]: "지원하지 않는 OAuth2 제공자입니다.",
+  [ErrorCodes.AUTH_UNAUTHORIZED]: "로그인 상태를 확인할 수 없습니다.",
+  [ErrorCodes.AUTH_TOKEN_INVALID]: "인증 정보가 유효하지 않습니다.",
+  [ErrorCodes.AUTH_RECENT_AUTH_REQUIRED]: "최근 인증이 필요합니다.",
+  [ErrorCodes.USER_OAUTH2_ALREADY_LINKED]: "이미 소셜 로그인 정보가 연동되어 있습니다.",
+  [ErrorCodes.USER_OAUTH2_ACCOUNT_ALREADY_IN_USE]: "이미 다른 계정에 연결된 소셜 계정입니다.",
+};
+
 onMounted(async () => {
   await handleOAuthCallback();
 });
 
 async function handleOAuthCallback() {
   const errorParam = route.query.error;
-  const descriptionParam = route.query.error_description;
   const authStatusParam = route.query.auth_status;
 
   const errorCode = Array.isArray(errorParam) ? errorParam[0] : errorParam;
-  const errorDescription = Array.isArray(descriptionParam)
-    ? descriptionParam[0]
-    : descriptionParam;
   const authStatus = Array.isArray(authStatusParam)
     ? authStatusParam[0]
     : authStatusParam;
@@ -48,7 +55,10 @@ async function handleOAuthCallback() {
   if (errorCode) {
     clearPendingAuthState();
     clearSecurityAccess();
-    await alert(errorCode, errorDescription || "알 수 없는 오류가 발생했습니다.");
+    await alert(
+      "OAuth2 인증 실패",
+      oauthErrorMessages[errorCode] ?? "인증을 완료하지 못했습니다. 다시 시도해주세요.",
+    );
     await router.replace(RouteHelper.auth.login());
     return;
   }

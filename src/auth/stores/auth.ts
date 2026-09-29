@@ -85,7 +85,10 @@ export const useAuthStore = defineStore("auth", {
     
     async silentRefresh(): Promise<boolean> {
       try {
-        const response = await api.post<{ accessToken: string }>("/auth/refresh", {}, { skipAlert: true });
+        const response = await api.post<{ accessToken: string }>("/auth/refresh", {}, {
+          errorMode: "local",
+          skipAuthRefresh: true,
+        });
         
         if (response.data.accessToken) {
           this.setAccessToken(response.data.accessToken);
@@ -124,7 +127,7 @@ export const useAuthStore = defineStore("auth", {
       };
 
       switch(providerCode){
-        // 오류 발생시 백엔드에서 AuthCallbackForm으로 리다이렉션하여 파라미터로 에러 코드와 메시지를 전달받아 처리
+        // 오류 발생 시 백엔드가 허용 목록의 에러 코드를 callback으로 전달합니다.
         case ProviderInfo.KAKAO:
           window.location.assign(getOAuthUrl(import.meta.env.VITE_API_OAUTH2_KAKAO));
           break;
@@ -140,8 +143,10 @@ export const useAuthStore = defineStore("auth", {
 
     async localLogin(dto: any): Promise<boolean> {
       try {
-        // 로그인 에러는 호출한 컴포넌트에서 직접 처리 위해 skipAlert 사용
-        const response = await api.post<{ accessToken: string }>("/auth/login", dto, { skipAlert: true });
+        const response = await api.post<{ accessToken: string }>("/auth/login", dto, {
+          errorMode: "local",
+          skipAuthRefresh: true,
+        });
         
         if (response.data.accessToken) {
           this.setAccessToken(response.data.accessToken);
@@ -157,7 +162,7 @@ export const useAuthStore = defineStore("auth", {
     async localSignup(dto: any): Promise<boolean> {
       try {
         // 회원가입 에러 호출한 컴포넌트에서 직접 핸들링
-        await api.post<void>("/auth/signup", dto, { skipAlert: true });
+        await api.post<void>("/auth/signup", dto, { errorMode: "local" });
         return true;
       } catch (error) {
         throw error;
