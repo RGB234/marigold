@@ -219,6 +219,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage as resolveErrorMessage } from "@/global/i18n/errorMessages";
 import axios from "axios";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -435,7 +436,7 @@ function getProviderLabel(provider: LinkedOAuthProvider) {
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail ?? fallbackMessage;
+    return resolveErrorMessage(error.response?.data, fallbackMessage);
   }
 
   return fallbackMessage;

@@ -1,4 +1,4 @@
-import api from "../../global/api";
+import api from "@/global/apiClient";
 import type {
     RegisterEmailPasswordDto,
     UserInfoDto,

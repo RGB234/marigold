@@ -50,10 +50,10 @@
         <v-btn
           color="white"
           variant="text"
-          icon="mdi-close"
+          icon
           size="small"
           @click="store.snackbar.show = false"
-        ></v-btn>
+        ><AppIcon name="close" /></v-btn>
       </template>
     </v-snackbar>
   </div>
@@ -61,6 +61,7 @@
 
 <script setup>
 import { useAlertStore } from '@/global/stores/alert';
+import AppIcon from '@/global/components/AppIcon.vue';
 
 const store = useAlertStore();
 </script>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { extractProblemDetail } from '@/global/utils/apiError';
+import { getErrorMessage } from '@/global/i18n/errorMessages';
 import { useRoute, useRouter } from 'vue-router';
 import { getAdoptionCandidates, getAdoptionPostDetail } from '@/adoption/api/adoptionPost.api';
 import { getOrCreateChatRoom } from '@/chat/api/chat.api';
@@ -32,8 +34,13 @@ const fetchData = async () => {
         
         postDetail.value = detailData;
         candidates.value = candidatesData;
-    } catch {
-        toast.error("데이터를 불러오는 중 오류가 발생했습니다.");
+    } catch (error) {
+        const problem = extractProblemDetail(error);
+        if (problem?.status === 410 && problem.errorCode === 'ADOPTION_POST_DELETED') {
+            await router.replace(RouteHelper.adoption.deleted());
+            return;
+        }
+        toast.error(getErrorMessage(problem, "데이터를 불러오는 중 오류가 발생했습니다."));
     } finally {
         loading.value = false;
     }

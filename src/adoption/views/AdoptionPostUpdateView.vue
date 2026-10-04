@@ -151,6 +151,7 @@ import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractProblemDetail } from "@/global/utils/apiError";
+import { getErrorMessage } from "@/global/i18n/errorMessages";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -280,7 +281,12 @@ const handleFetchAdoption = async () => {
     });
 
     imagePreviews.value = existingImages.map((image) => image.url);
-  } catch {
+  } catch (error) {
+    const problem = extractProblemDetail(error);
+    if (problem?.status === 410 && problem.errorCode === "ADOPTION_POST_DELETED") {
+      await router.replace(RouteHelper.adoption.deleted());
+      return;
+    }
     await router.push(RouteHelper.adoption.list());
   }
 };
@@ -356,6 +362,13 @@ const handleSubmit = async () => {
     const problem = extractProblemDetail(error);
 
     applyFieldErrors(problem?.errors);
+    if (problem?.status === 410 && problem.errorCode === "ADOPTION_POST_DELETED") {
+      await router.replace(RouteHelper.adoption.deleted());
+      return;
+    }
+    if (!problem?.errors?.length) {
+      toast.error(getErrorMessage(problem));
+    }
   }
 };
 

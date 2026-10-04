@@ -1,4 +1,4 @@
-import api from "@/global/api";
+import api from "@/global/apiClient";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
 import {Long_String, PageableParams, TSID_String} from "@/global/types/common.ts";
 

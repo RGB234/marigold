@@ -1,9 +1,9 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import api from "@/global/api";
+import api from "@/global/apiClient";
 import { useAuthStore } from "@/auth/stores/auth";
 
-vi.mock("@/global/api", () => ({
+vi.mock("@/global/apiClient", () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),

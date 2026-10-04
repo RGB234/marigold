@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage as resolveErrorMessage } from "@/global/i18n/errorMessages";
 import axios from "axios";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -216,7 +217,7 @@ async function goBackToProfile() {
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.detail ?? fallbackMessage;
+    return resolveErrorMessage(error.response?.data, fallbackMessage);
   }
 
   return fallbackMessage;

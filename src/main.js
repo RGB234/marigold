@@ -1,11 +1,12 @@
 import { createApp } from "vue";
 import { createPinia } from "pinia";
+import { useAuthStore } from "@/auth/stores/auth";
+import apiClient from "@/global/apiClient";
+import { installApiInterceptors } from "@/global/installApiInterceptors";
 import App from "./App.vue";
 import router from "./global/router";
 import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
-import "@mdi/font/css/materialdesignicons.css";
+import "vuetify/styles";
 import "./main.css"; // 최하단에서 import
 
 
@@ -14,15 +15,14 @@ import GlobalAlert from "@/global/components/GlobalAlert.vue";
 import { logger } from "@/global/logger";
 
 
-const vuetify = createVuetify({
-  components,
-  directives,
-});
+const vuetify = createVuetify();
 
 const app = createApp(App);
 const pinia = createPinia();
 
 app.use(pinia);
+const authStore = useAuthStore(pinia);
+installApiInterceptors(apiClient, authStore);
 app.use(router);
 app.use(vuetify);
 

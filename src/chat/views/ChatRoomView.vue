@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { getErrorMessage } from "@/global/i18n/errorMessages";
+import AppIcon from '@/global/components/AppIcon.vue';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import { useAuthStore } from '@/auth/stores/auth';
-import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/api';
+import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/apiClient';
 import { logger } from '@/global/logger';
 import { ErrorCodes } from '@/global/errorCodes';
 import {
@@ -139,7 +141,7 @@ const connectWebSocket = () => {
         logger.warn(
           `[STOMP Message Error] code: ${error.errorCode} | command: ${error.command} | message: ${error.message}`,
         );
-        toast.error(error.message);
+        toast.error(getErrorMessage({ errorCode: error.errorCode, detail: error.message }));
         return;
       }
 
@@ -160,7 +162,7 @@ const connectWebSocket = () => {
       `[Fatal STOMP Error] code: ${error?.errorCode ?? 'UNKNOWN'} | message: ${frame.headers['message']}`,
     );
     toast.error(
-      error?.message ?? frame.headers['message'] ?? '실시간 연결을 처리하는 중 오류가 발생했습니다.',
+      getErrorMessage(error ? { errorCode: error.errorCode, detail: error.message } : null, '실시간 연결을 처리하는 중 오류가 발생했습니다.'),
     );
 
     const retryable =
@@ -431,7 +433,7 @@ onUnmounted(() => {
                 />
               </span>
               <span v-else class="attachment-file-icon">
-                <i class="mdi mdi-file-outline" aria-hidden="true"></i>
+                <AppIcon name="file" />
               </span>
               <span class="attachment-info">
                 <span class="attachment-name">{{ attachment.originalFileName }}</span>
@@ -463,7 +465,7 @@ onUnmounted(() => {
               title="다운로드"
               @click="downloadAttachment(selectedAttachment)"
             >
-              <i class="mdi mdi-download" aria-hidden="true"></i>
+              <AppIcon name="download" />
             </button>
             <button
               type="button"
@@ -472,7 +474,7 @@ onUnmounted(() => {
               title="닫기"
               @click="closeAttachmentPreview"
             >
-              <i class="mdi mdi-close" aria-hidden="true"></i>
+              <AppIcon name="close" />
             </button>
           </div>
           <img
@@ -482,7 +484,7 @@ onUnmounted(() => {
             class="chat-attachment-popup-img"
           />
           <div v-else class="chat-file-popup-preview">
-            <i class="mdi mdi-file-outline" aria-hidden="true"></i>
+            <AppIcon name="file" class="chat-file-popup-icon" />
             <div class="chat-file-popup-name">{{ selectedAttachment.originalFileName }}</div>
             <div class="chat-file-popup-size">{{ formatFileSize(selectedAttachment.fileSize) }}</div>
           </div>
@@ -1000,7 +1002,7 @@ button:disabled {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
-.chat-file-popup-preview .mdi {
+.chat-file-popup-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1010,10 +1012,6 @@ button:disabled {
   font-size: 56px;
   line-height: 1;
   margin-bottom: 16px;
-}
-
-.chat-file-popup-preview .mdi::before {
-  line-height: 1;
 }
 
 .chat-file-popup-name {

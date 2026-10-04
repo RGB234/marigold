@@ -30,7 +30,7 @@ vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { roomId: 'room' } }),
   useRouter: () => ({ replace: mocks.replace, push: vi.fn() }),
 }));
-vi.mock('@/global/api', () => ({
+vi.mock('@/global/apiClient', () => ({
   CSRF_TOKEN_HEADER_NAME: 'X-CSRF-TOKEN', getCsrfToken: () => 'csrf',
 }));
 vi.mock('@/global/composables/useAlert', () => ({
@@ -126,7 +126,7 @@ describe('chat connection authentication', () => {
         }),
       });
 
-      expect(mocks.toastError).toHaveBeenCalledWith('메시지를 입력해주세요.');
+      expect(mocks.toastError).toHaveBeenCalledWith('입력값이 올바르지 않습니다.');
     } finally {
       wrapper.unmount();
     }

@@ -154,6 +154,7 @@ import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractProblemDetail } from "@/global/utils/apiError";
+import { getErrorMessage } from "@/global/i18n/errorMessages";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -305,7 +306,7 @@ const handleSubmit = async () => {
     if (problem) {
       const hasFieldErrors = applyFieldErrors(problem.errors);
       if (!hasFieldErrors && problem.detail) {
-        toast.error(problem.detail);
+        toast.error(getErrorMessage(problem));
       }
       return;
     }

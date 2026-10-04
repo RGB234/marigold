@@ -21,22 +21,22 @@
 
           <div class="menu-list">
             <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.writerList(userId))">
-              <i class="mdi mdi-pencil-box-outline item-icon"></i>
+              <AppIcon name="pencil" class="item-icon" />
               <span class="item-title">작성글 목록</span>
             </div>
 
             <div class="menu-item" @click="handleNavigation(RouteHelper.adoption.adopterList(userId))">
-              <i class="mdi mdi-heart-outline item-icon"></i>
+              <AppIcon name="heart" class="item-icon" />
               <span class="item-title">입양 목록</span>
             </div>
 
             <div class="menu-item" @click="handleNavigation(RouteHelper.chat.list())">
-              <i class="mdi mdi-chat-outline item-icon"></i>
+              <AppIcon name="chat" class="item-icon" />
               <span class="item-title">대화 목록</span>
             </div>
 
             <div class="menu-item" @click="handleNavigation(RouteHelper.user.profile(userId))">
-              <i class="mdi mdi-cog-outline item-icon"></i>
+              <AppIcon name="cog" class="item-icon" />
               <span class="item-title">설정</span>
             </div>
           </div>
@@ -45,7 +45,7 @@
 
           <div class="menu-list">
             <div class="menu-item" @click="handleLogout">
-              <i class="mdi mdi-logout item-icon"></i>
+              <AppIcon name="logout" class="item-icon" />
               <span class="item-title">로그아웃</span>
             </div>
           </div>
@@ -72,6 +72,7 @@ import { RouteLocationRaw } from "vue-router";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import AppIcon from '@/global/components/AppIcon.vue';
 
 const loadingStore = useLoadingStore();
 const authStore = useAuthStore();

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import api from "@/global/api";
+import api from "@/global/apiClient";
 import {TSID_String} from "@/global/types/common.ts";
 import { validateTsid } from "@/global/validation/validators";
 import {

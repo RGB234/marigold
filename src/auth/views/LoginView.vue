@@ -37,6 +37,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { getErrorMessage } from "@/global/i18n/errorMessages";
+import { extractProblemDetail } from "@/global/utils/apiError";
 import { useRouter } from 'vue-router';
 
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
@@ -82,7 +84,7 @@ const handleLocalLogin = async () => {
     await authStore.localLogin(loginDto.value);
     await router.replace(RouteHelper.home());
   } catch (error: any) {
-    await alert("로그인 실패", "이메일이나 비밀번호가 유효하지 않습니다.");
+    await alert("로그인 실패", getErrorMessage(extractProblemDetail(error)));
   }
 };
 

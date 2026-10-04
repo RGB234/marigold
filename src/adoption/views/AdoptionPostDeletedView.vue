@@ -12,7 +12,7 @@ const goToList = () => {
 <template>
   <div class="deleted-container">
     <div class="deleted-content">
-      <h2>삭제된 게시글입니다.</h2>
+      <h2>삭제된 게시물입니다</h2>
       <p>이 게시글은 작성자에 의해 삭제되었습니다.</p>
       <button class="btn primary" @click="goToList">목록으로 돌아가기</button>
     </div>

@@ -105,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import { getErrorMessage } from "@/global/i18n/errorMessages";
 import { ref } from "vue";
 import { useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
@@ -163,7 +164,7 @@ const handleLocalSignup = async () => {
     const errorResponse = error.response?.data;
 
     fieldErrors.value = errorResponse?.errors || [];
-    generalError.value = errorResponse?.detail || "";
+    generalError.value = getErrorMessage(errorResponse);
   }
 };
 
