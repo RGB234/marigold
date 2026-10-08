@@ -4,15 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run check:env -- dev && vite --mode dev",
+    "dev": "npm run check:env -- development && vite",
     "prod": "npm run check:env -- prod && vite --mode prod",
-    "build:dev": "npm run check:env -- dev && vite build --mode dev",
+    "build:dev": "npm run check:env -- development && vite build --mode development",
     "build:prod": "npm run check:env -- prod && vite build --mode prod",
     "build:analyze": "cross-env BUNDLE_ANALYZE=true npm run build:dev",
     "check:env": "node scripts/check-env.mjs",
-    "check:maintenance": "node scripts/check-maintenance.mjs",
     "preview": "npm run build:dev && wrangler dev",
-    "check:validation-policy": "node scripts/check-validation-policy.mjs",
+    "check:validation-policy": "node scripts/sync-validation-policy.mjs --check",
+    "sync:validation-policy": "node scripts/sync-validation-policy.mjs --write",
     "test:unit": "vitest",
     "test:unit:ui": "vitest --ui",
     "test:e2e": "playwright test",
@@ -21,8 +21,8 @@
   "dependencies": {
     "@mdi/js": "^7.4.47",
     "@stomp/stompjs": "^7.3.0",
-    "axios": "^1.12.2",
-    "js-cookie": "^3.0.5",
+    "axios": "^1.20.0",
+    "js-cookie": "^3.0.8",
     "pinia": "^3.0.3",
     "sockjs-client": "^1.6.1",
     "vue": "^3.2.13",
@@ -30,25 +30,19 @@
     "vuetify": "^3.10.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.39.1",
+    "@cloudflare/vite-plugin": "^1.62.5",
     "@playwright/test": "^1.59.1",
     "@types/js-cookie": "^3.0.6",
     "@types/sockjs-client": "^1.5.4",
     "@vitejs/plugin-vue": "^6.0.3",
-    "@vitest/ui": "^4.1.3",
+    "@vitest/ui": "^4.1.11",
     "@vue/test-utils": "^2.4.6",
     "cross-env": "^10.1.0",
     "jsdom": "^29.0.2",
-    "msw": "^2.13.0",
     "rollup-plugin-visualizer": "^7.1.1",
-    "vite": "^7.3.0",
+    "vite": "^7.3.6",
     "vite-plugin-vuetify": "^2.1.2",
-    "vitest": "^4.1.3",
-    "wrangler": "^4.96.0"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
+    "vitest": "^4.1.11",
+    "wrangler": "^4.147.0"
   }
 }

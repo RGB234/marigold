@@ -32,7 +32,7 @@ import { formatFileSize, validateChatAttachmentFiles } from '@/global/validation
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const { toast } = useAlert();
+const { toast, apiError } = useAlert();
 const roomId = computed(() => {
   const id = route.params.roomId;
   return Array.isArray(id) ? id[0] : id;
@@ -67,7 +67,7 @@ const isConnectionFailed = ref(false);
 const isSending = ref(false);
 const retryCount = ref(0);
 const MAX_RETRIES = 5;
-const RETRYABLE_CONNECT_ERROR_CODES = new Set([
+const RETRYABLE_CONNECT_ERROR_CODES = new Set<string>([
   ErrorCodes.AUTH_UNAUTHORIZED,
   ErrorCodes.AUTH_TOKEN_INVALID,
   ErrorCodes.AUTH_TOKEN_EXPIRED,
@@ -114,7 +114,19 @@ const connectWebSocket = () => {
 
   client.beforeConnect = async () => {
     // 자동 재연결도 매번 새 토큰과 최신 CSRF 헤더로 CONNECT합니다.
-    const refreshed = await authStore.silentRefresh();
+    let refreshed: boolean;
+    try {
+      refreshed = await authStore.silentRefresh();
+    } catch (error) {
+      if (isUnmounted || stompClient !== client || isManualDisconnect) return;
+      isManualDisconnect = true;
+      isReconnecting.value = false;
+      isConnectionFailed.value = true;
+      client.reconnectDelay = 0;
+      void client.deactivate();
+      apiError(error, '연결을 복구하지 못했습니다. 다시 시도해주세요.');
+      return;
+    }
     if (isUnmounted || stompClient !== client || isManualDisconnect) return;
     if (!refreshed || !authStore.accessToken) {
       isManualDisconnect = true;
@@ -229,8 +241,8 @@ const downloadAttachment = async (attachment: ChatAttachmentDto) => {
   try {
     const downloadUrl = await getChatAttachmentDownloadUrl(roomId.value, attachment.id);
     triggerDownload(downloadUrl, attachment.originalFileName);
-  } catch {
-    toast.error('파일 다운로드 중 오류가 발생했습니다.');
+  } catch (error) {
+    apiError(error, '파일 다운로드 중 오류가 발생했습니다.');
   }
 };
 
@@ -298,8 +310,8 @@ const sendFileMessage = async () => {
     }
     newMessage.value = '';
     clearSelectedFiles();
-  } catch {
-    toast.error('파일 전송 중 오류가 발생했습니다.');
+  } catch (error) {
+    apiError(error, '파일 전송 중 오류가 발생했습니다.');
   } finally {
     isSending.value = false;
   }

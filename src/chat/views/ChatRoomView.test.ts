@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   replace: vi.fn(),
   toastError: vi.fn(),
+  apiError: vi.fn(),
   auth: { accessToken: 'old-token', userId: 'user' } as any,
 }));
 
@@ -34,7 +35,7 @@ vi.mock('@/global/apiClient', () => ({
   CSRF_TOKEN_HEADER_NAME: 'X-CSRF-TOKEN', getCsrfToken: () => 'csrf',
 }));
 vi.mock('@/global/composables/useAlert', () => ({
-  useAlert: () => ({ toast: { error: mocks.toastError } }),
+  useAlert: () => ({ toast: { error: mocks.toastError }, apiError: mocks.apiError }),
 }));
 vi.mock('@/chat/api/chat.api', () => ({
   getChatRoom: vi.fn().mockResolvedValue({ postId: 'post' }),
@@ -93,6 +94,22 @@ describe('chat connection authentication', () => {
     } finally { wrapper.unmount(); }
   });
 
+  it('keeps the user on the chat retry screen after a transient refresh failure', async () => {
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      const failure = { isAxiosError: true, code: 'ERR_NETWORK' };
+      mocks.refresh.mockRejectedValueOnce(failure);
+      const client = mocks.clients[0];
+      await client.beforeConnect();
+      await flushPromises();
+      expect(client.deactivate).toHaveBeenCalled();
+      expect(mocks.replace).not.toHaveBeenCalled();
+      expect(mocks.apiError).toHaveBeenCalledWith(failure, expect.any(String));
+      expect(wrapper.text()).toContain('다시 시도');
+    } finally { wrapper.unmount(); }
+  });
+
   it('does not update connection headers after unmount during refresh', async () => {
     const wrapper = shallowMount(ChatRoomView);
     await flushPromises();
@@ -132,7 +149,7 @@ describe('chat connection authentication', () => {
     }
   });
 
-  it('shows the JSON body from a fatal STOMP ERROR frame', async () => {
+  it('handles retryable and non-retryable fatal STOMP errors', async () => {
     const wrapper = shallowMount(ChatRoomView);
     try {
       await flushPromises();
@@ -151,16 +168,7 @@ describe('chat connection authentication', () => {
 
       expect(mocks.toastError).toHaveBeenCalledWith('토큰이 유효하지 않습니다.');
       expect(client.deactivate).not.toHaveBeenCalled();
-    } finally {
-      wrapper.unmount();
-    }
-  });
-
-  it('stops reconnecting after a non-retryable fatal STOMP error', async () => {
-    const wrapper = shallowMount(ChatRoomView);
-    try {
-      await flushPromises();
-      const client = mocks.clients[0];
+      mocks.toastError.mockClear();
 
       client.onStompError({
         headers: { message: '권한이 없습니다.' },
@@ -174,6 +182,7 @@ describe('chat connection authentication', () => {
         }),
       });
 
+      expect(mocks.toastError).toHaveBeenCalledWith('권한이 없습니다.');
       expect(client.reconnectDelay).toBe(0);
       expect(client.deactivate).toHaveBeenCalled();
     } finally {

@@ -151,7 +151,6 @@ import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractProblemDetail } from "@/global/utils/apiError";
-import { getErrorMessage } from "@/global/i18n/errorMessages";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -205,7 +204,7 @@ const errors = reactive<Record<keyof AdoptionForm | string, string>>({
 
 const route = useRoute();
 const router = useRouter();
-const { toast } = useAlert();
+const { toast, apiError } = useAlert();
 const imagePreviews = ref<string[]>([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
@@ -238,11 +237,12 @@ const applyFieldErrors = (errorDetails?: ErrorDetail[]) => {
     return false;
   }
 
-  errorDetails.forEach((error) => {
+  const visibleErrors = errorDetails.filter((error) => Object.prototype.hasOwnProperty.call(errors, error.field));
+  visibleErrors.forEach((error) => {
     errors[error.field as keyof AdoptionForm] = error.message;
   });
 
-  return true;
+  return visibleErrors.length > 0;
 };
 
 const clearFileInput = () => {
@@ -287,6 +287,7 @@ const handleFetchAdoption = async () => {
       await router.replace(RouteHelper.adoption.deleted());
       return;
     }
+    apiError(error, "게시글을 불러오지 못했습니다. 다시 시도해주세요.");
     await router.push(RouteHelper.adoption.list());
   }
 };
@@ -361,13 +362,12 @@ const handleSubmit = async () => {
   } catch (error: unknown) {
     const problem = extractProblemDetail(error);
 
-    applyFieldErrors(problem?.errors);
     if (problem?.status === 410 && problem.errorCode === "ADOPTION_POST_DELETED") {
       await router.replace(RouteHelper.adoption.deleted());
       return;
     }
-    if (!problem?.errors?.length) {
-      toast.error(getErrorMessage(problem));
+    if (!applyFieldErrors(problem?.errors)) {
+      apiError(error);
     }
   }
 };

@@ -63,6 +63,7 @@
 import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
 import { useLoadingStore } from "@/global/stores/loading";
+import { useAlert } from "@/global/composables/useAlert";
 import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
@@ -76,6 +77,7 @@ import AppIcon from '@/global/components/AppIcon.vue';
 
 const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
+const { apiError } = useAlert();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const userId = computed(() => authStore.userId);
 
@@ -134,7 +136,11 @@ watch(
 onMounted(async () => {
   document.addEventListener('click', closeMenu);
   // 새로고침 등 앱 초기화 시 로그인 상태를 복구합니다 (쿠키의 Refresh Token 활용)
-  await authStore.initializeAuth();
+  try {
+    await authStore.initializeAuth();
+  } catch (error) {
+    apiError(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+  }
 });
 
 onUnmounted(() => {

@@ -8,6 +8,7 @@ import {
   type PendingAuthState,
 } from "@/auth/utils/pendingAuth";
 import { clearSecurityAccess } from "@/user/utils/securityAccess";
+import { normalizeApiError } from "@/global/utils/apiError";
 
 
 export enum ProviderInfo {
@@ -61,13 +62,13 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() : Promise<boolean> {  
       try {
 
-        let {data: authStatus} = await api.get<AuthStatusResponse>("/auth/status");
+        let {data: authStatus} = await api.get<AuthStatusResponse>("/auth/status", { errorMode: "local" });
 
         // 메모리 토큰은 없지만 refresh cookie가 있는 경우에만 세션을 복구합니다.
         if (!this.accessToken && authStatus.refreshTokenPresent) {
           const refreshed = await this.silentRefresh();
           if (refreshed) {
-            ({data: authStatus} = await api.get<AuthStatusResponse>("/auth/status"));
+            ({data: authStatus} = await api.get<AuthStatusResponse>("/auth/status", { errorMode: "local" }));
           }
         }
 
@@ -77,8 +78,10 @@ export const useAuthStore = defineStore("auth", {
         
         return true;
       } catch (error) {
-        // 에러 발생 시 인증되지 않은 것으로 처리
-        this.resetAuthState();
+        const normalized = normalizeApiError(error);
+        if (normalized.type === "api" && normalized.status === 401) {
+          this.resetAuthState();
+        }
         throw error;
       }
     },
@@ -90,14 +93,18 @@ export const useAuthStore = defineStore("auth", {
           skipAuthRefresh: true,
         });
         
-        if (response.data.accessToken) {
+        if (typeof response.data.accessToken === "string" && response.data.accessToken) {
           this.setAccessToken(response.data.accessToken);
           return true;
         }
-        return false;
-      } catch {
-        this.resetAuthState();
-        return false;
+        throw new Error("Invalid refresh response");
+      } catch (error) {
+        const normalized = normalizeApiError(error);
+        if (normalized.type === "api" && normalized.status === 401) {
+          this.resetAuthState();
+          return false;
+        }
+        throw error;
       }
     },
 

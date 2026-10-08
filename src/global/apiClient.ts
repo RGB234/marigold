@@ -2,6 +2,8 @@ import axios, { type AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 
 export type ApiErrorMode = "global" | "local";
+export const API_TIMEOUT_MS = 15_000;
+export const UPLOAD_TIMEOUT_MS = 60_000;
 
 declare module "axios" {
   export interface AxiosRequestConfig {
@@ -20,13 +22,14 @@ let csrfTokenCache: string | null = null;
 export const getCsrfToken = (): string | null =>
   csrfTokenCache ?? Cookies.get(CSRF_TOKEN_COOKIE_NAME) ?? null;
 
-export const cacheCsrfToken = (token: string | undefined): void => {
+export const cacheCsrfToken = (token: string | null | undefined): void => {
   csrfTokenCache = token ?? csrfTokenCache;
 };
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_V1_BASE,
   withCredentials: true,
+  timeout: API_TIMEOUT_MS,
 });
 
 export default apiClient;

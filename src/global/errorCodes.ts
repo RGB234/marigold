@@ -9,5 +9,3 @@ export const ErrorCodes = {
   USER_OAUTH2_ALREADY_LINKED: "USER_OAUTH2_ALREADY_LINKED",
   USER_OAUTH2_ACCOUNT_ALREADY_IN_USE: "USER_OAUTH2_ACCOUNT_ALREADY_IN_USE",
 } as const;
-
-export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

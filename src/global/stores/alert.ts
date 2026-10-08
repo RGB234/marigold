@@ -1,7 +1,15 @@
 import { defineStore } from 'pinia';
 
+interface PendingDialog {
+  title: string;
+  text: string;
+  type: 'confirm' | 'alert';
+  resolve: (value: boolean) => void;
+}
+
 export const useAlertStore = defineStore('alert', {
   state: () => ({
+    queue: [] as PendingDialog[],
     // 모달 (Dialog)
     dialog: {
       show: false,
@@ -25,17 +33,7 @@ export const useAlertStore = defineStore('alert', {
      * if (result) { ... }
      */
     showConfirm(title: string, text: string) {
-      this.dialog = {
-        show: true,
-        title,
-        text,
-        type: 'confirm',
-        resolve: null as ((value: boolean) => void) | null,
-      };
-      return new Promise((resolve) => {
-        // Promise 성공 시 콜백함수인 resolve 함수를 전달
-        this.dialog.resolve = resolve as (value: boolean) => void;
-      });
+      return this.enqueueDialog('confirm', title, text);
     },
 
     /**
@@ -43,27 +41,30 @@ export const useAlertStore = defineStore('alert', {
      * await store.showAlert('제목', '내용');
      */
     showAlert(title: string, text: string) {
-        this.dialog = {
-            show: true,
-            title,
-            text,
-            type: 'alert',
-            resolve: null,
-        };
-        return new Promise((resolve) => {
-            this.dialog.resolve = resolve;
-        });
+      return this.enqueueDialog('alert', title, text);
+    },
+
+    enqueueDialog(type: PendingDialog['type'], title: string, text: string): Promise<boolean> {
+      return new Promise((resolve) => {
+        const dialog = { type, title, text, resolve };
+        if (this.dialog.show) {
+          this.queue.push(dialog);
+        } else {
+          this.dialog = { ...dialog, show: true };
+        }
+      });
     },
 
     /**
      * 모달 닫기 및 결과 처리
      */
     handleDialogAction(result: boolean) {
-      this.dialog.show = false;
-      if (this.dialog.resolve) {
-        this.dialog.resolve(result);
-        this.dialog.resolve = null; // resolve 해제
-      }
+      const resolve = this.dialog.resolve;
+      const next = this.queue.shift();
+      this.dialog = next
+        ? { ...next, show: true }
+        : { ...this.dialog, show: false, resolve: null };
+      resolve?.(result);
     },
 
     /**

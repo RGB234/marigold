@@ -1,4 +1,5 @@
 import { useAlertStore } from '@/global/stores/alert';
+import { getApiErrorMessage } from '@/global/utils/apiError';
 
 export function useAlert() {
   const store = useAlertStore();
@@ -15,9 +16,15 @@ export function useAlert() {
     show: (text: string, color: string) => store.showToast(text, color),
   };
 
+  const apiError = (error: unknown, fallback?: string) => {
+    const message = getApiErrorMessage(error, fallback);
+    if (message) toast.error(message);
+  };
+
   return {
     confirm,
     alert,
     toast,
+    apiError,
   };
 }

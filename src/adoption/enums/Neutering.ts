@@ -9,9 +9,3 @@ export const NeuteringLabels: Record<Neutering, string> = {
     [Neutering.NO]: "중성화X",
     [Neutering.UNKNOWN]: "불명"
 }
-
-export const NeuteringOptions = [
-    { value: Neutering.YES, label: NeuteringLabels[Neutering.YES] },
-    { value: Neutering.NO, label: NeuteringLabels[Neutering.NO] },
-    { value: Neutering.UNKNOWN, label: NeuteringLabels[Neutering.UNKNOWN] }
-]

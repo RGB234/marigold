@@ -12,37 +12,6 @@ import {AdoptionPostStatus} from "@/adoption/enums/AdoptionPostStatus.ts";
 import type { UserStatus } from "@/user/types/user";
 
 /**
- * 입양 게시글 생성 요청
- */
-export interface AdoptionPoseCreateRequest {
-  species: Species;
-  title: string;
-  age: number;
-  sex: Sex;
-  area: string;
-  weight: number;
-  neutering: Neutering;
-  features: string;
-  images: File[];
-}
-
-/**
- * 입양 게시글 수정 요청
- */
-export interface AdoptionPostUpdateRequest {
-  species: Species;
-  title: string;
-  age: number;
-  sex: Sex;
-  area: string;
-  weight: number;
-  neutering: Neutering;
-  features: string;
-  imageFileNamesToKeep: string[];
-  images: File[];
-}
-
-/**
  * 입양 목록 검색 필터
  */
 export interface AdoptionPostSearchFilter {
@@ -75,22 +44,6 @@ export interface AdoptionPostResponse {
  * 입양 목록 페이지 응답
  */
 export type AdoptionPostPageResponse = PageResponse<AdoptionPostResponse>;
-
-/**
- * 입양 + 채팅 정보 결합 응답 (AdoptionWithChatDto)
- */
-export interface AdoptionPostWithChatResponse {
-  adoptionPost: AdoptionPostResponse;
-  chatRoomId: TSID_String;
-  receiverId: TSID_String;
-  receiverNickname: string;
-  chatCreatedAt: ISO8601DateString;
-}
-
-/**
- * 입양 + 채팅 목록 페이지 응답
- */
-export type AdoptionPostWithChatPageResponse = PageResponse<AdoptionPostWithChatResponse>;
 
 /**
  * 입양 상세 정보 응답 (AdoptionDetailResponseDto)
@@ -152,16 +105,4 @@ export interface AdoptionCommentResponse {
   createdAt: ISO8601DateString;
   modifiedAt: ISO8601DateString;
   children: AdoptionCommentResponse[];
-}
-
-export interface AdoptionCommentCreateRequest {
-  parentId?: Long_String;
-  content: string;
-  images: File[];
-}
-
-export interface AdoptionCommentUpdateRequest {
-  content: string;
-  removeImage?: boolean;
-  images?: File[];
 }

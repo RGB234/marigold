@@ -56,6 +56,9 @@ export function getErrorMessage(
 ): string {
   const messages = errorMessages[locale];
   const code = problem?.errorCode;
-  const translated = code && messages && Object.hasOwn(messages, code) ? messages[code] : undefined;
+  const translated =
+    code && messages && Object.prototype.hasOwnProperty.call(messages, code)
+      ? messages[code]
+      : undefined;
   return translated || problem?.detail || fallback;
 }

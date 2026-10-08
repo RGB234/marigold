@@ -33,7 +33,12 @@
     </div>
   </div>
 
-  <div class="card-container">
+  <div v-if="loading" class="card-container">목록을 불러오는 중입니다...</div>
+  <div v-else-if="loadError" class="card-container" role="alert">
+    <p>{{ loadError }}</p>
+    <button type="button" @click="handleSearch(currentPage)">다시 시도</button>
+  </div>
+  <div v-else class="card-container">
     <div v-for="(card, index) in visibleCards" :key="index" class="card" @click="handleCardClick(card)">
       <div class="card-image">
         <img :src="card.imageUrl || NoImage" alt="대표이미지" class="thumb" @error="handleImageError" />
@@ -92,6 +97,7 @@ import { cleanParams } from "@/global/utils/objectUtils";
 import { getAdoptionPostList } from "@/adoption/api/adoptionPost.api";
 import { RouteHelper } from "@/global/router/routeHelper";
 import NoImage from "@/assets/images/no-image.jpeg";
+import { getApiErrorMessage } from "@/global/utils/apiError";
 import {
   AdoptionPostResponse,
   AdoptionPostPageResponse
@@ -105,6 +111,8 @@ const router = useRouter();
 const route = useRoute();
 
 const searchResult = ref<AdoptionPostResponse[]>();
+const loading = ref(false);
+const loadError = ref('');
 const searchFilters = ref<{ species?: string; sex?: string }>({
   species: undefined, // undefined이면 전체검색
   sex: undefined,     // undefined이면 전체검색
@@ -142,6 +150,8 @@ const replaceRoutePage = async (pageNumber: number) => {
 
 // page를 인자로 받아 서버에서 해당 페이지 데이터를 불러옴
 const fetchSearchResult = async (page = 0): Promise<number | null> => {
+  loading.value = true;
+  loadError.value = '';
   currentPage.value = page;
   searchResult.value = [];
   try {
@@ -154,9 +164,11 @@ const fetchSearchResult = async (page = 0): Promise<number | null> => {
     totalElements.value = data.page.totalElements ?? 0;
 
     return totalServerPages.value;
-  } catch {
-    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+  } catch (error) {
+    loadError.value = getApiErrorMessage(error);
     return null;
+  } finally {
+    loading.value = false;
   }
 };
 

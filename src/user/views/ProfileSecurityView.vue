@@ -219,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { getErrorMessage as resolveErrorMessage } from "@/global/i18n/errorMessages";
+import { getApiErrorMessage as getErrorMessage } from "@/global/utils/apiError";
 import axios from "axios";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -432,14 +432,6 @@ async function handleRecentAuthRequired() {
 
 function getProviderLabel(provider: LinkedOAuthProvider) {
   return provider === "KAKAO" ? "카카오" : "네이버";
-}
-
-function getErrorMessage(error: unknown, fallbackMessage: string) {
-  if (axios.isAxiosError(error)) {
-    return resolveErrorMessage(error.response?.data, fallbackMessage);
-  }
-
-  return fallbackMessage;
 }
 
 function isRecentAuthRequiredError(error: unknown) {

@@ -1,16 +1,21 @@
 <template>
   <div class="callback-container">
-    <h4>처리 중입니다. 잠시만 기다려 주세요.</h4>
+    <template v-if="restoreError">
+      <p role="alert">{{ restoreError }}</p>
+      <button type="button" @click="handleOAuthCallback">다시 시도</button>
+    </template>
+    <h4 v-else>처리 중입니다. 잠시만 기다려 주세요.</h4>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAlert } from "@/global/composables/useAlert";
 import { useAuthStore } from "@/auth/stores/auth";
 import { RouteHelper } from "@/global/router/routeHelper";
 import { getErrorMessage } from "@/global/i18n/errorMessages";
+import { getApiErrorMessage, normalizeApiError } from "@/global/utils/apiError";
 import {
   clearPendingAuthState,
   getPendingAuthState,
@@ -24,12 +29,14 @@ const route = useRoute();
 const router = useRouter();
 const { alert } = useAlert();
 const authStore = useAuthStore();
+const restoreError = ref("");
 
 onMounted(async () => {
   await handleOAuthCallback();
 });
 
 async function handleOAuthCallback() {
+  restoreError.value = "";
   const errorParam = route.query.error;
   const authStatusParam = route.query.auth_status;
 
@@ -60,7 +67,12 @@ async function handleOAuthCallback() {
   if (shouldRestoreAuth) {
     try {
       await authStore.initializeAuth();
-    } catch {
+    } catch (error) {
+      const normalized = normalizeApiError(error);
+      if (normalized.type !== "api" || normalized.status !== 401) {
+        restoreError.value = getApiErrorMessage(error);
+        return;
+      }
       clearPendingAuthState();
       clearSecurityAccess();
       await alert("로그인 필요", "인증 정보를 복구하지 못했습니다. 다시 로그인해 주세요.");

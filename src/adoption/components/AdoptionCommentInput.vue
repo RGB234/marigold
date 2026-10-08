@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const { toast } = useAlert();
+const { toast, apiError } = useAlert();
 
 const content = ref('');
 const images = ref<File[]>([]);
@@ -85,8 +85,8 @@ const submitComment = async () => {
     imagePreviews.value = [];
     
     emit('comment-created');
-  } catch {
-    toast.error('댓글 등록 중 오류가 발생했습니다.');
+  } catch (error) {
+    apiError(error, '댓글 등록 중 오류가 발생했습니다.');
   } finally {
     isSubmitting.value = false;
   }

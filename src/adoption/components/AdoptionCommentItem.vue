@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const authStore = useAuthStore();
-const { confirm, toast } = useAlert();
+const { confirm, toast, apiError } = useAlert();
 
 const showReplyInput = ref(false);
 const isEditing = ref(false);
@@ -134,8 +134,8 @@ const handleDelete = async () => {
       await deleteAdoptionComment(props.postId, props.comment.id);
       toast.success('댓글을 삭제했습니다.');
       emit('refresh');
-    } catch {
-      toast.error('댓글 삭제 중 오류가 발생했습니다.');
+    } catch (error) {
+      apiError(error, '댓글 삭제 중 오류가 발생했습니다.');
     }
   }
 };
@@ -215,8 +215,8 @@ const submitEdit = async () => {
     resetEditImageState();
     isEditing.value = false;
     emit('refresh');
-  } catch {
-    toast.error('댓글 수정 중 오류가 발생했습니다.');
+  } catch (error) {
+    apiError(error, '댓글 수정 중 오류가 발생했습니다.');
   } finally {
     isUpdating.value = false;
   }

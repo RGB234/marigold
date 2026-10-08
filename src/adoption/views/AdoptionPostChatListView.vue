@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { extractProblemDetail } from '@/global/utils/apiError';
-import { getErrorMessage } from '@/global/i18n/errorMessages';
+import { extractProblemDetail, getApiErrorMessage } from '@/global/utils/apiError';
 import { useRoute, useRouter } from 'vue-router';
 import { getAdoptionCandidates, getAdoptionPostDetail } from '@/adoption/api/adoptionPost.api';
 import { getOrCreateChatRoom } from '@/chat/api/chat.api';
@@ -13,18 +12,20 @@ import NoImage from '@/assets/images/no-image.jpeg';
 
 const route = useRoute();
 const router = useRouter();
-const { toast } = useAlert();
+const { apiError } = useAlert();
 
 const adoptionPostId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
 
 const candidates = ref<AdoptionCandidateResponse[]>([]);
 const postDetail = ref<AdoptionPostDetailResponse | null>(null);
 const loading = ref(false);
+const loadError = ref('');
 
 const fetchData = async () => {
     if (!adoptionPostId) return;
 
     loading.value = true;
+    loadError.value = '';
     try {
         // 병렬로 게시글 정보와 후보자(채팅 내역이 있는 사용자) 목록 조회
         const [detailData, candidatesData] = await Promise.all([
@@ -40,7 +41,7 @@ const fetchData = async () => {
             await router.replace(RouteHelper.adoption.deleted());
             return;
         }
-        toast.error(getErrorMessage(problem, "데이터를 불러오는 중 오류가 발생했습니다."));
+        loadError.value = getApiErrorMessage(error, "데이터를 불러오는 중 오류가 발생했습니다.");
     } finally {
         loading.value = false;
     }
@@ -51,8 +52,8 @@ const goToChatRoom = async (candidateId: string) => {
         // 기존 채팅방 조회 (또는 생성)
         const chatRoom = await getOrCreateChatRoom(adoptionPostId, candidateId);
         router.push(RouteHelper.chat.room(chatRoom.id.toString()));
-    } catch {
-        toast.error("채팅방 이동 중 오류가 발생했습니다.");
+    } catch (error) {
+        apiError(error, "채팅방 이동 중 오류가 발생했습니다.");
     }
 };
 
@@ -85,6 +86,11 @@ onMounted(() => {
         <div v-if="loading" class="loading-state">
             <div class="spinner"></div>
             <p>목록을 불러오는 중입니다...</p>
+        </div>
+
+        <div v-else-if="loadError" class="empty-state" role="alert">
+            <p>{{ loadError }}</p>
+            <button type="button" @click="fetchData">다시 시도</button>
         </div>
 
         <div v-else class="content-wrapper">

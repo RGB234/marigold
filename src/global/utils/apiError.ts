@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { ProblemDetail } from "@/global/types/common";
 import { isProblemDetail } from "@/global/types/common";
+import { getErrorMessage } from "@/global/i18n/errorMessages";
 
 export type AppError =
   | { type: "api"; status: number; problem: ProblemDetail | null }
@@ -36,4 +37,20 @@ export function normalizeApiError(error: unknown): AppError {
     status: error.response.status,
     problem: isProblemDetail(error.response.data) ? error.response.data : null,
   };
+}
+
+export function getApiErrorMessage(error: unknown, fallback?: string): string {
+  const normalized = normalizeApiError(error);
+  switch (normalized.type) {
+    case "cancelled":
+      return "";
+    case "network":
+      return "서버에 연결할 수 없습니다. 네트워크 상태를 확인한 후 다시 시도해주세요.";
+    case "timeout":
+      return "서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.";
+    case "api":
+      return getErrorMessage(normalized.problem, fallback);
+    default:
+      return getErrorMessage(null, fallback);
+  }
 }

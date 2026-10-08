@@ -82,8 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { getErrorMessage as resolveErrorMessage } from "@/global/i18n/errorMessages";
-import axios from "axios";
+import { getApiErrorMessage as getErrorMessage } from "@/global/utils/apiError";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
@@ -215,13 +214,6 @@ async function goBackToProfile() {
   await router.push(RouteHelper.home());
 }
 
-function getErrorMessage(error: unknown, fallbackMessage: string) {
-  if (axios.isAxiosError(error)) {
-    return resolveErrorMessage(error.response?.data, fallbackMessage);
-  }
-
-  return fallbackMessage;
-}
 </script>
 
 <style scoped>

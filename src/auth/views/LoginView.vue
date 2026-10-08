@@ -37,8 +37,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { getErrorMessage } from "@/global/i18n/errorMessages";
-import { extractProblemDetail } from "@/global/utils/apiError";
+import { getApiErrorMessage } from "@/global/utils/apiError";
 import { useRouter } from 'vue-router';
 
 import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
@@ -83,8 +82,9 @@ const handleLocalLogin = async () => {
   try {
     await authStore.localLogin(loginDto.value);
     await router.replace(RouteHelper.home());
-  } catch (error: any) {
-    await alert("로그인 실패", getErrorMessage(extractProblemDetail(error)));
+  } catch (error: unknown) {
+    const message = getApiErrorMessage(error);
+    if (message) await alert("로그인 실패", message);
   }
 };
 

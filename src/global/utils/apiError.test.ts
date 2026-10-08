@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeApiError } from "@/global/utils/apiError";
+import { getApiErrorMessage, normalizeApiError } from "@/global/utils/apiError";
 
 describe("normalizeApiError", () => {
   it("Problem Details 응답을 API 오류로 정규화한다", () => {
@@ -32,5 +32,13 @@ describe("normalizeApiError", () => {
     expect(normalizeApiError({ isAxiosError: true, code: "ECONNABORTED" })).toEqual({
       type: "timeout",
     });
+  });
+
+  it('provides local fallbacks for network, timeout, and non-ProblemDetail responses', () => {
+    expect(getApiErrorMessage({ isAxiosError: true, code: 'ERR_NETWORK' })).toContain('네트워크');
+    expect(getApiErrorMessage({ isAxiosError: true, code: 'ECONNABORTED' })).toContain('지연');
+    expect(getApiErrorMessage({ isAxiosError: true, response: { status: 502, data: '<html>gateway</html>' } }))
+      .toContain('다시 시도');
+    expect(getApiErrorMessage({ isAxiosError: true, code: 'ERR_CANCELED' })).toBe('');
   });
 });

@@ -174,13 +174,14 @@ const router = createRouter({
 // 전역 가드 설정
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
-  const { alert } = useAlert();
+  const { alert, apiError } = useAlert();
 
   if (to.meta?.requiresAuth) {
     try {
       await authStore.initializeAuth();
-    } catch {
-      // 인증 초기화 실패는 아래 로그인 상태 검사에서 처리합니다.
+    } catch (error) {
+      apiError(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      return next(_from.matched.length ? false : RouteHelper.home());
     }
 
     if (!authStore.isLoggedIn) {

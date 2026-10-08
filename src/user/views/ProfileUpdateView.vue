@@ -1,11 +1,12 @@
 <template>
     <div class="profile-form-container">
         <h2>프로필 수정</h2>
+        <p v-if="generalError" role="alert" class="error-message">{{ generalError }}</p>
 
         <form @submit.prevent="submitForm">
             <div class="image-upload-section">
                 <div class="image-preview" @click="triggerFileInput">
-                    <img :src="previewUrl" alt="프로필 이미지" class="profile-img" />
+                    <img :src="previewUrl ?? undefined" alt="프로필 이미지" class="profile-img" />
                 </div>
 
                 <input
@@ -53,7 +54,7 @@ import { useAuthStore } from '@/auth/stores/auth';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { RouteHelper } from '@/global/router/routeHelper';
 import type { ErrorDetail } from '@/global/types/common';
-import { extractProblemDetail } from '@/global/utils/apiError';
+import { extractProblemDetail, getApiErrorMessage } from '@/global/utils/apiError';
 import { convertToFormData } from '@/global/utils/objectUtils';
 import { validateImageFiles, validateNickname } from '@/global/validation/validators';
 import { getUserProfile, updateUserProfile } from '@/user/api/user.api';
@@ -79,6 +80,7 @@ const errors = reactive<Record<keyof ProfileForm, string>>({
 const previewUrl = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const isSubmitting = ref(false);
+const generalError = ref('');
 
 const authStore = useAuthStore();
 const userId = computed(() => authStore.userId);
@@ -95,11 +97,12 @@ const applyFieldErrors = (errorDetails?: ErrorDetail[]) => {
         return false;
     }
 
-    errorDetails.forEach((error) => {
+    const visibleErrors = errorDetails.filter((error) => error.field === 'nickname' || error.field === 'image');
+    visibleErrors.forEach((error) => {
         errors[error.field as keyof ProfileForm] = error.message;
     });
 
-    return true;
+    return visibleErrors.length > 0;
 };
 
 const handleFetchUserProfile = async () => {
@@ -176,6 +179,7 @@ const resetImageToDefault = () => {
 
 const submitForm = async () => {
     resetErrors();
+    generalError.value = '';
 
     const nicknameError = validateNickname(form.nickname);
     if (nicknameError) {
@@ -195,7 +199,9 @@ const submitForm = async () => {
     } catch (error: unknown) {
         const problem = extractProblemDetail(error);
 
-        applyFieldErrors(problem?.errors);
+        if (!applyFieldErrors(problem?.errors)) {
+            generalError.value = getApiErrorMessage(error);
+        }
     } finally {
         isSubmitting.value = false;
     }

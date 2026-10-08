@@ -154,7 +154,6 @@ import { useAlert } from "@/global/composables/useAlert";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
 import { extractProblemDetail } from "@/global/utils/apiError";
-import { getErrorMessage } from "@/global/i18n/errorMessages";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
@@ -199,7 +198,7 @@ const errors = reactive<Record<keyof AdoptionForm, string>>({
 });
 
 const router = useRouter();
-const { toast } = useAlert();
+const { toast, apiError } = useAlert();
 const imagePreviews = ref<string[]>([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
@@ -223,11 +222,12 @@ const applyFieldErrors = (errorDetails?: ErrorDetail[]) => {
     return false;
   }
 
-  errorDetails.forEach((error) => {
+  const visibleErrors = errorDetails.filter((error) => Object.prototype.hasOwnProperty.call(errors, error.field));
+  visibleErrors.forEach((error) => {
     errors[error.field as keyof AdoptionForm] = error.message;
   });
 
-  return true;
+  return visibleErrors.length > 0;
 };
 
 const clearFileInput = () => {
@@ -303,12 +303,8 @@ const handleSubmit = async () => {
   } catch (error: unknown) {
     const problem = extractProblemDetail(error);
 
-    if (problem) {
-      const hasFieldErrors = applyFieldErrors(problem.errors);
-      if (!hasFieldErrors && problem.detail) {
-        toast.error(getErrorMessage(problem));
-      }
-      return;
+    if (!applyFieldErrors(problem?.errors)) {
+      apiError(error);
     }
   }
 };

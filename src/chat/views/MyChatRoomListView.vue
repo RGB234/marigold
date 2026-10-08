@@ -6,17 +6,20 @@ import { getMyChatRooms } from '@/chat/api/chat.api';
 import type { ChatRoomDto } from '@/chat/types/chat';
 import { RouteHelper } from '@/global/router/routeHelper';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import { getApiErrorMessage } from '@/global/utils/apiError';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const allRooms = ref<ChatRoomDto[]>([]);
 const loading = ref(false);
+const loadError = ref('');
 
 // 탭 상태: 'writer' (내가 올린 공고에 대한 채팅) | 'inquirer' (내가 문의한 채팅)
 const currentTab = ref<'inquirer' | 'writer'>('inquirer');
 
 const fetchRooms = async () => {
   loading.value = true;
+  loadError.value = '';
   try {
     const response = await getMyChatRooms({ 
       type: currentTab.value,
@@ -25,8 +28,8 @@ const fetchRooms = async () => {
       direction: 'DESC' 
     });
     allRooms.value = response.content || [];
-  } catch {
-    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+  } catch (error) {
+    loadError.value = getApiErrorMessage(error);
   } finally {
     loading.value = false;
   }
@@ -96,6 +99,11 @@ onMounted(() => fetchRooms());
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>목록을 불러오는 중입니다...</p>
+    </div>
+
+    <div v-else-if="loadError" class="empty-state" role="alert">
+      <p>{{ loadError }}</p>
+      <button type="button" @click="fetchRooms">다시 시도</button>
     </div>
 
     <div v-else-if="allRooms.length > 0" class="room-list">

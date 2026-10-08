@@ -24,13 +24,11 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getUserProfile } from '@/user/api/user.api';
 import { useAuthStore } from '@/auth/stores/auth';
-import { useAlert } from '@/global/composables/useAlert';
 import { RouteHelper } from '@/global/router/routeHelper';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const { toast } = useAlert();
 
 // 대상 유저 ID (Path Variable이 있으면 사용, 없으면 내 로그인 ID 사용)
 const targetUserId = computed(() => {
@@ -64,9 +62,8 @@ const userInfo = ref<UserInfo>({
 const fetchUserProfile = async (userId: string) => {
   try {
     userInfo.value = await getUserProfile(userId);
-  } catch (error) {
-    toast.error("프로필 조회 중 오류가 발생했습니다.");
-    throw error;
+  } catch {
+    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
   }
 }
 

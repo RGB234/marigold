@@ -9,6 +9,7 @@ import { AdoptionPostResponse, AdoptionPostPageResponse } from '@/adoption/types
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
 import { RouteHelper } from '@/global/router/routeHelper';
 import { Long_String } from '@/global/types/common';
+import { getApiErrorMessage } from '@/global/utils/apiError';
 
 const router = useRouter(); 
 const route = useRoute();
@@ -16,6 +17,7 @@ const route = useRoute();
 // 상태 변수
 const myAdoptionInfoList = ref<AdoptionPostResponse[]>([]);
 const loading = ref(false);
+const loadError = ref('');
 
 // 서버 사이드 페이지네이션
 const currentPage = ref(0);      // 서버 페이지 번호 (0부터 시작)
@@ -28,13 +30,14 @@ const fetchMyAdoptions = async (page = 0) => {
     if (!userId) return;
 
     loading.value = true;
+    loadError.value = '';
     currentPage.value = page;
     try {
         const data: AdoptionPostPageResponse = await getAdoptionPostListByAdopter(userId, { page, size: 10 });
         myAdoptionInfoList.value = data.content || [];
         totalServerPages.value = data.page.totalPages ?? 1;
-    } catch {
-        myAdoptionInfoList.value = [];
+    } catch (error) {
+        loadError.value = getApiErrorMessage(error);
     } finally {
         loading.value = false;
     }
@@ -77,6 +80,11 @@ onMounted(() => {
         <div v-if="loading" class="loading-state">
             <div class="spinner"></div>
             <p>목록을 불러오는 중입니다...</p>
+        </div>
+
+        <div v-else-if="loadError" class="empty-state" role="alert">
+            <p>{{ loadError }}</p>
+            <button type="button" @click="fetchMyAdoptions(currentPage)">다시 시도</button>
         </div>
 
         <div v-else-if="myAdoptionInfoList.length > 0">

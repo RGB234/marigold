@@ -71,4 +71,34 @@ describe("auth store initialization", () => {
     expect(authStore.accessToken).toBe("access-token");
     expect(authStore.userId).toBe("01ARZ3NDEKTSV");
   });
+
+  it('preserves authentication and the cause when refresh fails temporarily', async () => {
+    const failure = { isAxiosError: true, code: 'ERR_NETWORK' };
+    const auth = useAuthStore();
+    auth.$patch({ id: '01ARZ3NDEKTSV', accessToken: 'existing-token', authorities: ['ROLE_PERSON'] });
+    post.mockRejectedValueOnce(failure);
+    await expect(auth.silentRefresh()).rejects.toBe(failure);
+    expect(auth.userId).toBe('01ARZ3NDEKTSV');
+    expect(auth.accessToken).toBe('existing-token');
+    expect(auth.authorities).toEqual(['ROLE_PERSON']);
+  });
+
+  it('clears authentication when the refresh token is rejected with 401', async () => {
+    const auth = useAuthStore();
+    auth.$patch({ id: '01ARZ3NDEKTSV', accessToken: 'existing-token' });
+    post.mockRejectedValueOnce({ isAxiosError: true, response: { status: 401 } });
+    await expect(auth.silentRefresh()).resolves.toBe(false);
+    expect(auth.accessToken).toBeNull();
+    expect(auth.userId).toBeNull();
+  });
+
+  it('does not clear authentication when the status endpoint is unavailable', async () => {
+    const auth = useAuthStore();
+    auth.$patch({ id: '01ARZ3NDEKTSV', accessToken: 'existing-token' });
+    const failure = { isAxiosError: true, response: { status: 503 } };
+    get.mockRejectedValueOnce(failure);
+    await expect(auth.initializeAuth()).rejects.toBe(failure);
+    expect(auth.accessToken).toBe('existing-token');
+  });
+
 });

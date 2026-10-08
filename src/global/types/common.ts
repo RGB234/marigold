@@ -3,11 +3,6 @@
  */
 
 /**
- * UUID v4 형식의 문자열 (예: "550e8400-e29b-41d4-a716-446655440000")
- */
-export type UUID = string;
-
-/**
  * TSID (Time-Sorted Unique Identifier) 문자열
  */
 export type TSID_String = string; // crockford base32

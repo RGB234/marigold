@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { getErrorMessage } from "@/global/i18n/errorMessages";
+import { extractProblemDetail, getApiErrorMessage } from "@/global/utils/apiError";
 import { ref } from "vue";
 import { useAuthStore } from "@/auth/stores/auth";
 import { useAlert } from "@/global/composables/useAlert";
@@ -160,11 +160,11 @@ const handleLocalSignup = async () => {
     toast.info("회원가입 성공. 로그인 해주세요.");
     confirmPassword.value = "";
     await router.push(RouteHelper.auth.login());
-  } catch (error: any) {
-    const errorResponse = error.response?.data;
+  } catch (error: unknown) {
+    const errorResponse = extractProblemDetail(error);
 
-    fieldErrors.value = errorResponse?.errors || [];
-    generalError.value = getErrorMessage(errorResponse);
+    fieldErrors.value = Array.isArray(errorResponse?.errors) ? errorResponse.errors : [];
+    generalError.value = getApiErrorMessage(error);
   }
 };
 
