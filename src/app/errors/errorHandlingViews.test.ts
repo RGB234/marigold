@@ -2,7 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError } from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
-import { useAlertStore } from './stores/alert';
+import { useToastStore } from '@/app/feedback/toast/toast.store';
 import ProfileUpdateView from '@/user/views/ProfileUpdateView.vue';
 import AdoptionPostCreateView from '@/adoption/views/AdoptionPostCreateView.vue';
 import MyChatRoomListView from '@/chat/views/MyChatRoomListView.vue';
@@ -14,9 +14,12 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: mocks.push }) }));
 vi.mock('@/auth/stores/auth', () => ({ useAuthStore: () => ({ userId: '01ARZ3NDEKTSV' }) }));
-vi.mock('@/user/api/user.api', () => ({
-  getUserProfile: vi.fn().mockResolvedValue({ nickname: '기존닉네임', imageUrl: '' }),
-  updateUserProfile: mocks.updateProfile,
+vi.mock('@/user/stores/user', () => ({
+  useUserStore: () => ({
+    profile: { id: '01ARZ3NDEKTSV', nickname: '기존닉네임', imageUrl: null },
+    loadCurrentUser: vi.fn().mockResolvedValue(undefined),
+    updateCurrentUser: mocks.updateProfile,
+  }),
 }));
 vi.mock('@/adoption/api/adoptionPost.api', () => ({
   createAdoptionPost: mocks.createPost, getAdoptionComments: mocks.getComments,
@@ -38,7 +41,9 @@ describe('local save errors', () => {
   it('shows a profile failure while keeping input', async () => {
     const failure = new AxiosError('offline', 'ERR_NETWORK');
     mocks.updateProfile.mockRejectedValueOnce(failure);
-    const wrapper = shallowMount(ProfileUpdateView);
+    const wrapper = shallowMount(ProfileUpdateView, {
+      global: { stubs: { AsyncButton: false } },
+    });
     try {
       await flushPromises();
       await wrapper.get('#nickname').setValue('수정닉네임');
@@ -56,7 +61,9 @@ describe('local save errors', () => {
       type: 'urn:test', title: 'Bad Request', status: 400,
       errors: [{ field: 'nickname', message: '닉네임 확인 필요' }],
     } } });
-    const wrapper = shallowMount(ProfileUpdateView);
+    const wrapper = shallowMount(ProfileUpdateView, {
+      global: { stubs: { AsyncButton: false } },
+    });
     try {
       await flushPromises();
       await wrapper.get('form').trigger('submit');
@@ -69,8 +76,8 @@ describe('local save errors', () => {
   it('shows a post save failure even without Problem Details', async () => {
     const failure = new AxiosError('offline', 'ERR_NETWORK');
     mocks.createPost.mockRejectedValueOnce(failure);
-    const store = useAlertStore();
-    const toast = vi.spyOn(store, 'showToast');
+    const store = useToastStore();
+    const toast = vi.spyOn(store, 'open');
     const wrapper = shallowMount(AdoptionPostCreateView);
     try {
       await wrapper.get('.btn-row .button:not(.secondary)').trigger('click');
@@ -82,9 +89,14 @@ describe('local save errors', () => {
 });
 
 describe.each([
-  { name: 'chat rooms', mount: () => shallowMount(MyChatRoomListView), request: mocks.getRooms,
+  { name: 'chat rooms', mount: () => shallowMount(MyChatRoomListView, {
+    global: { stubs: { RequestErrorState: false, RetryButton: false } },
+  }), request: mocks.getRooms,
     result: { content: [] }, empty: '문의한 채팅 내역이 없습니다.' },
-  { name: 'comments', mount: () => shallowMount(AdoptionCommentList, { props: { postId: '1', canComment: false } }),
+  { name: 'comments', mount: () => shallowMount(AdoptionCommentList, {
+    props: { postId: '1', canComment: false },
+    global: { stubs: { RequestErrorState: false, RetryButton: false } },
+  }),
     request: mocks.getComments, result: [], empty: '아직 등록된 댓글이 없습니다.' },
 ])('$name load recovery', ({ mount, request, result, empty }) => {
   it('distinguishes failure from empty results and allows retry', async () => {
