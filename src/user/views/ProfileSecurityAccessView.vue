@@ -9,10 +9,8 @@
         </p>
       </div>
 
-      <div v-if="isLoading" class="state-box">보안 설정 정보를 불러오는 중입니다.</div>
-      <div v-else-if="!securityInfo" class="state-box">
-        보안 설정 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.
-      </div>
+      <RequestLoadingState v-if="isLoading" message="보안 설정 정보를 불러오는 중입니다..." />
+      <RequestErrorState v-else-if="loadError" :message="loadError" @retry="fetchSecurityInfo" />
       <div v-else class="verify-sections">
         <form
           v-if="securityInfo.hasLocalCredentials && securityInfo.email"
@@ -82,27 +80,34 @@
 </template>
 
 <script setup lang="ts">
-import { getApiErrorMessage as getErrorMessage } from "@/global/utils/apiError";
+import { getApiErrorMessage as getErrorMessage } from "@/shared/errors/apiError";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
-import { useAlert } from "@/global/composables/useAlert";
+import { useAuthStore } from "@/auth/stores/auth";
+import { startOAuth } from "@/auth/services/oauthFlow";
+import { ProviderInfo } from "@/auth/types/auth";
+import { useDialog } from "@/app/feedback/dialog/useDialog";
+import { useToast } from "@/app/feedback/toast/useToast";
 import { RouteHelper } from "@/global/router/routeHelper";
 import { getUserSecurityInfo } from "@/user/api/user.api";
 import type { UserSecurityInfoDto } from "@/user/types/user";
 import {
   clearSecurityAccess,
   grantSecurityAccess,
-} from "@/user/utils/securityAccess";
+} from "@/auth/utils/securityAccess";
+import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
+import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const { alert, toast } = useAlert();
+const { alert } = useDialog();
+const toast = useToast();
 
 const isLoading = ref(true);
 const isSubmittingPassword = ref(false);
 const securityInfo = ref<UserSecurityInfoDto | null>(null);
+const loadError = ref("");
 const password = ref("");
 
 const providerLabel = computed(() => {
@@ -134,11 +139,13 @@ onMounted(async () => {
 
 async function fetchSecurityInfo() {
   isLoading.value = true;
+  loadError.value = "";
 
   try {
     securityInfo.value = await getUserSecurityInfo();
-  } catch {
+  } catch (error) {
     securityInfo.value = null;
+    loadError.value = getErrorMessage(error, "보안 설정 정보를 확인하지 못했습니다.");
   } finally {
     isLoading.value = false;
   }
@@ -158,7 +165,7 @@ async function reauthenticateWithPassword() {
   isSubmittingPassword.value = true;
 
   try {
-    await authStore.localLogin({
+    await authStore.signInWithPassword({
       email: securityInfo.value.email,
       password: password.value,
     });
@@ -188,7 +195,7 @@ function reauthenticateWithOAuth() {
     return;
   }
 
-  authStore.login(securityInfo.value.providerInfo as ProviderInfo, {
+  startOAuth(securityInfo.value.providerInfo as ProviderInfo, {
     redirectTo: router.resolve(getSecurityRouteAfterVerify()).fullPath,
     expectedUserId: authStore.userId,
     grantSecurityAccess: true,

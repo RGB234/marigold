@@ -2,19 +2,19 @@
   <div class="app-container">
     <nav>
       <router-link :to=RouteHelper.home()>홈</router-link>
-      <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.login()>로그인</router-link>
-      <router-link v-if="!isLoggedIn" :to=RouteHelper.auth.signup()>회원가입</router-link>
+      <router-link v-if="!isAuthenticated" :to=RouteHelper.auth.login()>로그인</router-link>
+      <router-link v-if="!isAuthenticated" :to=RouteHelper.auth.signup()>회원가입</router-link>
 
-      <div v-if="isLoggedIn && userId" class="profile-menu-container" ref="menuContainer">
+      <div v-if="isAuthenticated && userId" class="profile-menu-container" ref="menuContainer">
         <a class="profile-activator" @click="toggleMenu">
-          <img :src="userInfo.imageUrl || defaultProfileImage" alt="" class="profile-image">
+          <img :src="currentUser?.imageUrl || defaultProfileImage" alt="" class="profile-image">
         </a>
 
         <!-- 드롭다운 메뉴 -->
         <div v-if="isMenuOpen" class="dropdown-menu">
           <div class="menu-header" @click="handleNavigation(RouteHelper.user.profile(userId))">
-            <UserProfileLink class="app-profile-link" :userId="userInfo.id" :nickname="userInfo.nickname"
-              :imageUrl="userInfo.imageUrl" :status="userInfo.status" :showImage="true" imageSize="2.5rem" />
+            <UserProfileLink class="app-profile-link" :userId="userId" :nickname="currentUser?.nickname"
+              :imageUrl="currentUser?.imageUrl" :status="currentUser?.status" :showImage="true" imageSize="2.5rem" />
           </div>
 
           <div class="divider"></div>
@@ -54,43 +54,34 @@
     </nav>
 
     <router-view />
-    <LoadingOverlay v-if="loadingStore.isLoading" />
-    <GlobalAlert />
+    <GlobalDialog />
+    <GlobalToast />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed, ref, watch } from "vue";
+import { onMounted, onUnmounted, computed, ref } from "vue";
 import { useAuthStore } from "./auth/stores/auth";
-import { useLoadingStore } from "@/global/stores/loading";
-import { useAlert } from "@/global/composables/useAlert";
-import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
+import { useUserStore } from "@/user/stores/user";
+import GlobalDialog from "@/app/feedback/dialog/GlobalDialog.vue";
+import GlobalToast from "@/app/feedback/toast/GlobalToast.vue";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
 import router from "@/global/router";
-import { getUserProfile } from "./user/api/user.api";
-import { UserInfoDto } from "./user/types/user";
 import { RouteLocationRaw } from "vue-router";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import AppIcon from '@/global/components/AppIcon.vue';
 
-const loadingStore = useLoadingStore();
 const authStore = useAuthStore();
-const { apiError } = useAlert();
-const isLoggedIn = computed(() => authStore.isLoggedIn);
+const userStore = useUserStore();
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 const userId = computed(() => authStore.userId);
+const currentUser = computed(() => userStore.profile);
 
 // 드롭다운 메뉴 상태 관리
 const isMenuOpen = ref(false);
 const menuContainer = ref<HTMLElement | null>(null);
-
-const userInfo = ref<UserInfoDto>({
-  id: '',
-  nickname: '',
-  imageUrl: '',
-  status: 'ACTIVE'
-});
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
@@ -109,38 +100,13 @@ const handleNavigation = (path: RouteLocationRaw) => {
 };
 
 // 로그아웃 후 홈으로 이동하는 함수 추가
-const handleLogout = () => {
-  authStore.logout();
-  router.push(RouteHelper.home());
+const handleLogout = async () => {
+  await authStore.signOut();
+  await router.push(RouteHelper.home());
   isMenuOpen.value = false;
 };
-
-watch(
-  () => userId.value, // userId 값이 변경될 때마다 실행
-  async (newUserId) => {
-    if (newUserId) {
-      // 로그인이 되어 새로운 userId가 들어오면 프로필 정보를 가져옴
-      try {
-        userInfo.value = await getUserProfile(newUserId);
-      } catch {
-        // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
-      }
-    } else {
-      // 로그아웃되어 userId가 null이 되면 프로필 정보 초기화
-      userInfo.value = { id: '', nickname: '', imageUrl: '' };
-    }
-  },
-  { immediate: true } // 컴포넌트가 처음 마운트될 때도 즉시 한 번 실행되도록 옵션 켜기
-);
-
-onMounted(async () => {
+onMounted(() => {
   document.addEventListener('click', closeMenu);
-  // 새로고침 등 앱 초기화 시 로그인 상태를 복구합니다 (쿠키의 Refresh Token 활용)
-  try {
-    await authStore.initializeAuth();
-  } catch (error) {
-    apiError(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
-  }
 });
 
 onUnmounted(() => {

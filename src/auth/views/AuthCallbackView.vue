@@ -1,21 +1,20 @@
 <template>
   <div class="callback-container">
-    <template v-if="restoreError">
-      <p role="alert">{{ restoreError }}</p>
-      <button type="button" @click="handleOAuthCallback">다시 시도</button>
-    </template>
-    <h4 v-else>처리 중입니다. 잠시만 기다려 주세요.</h4>
+    <RequestErrorState v-if="restoreError" :message="restoreError" @retry="handleOAuthCallback" />
+    <RequestLoadingState v-else message="로그인을 처리하고 있습니다..." />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useAlert } from "@/global/composables/useAlert";
+import { useDialog } from "@/app/feedback/dialog/useDialog";
 import { useAuthStore } from "@/auth/stores/auth";
 import { RouteHelper } from "@/global/router/routeHelper";
-import { getErrorMessage } from "@/global/i18n/errorMessages";
-import { getApiErrorMessage, normalizeApiError } from "@/global/utils/apiError";
+import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
+import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
+import { getErrorMessage } from "@/shared/errors/errorMessages";
+import { getApiErrorMessage, normalizeApiError } from "@/shared/errors/apiError";
 import {
   clearPendingAuthState,
   getPendingAuthState,
@@ -23,11 +22,11 @@ import {
 import {
   clearSecurityAccess,
   grantSecurityAccess,
-} from "@/user/utils/securityAccess";
+} from "@/auth/utils/securityAccess";
 
 const route = useRoute();
 const router = useRouter();
-const { alert } = useAlert();
+const { alert } = useDialog();
 const authStore = useAuthStore();
 const restoreError = ref("");
 
@@ -66,7 +65,7 @@ async function handleOAuthCallback() {
     authStatus === "LINK_SUCCESS";
   if (shouldRestoreAuth) {
     try {
-      await authStore.initializeAuth();
+      await authStore.restoreSession();
     } catch (error) {
       const normalized = normalizeApiError(error);
       if (normalized.type !== "api" || normalized.status !== 401) {
@@ -80,7 +79,7 @@ async function handleOAuthCallback() {
       return;
     }
 
-    if (!authStore.isLoggedIn) {
+    if (!authStore.isAuthenticated) {
       clearPendingAuthState();
       clearSecurityAccess();
       await alert("로그인 필요", "인증 정보를 확인하지 못했습니다. 다시 로그인해 주세요.");

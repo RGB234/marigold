@@ -10,19 +10,21 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ replace: mocks.replace, resolve: () => ({ fullPath: '/' }) }),
 }));
 vi.mock('@/auth/stores/auth', () => ({
-  useAuthStore: () => ({ initializeAuth: mocks.initialize, isLoggedIn: true, userId: 'user' }),
+  useAuthStore: () => ({ restoreSession: mocks.initialize, isAuthenticated: true, userId: 'user' }),
 }));
-vi.mock('@/global/composables/useAlert', () => ({ useAlert: () => ({ alert: vi.fn() }) }));
+vi.mock('@/app/feedback/dialog/useDialog', () => ({ useDialog: () => ({ alert: vi.fn() }) }));
 vi.mock('@/auth/utils/pendingAuth', () => ({
   getPendingAuthState: () => ({ redirectTo: '/chat', expectedUserId: 'user' }),
   clearPendingAuthState: mocks.clearPending,
 }));
-vi.mock('@/user/utils/securityAccess', () => ({ clearSecurityAccess: mocks.clearSecurity, grantSecurityAccess: vi.fn() }));
+vi.mock('@/auth/utils/securityAccess', () => ({ clearSecurityAccess: mocks.clearSecurity, grantSecurityAccess: vi.fn() }));
 
 describe('OAuth restoration retry', () => {
   it('preserves pending authentication on network failure and completes after retry', async () => {
     mocks.initialize.mockRejectedValueOnce({ isAxiosError: true, code: 'ERR_NETWORK' }).mockResolvedValueOnce(true);
-    const wrapper = shallowMount(AuthCallbackView);
+    const wrapper = shallowMount(AuthCallbackView, {
+      global: { stubs: { RequestErrorState: false, RetryButton: false } },
+    });
     try {
       await flushPromises();
       expect(wrapper.get('[role="alert"]').text()).toContain('네트워크');

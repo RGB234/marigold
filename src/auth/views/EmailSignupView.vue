@@ -97,7 +97,14 @@
         <span v-else class="error-msg">{{ getFieldError('nickname') }}</span>
       </div>
 
-      <button type="submit" class="btn-local-auth">회원가입 완료</button>
+      <AsyncButton
+        type="submit"
+        class="btn-local-auth"
+        :pending="isSubmitting"
+        pending-label="가입 중..."
+      >
+        회원가입 완료
+      </AsyncButton>
     </form>
 
     <p class="back-btn" @click="goBack">뒤로가기</p>
@@ -105,10 +112,10 @@
 </template>
 
 <script setup lang="ts">
-import { extractProblemDetail, getApiErrorMessage } from "@/global/utils/apiError";
+import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
 import { ref } from "vue";
-import { useAuthStore } from "@/auth/stores/auth";
-import { useAlert } from "@/global/composables/useAlert";
+import { registerWithPassword } from "@/auth/api/registration.api";
+import { useToast } from "@/app/feedback/toast/useToast";
 import router from "@/global/router";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ValidationError } from "@/global/validation/validators";
@@ -119,14 +126,15 @@ import {
   validatePassword,
   validatePasswordConfirmation,
 } from "@/global/validation/validators";
+import AsyncButton from "@/shared/ui/request-state/AsyncButton.vue";
 
-const authStore = useAuthStore();
-const { toast } = useAlert();
+const toast = useToast();
 
 const signupDto = ref({ email: "", password: "", nickname: "" });
 const confirmPassword = ref("");
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
+const isSubmitting = ref(false);
 const fieldErrors = ref<ValidationError[]>([]);
 const generalError = ref("");
 
@@ -148,6 +156,8 @@ const validateSignupForm = () => {
 };
 
 const handleLocalSignup = async () => {
+  if (isSubmitting.value) return;
+
   fieldErrors.value = [];
   generalError.value = "";
 
@@ -155,8 +165,9 @@ const handleLocalSignup = async () => {
     return;
   }
 
+  isSubmitting.value = true;
   try {
-    await authStore.localSignup(signupDto.value);
+    await registerWithPassword(signupDto.value);
     toast.info("회원가입 성공. 로그인 해주세요.");
     confirmPassword.value = "";
     await router.push(RouteHelper.auth.login());
@@ -165,6 +176,8 @@ const handleLocalSignup = async () => {
 
     fieldErrors.value = Array.isArray(errorResponse?.errors) ? errorResponse.errors : [];
     generalError.value = getApiErrorMessage(error);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 

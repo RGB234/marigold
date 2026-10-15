@@ -11,10 +11,8 @@
         </div>
       </div>
 
-      <div v-if="isLoading" class="state-box">보안 설정 정보를 불러오는 중입니다.</div>
-      <div v-else-if="!securityInfo" class="state-box">
-        보안 설정 정보를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.
-      </div>
+      <RequestLoadingState v-if="isLoading" message="보안 설정 정보를 불러오는 중입니다..." />
+      <RequestErrorState v-else-if="loadError" :message="loadError" @retry="fetchSecurityInfo" />
       <div v-else class="security-grid">
         <section class="panel">
           <div class="panel-header">
@@ -219,12 +217,15 @@
 </template>
 
 <script setup lang="ts">
-import { getApiErrorMessage as getErrorMessage } from "@/global/utils/apiError";
+import { getApiErrorMessage as getErrorMessage } from "@/shared/errors/apiError";
 import axios from "axios";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
-import { useAlert } from "@/global/composables/useAlert";
+import { useAuthStore } from "@/auth/stores/auth";
+import { startOAuth } from "@/auth/services/oauthFlow";
+import { ProviderInfo } from "@/auth/types/auth";
+import { useDialog } from "@/app/feedback/dialog/useDialog";
+import { useToast } from "@/app/feedback/toast/useToast";
 import { ErrorCodes } from "@/global/errorCodes";
 import { RouteHelper } from "@/global/router/routeHelper";
 import {
@@ -241,17 +242,21 @@ import type { LinkedOAuthProvider, UserSecurityInfoDto } from "@/user/types/user
 import {
   clearSecurityAccess,
   hasSecurityAccess,
-} from "@/user/utils/securityAccess";
+} from "@/auth/utils/securityAccess";
+import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
+import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const { alert, toast } = useAlert();
+const { alert } = useDialog();
+const toast = useToast();
 
 const isLoading = ref(true);
 const isSubmittingCredentials = ref(false);
 const isDeletingAccount = ref(false);
 const securityInfo = ref<UserSecurityInfoDto | null>(null);
+const loadError = ref("");
 const credentialError = ref("");
 const showDeleteModal = ref(false);
 const deleteConfirmationInput = ref("");
@@ -279,11 +284,13 @@ onMounted(async () => {
 
 async function fetchSecurityInfo() {
   isLoading.value = true;
+  loadError.value = "";
 
   try {
     securityInfo.value = await getUserSecurityInfo();
-  } catch {
+  } catch (error) {
     securityInfo.value = null;
+    loadError.value = getErrorMessage(error, "보안 설정 정보를 확인하지 못했습니다.");
   } finally {
     isLoading.value = false;
   }
@@ -331,7 +338,7 @@ async function startOAuthLink(provider: ProviderInfo) {
     return;
   }
 
-  authStore.login(provider, {
+  startOAuth(provider, {
     action: "link",
     redirectTo: router.resolve(RouteHelper.user.security()).fullPath,
     expectedUserId: userId,
@@ -367,7 +374,7 @@ async function confirmDelete() {
   try {
     await deleteUser();
     toast.success("계정이 삭제되었습니다.");
-    await authStore.logout();
+    await authStore.signOut();
     await router.replace(RouteHelper.home());
   } catch (error) {
     if (isRecentAuthRequiredError(error)) {

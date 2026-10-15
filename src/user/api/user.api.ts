@@ -1,26 +1,24 @@
-import api from "@/global/apiClient";
+import api from "@/shared/api/apiClient";
 import type {
     RegisterEmailPasswordDto,
     UserInfoDto,
     UserSecurityInfoDto,
 } from "@/user/types/user";
-import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 유저 프로필 조회
 export const getUserProfile = async (userId: string): Promise<UserInfoDto> => {
-    const {data: profile} = await api.get<UserInfoDto>(`/user/profile/${userId}`);
-
-    if (!profile.imageUrl) {
-        profile.imageUrl = defaultProfileImage;
-    }
-    return profile;
+    const { data } = await api.get<UserInfoDto>(`/user/profile/${userId}`);
+    return data;
 };
 
-// 유저 프로필 수정
-export const updateUserProfile = async (formData: FormData): Promise<void> => {
-    await api.patch<void>("/user", formData, {
-        errorMode: "local",
-    });
+export const getCurrentUserProfile = async (): Promise<UserInfoDto> => {
+    const { data } = await api.get<UserInfoDto>("/user/me");
+    return data;
+};
+
+export const updateCurrentUserProfile = async (formData: FormData): Promise<UserInfoDto> => {
+    const { data } = await api.patch<UserInfoDto>("/user/me", formData);
+    return data;
 };
 
 export const getUserSecurityInfo = async (): Promise<UserSecurityInfoDto> => {
@@ -29,10 +27,10 @@ export const getUserSecurityInfo = async (): Promise<UserSecurityInfoDto> => {
 };
 
 export const registerEmailPassword = async (payload: RegisterEmailPasswordDto): Promise<void> => {
-    await api.post<void>("/user/credentials", payload, { errorMode: "local" });
+    await api.post<void>("/user/credentials", payload);
 };
 
 // 유저 삭제
 export const deleteUser = async (): Promise<void> => {
-    await api.delete<void>("/user/delete", { errorMode: "local" });
+    await api.delete<void>("/user/delete");
 };

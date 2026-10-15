@@ -1,8 +1,10 @@
 <template>
   <div class="my-page-container">
-    <section class="profile-section">
+    <RequestLoadingState v-if="loading" message="프로필을 불러오는 중입니다..." />
+    <RequestErrorState v-else-if="loadError" :message="loadError" @retry="retryFetchProfile" />
+    <section v-if="userInfo" class="profile-section">
       <div class="profile-image-wrapper">
-        <img :src="userInfo.imageUrl" alt="프로필 이미지" class="profile-img" />
+        <img :src="userInfo.imageUrl || defaultProfileImage" alt="프로필 이미지" class="profile-img" />
       </div>
       <h2 class="nickname">{{ userInfo.nickname }}</h2>
       <button v-if="isMyProfile" class="edit-btn" @click="goToProfileEdit">프로필 수정</button>
@@ -20,15 +22,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getUserProfile } from '@/user/api/user.api';
 import { useAuthStore } from '@/auth/stores/auth';
+import { useUserStore } from '@/user/stores/user';
+import type { UserInfoDto } from '@/user/types/user';
+import defaultProfileImage from '@/assets/images/default-profile.png';
 import { RouteHelper } from '@/global/router/routeHelper';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const userStore = useUserStore();
 
 // 대상 유저 ID (Path Variable이 있으면 사용, 없으면 내 로그인 ID 사용)
 const targetUserId = computed(() => {
@@ -43,29 +52,45 @@ const isMyProfile = computed(() => {
   return Boolean(authStore.userId && targetUserId.value === authStore.userId);
 });
 
-// 유저 정보
-interface UserInfo {
-  id: string;
-  nickname: string;
-  imageUrl: string;
-}
-
-const userInfo = ref<UserInfo>({
-  id: '',
-  nickname: '',
-  imageUrl: ''
-});
+const viewedProfile = ref<UserInfoDto | null>(null);
+const loading = ref(false);
+const loadError = ref('');
+const userInfo = computed(() => isMyProfile.value ? userStore.profile : viewedProfile.value);
+let profileRequestId = 0;
 
 // --- 메서드 (Methods) ---
 
 // 데이터 불러오기
 const fetchUserProfile = async (userId: string) => {
+  const requestId = ++profileRequestId;
+  loading.value = true;
+  loadError.value = '';
   try {
-    userInfo.value = await getUserProfile(userId);
-  } catch {
-    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    if (userId === authStore.userId) {
+      await userStore.loadCurrentUser(userId);
+      return;
+    }
+
+    const profile = await getUserProfile(userId);
+    if (requestId === profileRequestId) {
+      viewedProfile.value = profile;
+    }
+  } catch (error) {
+    if (requestId === profileRequestId) {
+      loadError.value = getApiErrorMessage(error, '프로필을 불러오지 못했습니다.');
+    }
+  } finally {
+    if (requestId === profileRequestId) {
+      loading.value = false;
+    }
   }
 }
+
+const retryFetchProfile = async () => {
+  if (targetUserId.value) {
+    await fetchUserProfile(targetUserId.value);
+  }
+};
 
 const goToProfileEdit = () => {
   router.push(RouteHelper.user.profileUpdate());
@@ -76,24 +101,15 @@ const goToSecurityAccess = () => {
 }
 
 
-// --- 라이프사이클 ---
-onMounted(async () => {
-  if (targetUserId.value) {
-    await fetchUserProfile(targetUserId.value);
-  }
-});
-
-// 라우트 파라미터가 변경되거나(예: 다른 사람 프로필 클릭), 
-// MyProfile <-> Profile 이동 시 데이터 갱신
 watch(
-  () => route.params.userId,
-  async (newId) => {
-    // 새 ID가 있으면 그 ID로, 없으면 내 ID로 조회
-    const idToFetch = Array.isArray(newId) ? newId[0] : newId || authStore.userId;
-    if (idToFetch) {
-      await fetchUserProfile(idToFetch);
+  targetUserId,
+  async (userId) => {
+    viewedProfile.value = null;
+    if (userId) {
+      await fetchUserProfile(userId);
     }
-  }
+  },
+  { immediate: true },
 );
 </script>
 

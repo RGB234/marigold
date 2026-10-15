@@ -8,7 +8,7 @@ export type UserStatus = "ACTIVE" | "DELETED" | "BANNED" | "SLEEP";
 export interface UserInfoDto {
     id: TSID_String;
     nickname: string;
-    imageUrl: string;
+    imageUrl: string | null;
     status?: UserStatus;
 }
 

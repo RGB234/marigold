@@ -1,8 +1,10 @@
 import { useAuthStore } from "@/auth/stores/auth";
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import { useAlert } from "@/global/composables/useAlert";
-import { hasSecurityAccess } from "@/user/utils/securityAccess";
+import { useDialog } from "@/app/feedback/dialog/useDialog";
+import { useToast } from "@/app/feedback/toast/useToast";
+import { getApiErrorMessage } from "@/shared/errors/apiError";
+import { hasSecurityAccess } from "@/auth/utils/securityAccess";
 import { RouteHelper, RouteNames } from "./routeHelper";
 
 // 라우트 설정에 RouteRecordRaw 타입 적용
@@ -174,20 +176,24 @@ const router = createRouter({
 // 전역 가드 설정
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
-  const { alert, apiError } = useAlert();
+  const { alert } = useDialog();
+  const toast = useToast();
+
+  if (to.name !== RouteNames.AUTH.CALLBACK) {
+    try {
+      await authStore.ensureInitialized();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."));
+      if (to.meta?.requiresAuth) {
+        return next(_from.matched.length ? false : RouteHelper.home());
+      }
+    }
+  }
 
   if (to.meta?.requiresAuth) {
-    try {
-      await authStore.initializeAuth();
-    } catch (error) {
-      apiError(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
-      return next(_from.matched.length ? false : RouteHelper.home());
-    }
-
-    if (!authStore.isLoggedIn) {
-      if (await alert("Error", "로그인이 필요한 서비스입니다.")) {
-        return next({ name: RouteNames.AUTH.LOGIN });
-      }
+    if (!authStore.isAuthenticated) {
+      await alert("Error", "로그인이 필요한 서비스입니다.");
+      return next({ name: RouteNames.AUTH.LOGIN });
     }
 
     const roles = to.meta.roles;
@@ -205,9 +211,8 @@ router.beforeEach(async (to, _from, next) => {
     if (Array.isArray(roles) && roles.length > 0) {
       const hasAuthority = authStore.hasAnyAuthority(roles);
       if (!hasAuthority) {
-        if (await alert("Error", "권한이 없습니다")) {
-          return next({ name: RouteNames.HOME });
-        }
+        await alert("Error", "권한이 없습니다");
+        return next({ name: RouteNames.HOME });
       }
     }
   }

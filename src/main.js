@@ -1,17 +1,17 @@
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
 import { useAuthStore } from "@/auth/stores/auth";
-import apiClient from "@/global/apiClient";
-import { installApiInterceptors } from "@/global/installApiInterceptors";
+import { useUserStore } from "@/user/stores/user";
+import apiClient from "@/shared/api/apiClient";
+import { installApiInterceptors } from "@/app/api/installApiInterceptors";
 import App from "./App.vue";
 import router from "./global/router";
+import { RouteHelper } from "@/global/router/routeHelper";
 import { createVuetify } from "vuetify";
 import "vuetify/styles";
 import "./main.css"; // 최하단에서 import
 
 
-import LoadingOverlay from "@/global/components/LoadingOverlay.vue";
-import GlobalAlert from "@/global/components/GlobalAlert.vue";
 import { logger } from "@/global/logger";
 
 
@@ -22,6 +22,32 @@ const pinia = createPinia();
 
 app.use(pinia);
 const authStore = useAuthStore(pinia);
+const userStore = useUserStore(pinia);
+
+watch(
+  () => authStore.userId,
+  (userId) => {
+    if (!userId) {
+      userStore.clearCurrentUser();
+      return;
+    }
+
+    void userStore.loadCurrentUser(userId).catch((error) => {
+      logger.error("[User Profile] Failed to synchronize the current user", error);
+    });
+  },
+  { immediate: true, flush: "sync" },
+);
+
+watch(
+  () => authStore.phase,
+  (phase) => {
+    if (phase === "anonymous" && router.currentRoute.value.meta.requiresAuth) {
+      void router.push(RouteHelper.auth.login());
+    }
+  },
+);
+
 installApiInterceptors(apiClient, authStore);
 app.use(router);
 app.use(vuetify);
@@ -34,6 +60,4 @@ router.onError((error, to) => {
   logger.error(`[Router Error] target=${to.fullPath}`, error);
 });
 
-app.component('LoadingOverlay', LoadingOverlay);
-app.component('GlobalAlert', GlobalAlert);
 app.mount("#app");

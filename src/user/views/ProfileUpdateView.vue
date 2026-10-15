@@ -1,5 +1,8 @@
 <template>
     <div class="profile-form-container">
+        <RequestLoadingState v-if="initialLoading" message="프로필을 불러오는 중입니다..." />
+        <RequestErrorState v-else-if="loadError" :message="loadError" @retry="handleFetchUserProfile" />
+        <template v-else>
         <h2>프로필 수정</h2>
         <p v-if="generalError" role="alert" class="error-message">{{ generalError }}</p>
 
@@ -40,10 +43,11 @@
             </div>
 
             <div v-if="errors.image" class="error-message">{{ errors.image }}</div>
-            <button type="submit" class="submit-btn" :disabled="isSubmitting">
-                {{ isSubmitting ? '처리 중...' : '저장하기' }}
-            </button>
+            <AsyncButton type="submit" class="submit-btn" :pending="isSubmitting">
+                저장하기
+            </AsyncButton>
         </form>
+        </template>
     </div>
 </template>
 
@@ -51,13 +55,16 @@
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/auth/stores/auth';
+import { useUserStore } from '@/user/stores/user';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 import { RouteHelper } from '@/global/router/routeHelper';
 import type { ErrorDetail } from '@/global/types/common';
-import { extractProblemDetail, getApiErrorMessage } from '@/global/utils/apiError';
+import { extractProblemDetail, getApiErrorMessage } from '@/shared/errors/apiError';
 import { convertToFormData } from '@/global/utils/objectUtils';
 import { validateImageFiles, validateNickname } from '@/global/validation/validators';
-import { getUserProfile, updateUserProfile } from '@/user/api/user.api';
+import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 
 interface ProfileForm {
     nickname: string;
@@ -81,8 +88,11 @@ const previewUrl = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const isSubmitting = ref(false);
 const generalError = ref('');
+const initialLoading = ref(true);
+const loadError = ref('');
 
 const authStore = useAuthStore();
+const userStore = useUserStore();
 const userId = computed(() => authStore.userId);
 const router = useRouter();
 
@@ -106,16 +116,24 @@ const applyFieldErrors = (errorDetails?: ErrorDetail[]) => {
 };
 
 const handleFetchUserProfile = async () => {
+    initialLoading.value = true;
+    loadError.value = '';
     try {
         if (!userId.value) {
             return;
         }
 
-        const data = await getUserProfile(userId.value);
+        await userStore.loadCurrentUser(userId.value);
+        const data = userStore.profile;
+        if (!data) {
+            return;
+        }
         form.nickname = data.nickname;
         previewUrl.value = data.imageUrl || defaultProfileImage;
-    } catch {
-        // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    } catch (error) {
+        loadError.value = getApiErrorMessage(error, '프로필을 불러오지 못했습니다.');
+    } finally {
+        initialLoading.value = false;
     }
 };
 
@@ -191,7 +209,7 @@ const submitForm = async () => {
         isSubmitting.value = true;
         const formData = convertToFormData(form);
 
-        await updateUserProfile(formData);
+        await userStore.updateCurrentUser(formData);
 
         if (userId.value) {
             await router.push(RouteHelper.user.profile(userId.value));

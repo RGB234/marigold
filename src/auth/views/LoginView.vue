@@ -16,7 +16,14 @@
           <img v-else src="@/assets/images/visibility_off_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.svg" width="20" height="20" alt="비밀번호 숨김" />
         </span>
       </div>
-      <button type="submit" class="btn-local-auth">이메일로 로그인</button>
+      <AsyncButton
+        type="submit"
+        class="btn-local-auth"
+        :pending="isSubmitting"
+        pending-label="로그인 중..."
+      >
+        이메일로 로그인
+      </AsyncButton>
     </form>
 
     <!-- 구분선 -->
@@ -37,23 +44,27 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { getApiErrorMessage } from "@/global/utils/apiError";
+import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { useRouter } from 'vue-router';
 
-import { ProviderInfo, useAuthStore } from "@/auth/stores/auth";
-import { useAlert } from '@/global/composables/useAlert';
+import { useAuthStore } from "@/auth/stores/auth";
+import { startOAuth } from "@/auth/services/oauthFlow";
+import { ProviderInfo } from "@/auth/types/auth";
+import { useDialog } from '@/app/feedback/dialog/useDialog';
 
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import { RouteHelper } from '@/global/router/routeHelper';
 import { validateEmail } from '@/global/validation/validators';
+import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
-const { alert } = useAlert();
+const { alert } = useDialog();
 
 const loginDto = ref({ email: '', password: '' });
 const showPassword = ref(false);
+const isSubmitting = ref(false);
 
 interface Provider {
   name: ProviderInfo;
@@ -68,6 +79,8 @@ const providers = ref<Provider[]>([
 ]);
 
 const handleLocalLogin = async () => {
+  if (isSubmitting.value) return;
+
   const emailError = validateEmail(loginDto.value.email);
   if (emailError) {
     await alert("로그인 실패", emailError.message);
@@ -79,17 +92,20 @@ const handleLocalLogin = async () => {
     return;
   }
 
+  isSubmitting.value = true;
   try {
-    await authStore.localLogin(loginDto.value);
+    await authStore.signInWithPassword(loginDto.value);
     await router.replace(RouteHelper.home());
   } catch (error: unknown) {
     const message = getApiErrorMessage(error);
     if (message) await alert("로그인 실패", message);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
 function loginWithSocial(providerCode: ProviderInfo) {
-  authStore.login(providerCode);
+  startOAuth(providerCode);
 }
 
 // 회원가입 페이지 이동

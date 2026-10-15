@@ -34,7 +34,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import {ProviderInfo, useAuthStore } from '@/auth/stores/auth';
+import { startOAuth } from '@/auth/services/oauthFlow';
+import { ProviderInfo } from '@/auth/types/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
 import router from '@/global/router';
@@ -53,8 +54,6 @@ const providers = ref<Provider[]>([
   { name: ProviderInfo.KAKAO, description: '카카오 계정으로 회원가입', class: 'btn-kakao', icon: kakaoIcon },
 ]);
 
-const authStore = useAuthStore();
-
 // 이메일 회원가입 페이지 이동
 function goToEmailSignup() {
   router.push(RouteHelper.auth.emailSignup());
@@ -62,7 +61,7 @@ function goToEmailSignup() {
 
 // 소셜 계정으로 회원가입 (이제 로그인과 통합 처리)
 const handleSocialSignUp = (providerCode: ProviderInfo) => {
-  authStore.login(providerCode);
+  startOAuth(providerCode);
 };
 
 // 로그인 페이지 이동
