@@ -1,13 +1,13 @@
 import { flushPromises, shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatRoomView from './ChatRoomView.vue';
+import RetryButton from '@/shared/ui/request-state/RetryButton.vue';
 
 const mocks = vi.hoisted(() => ({
   clients: [] as any[],
   refresh: vi.fn(),
   replace: vi.fn(),
   toastError: vi.fn(),
-  apiError: vi.fn(),
   auth: { accessToken: 'old-token', userId: 'user' } as any,
 }));
 
@@ -16,6 +16,7 @@ vi.mock('@stomp/stompjs', () => ({
     activate = vi.fn();
     deactivate = vi.fn().mockResolvedValue(undefined);
     subscribe = vi.fn();
+    publish = vi.fn();
     constructor(options: any) {
       Object.assign(this, options);
       mocks.clients.push(this);
@@ -24,18 +25,18 @@ vi.mock('@stomp/stompjs', () => ({
 }));
 vi.mock('sockjs-client', () => ({ default: vi.fn() }));
 vi.mock('@/auth/stores/auth', () => ({
-  useAuthStore: () => ({ ...mocks.auth, silentRefresh: mocks.refresh,
+  useAuthStore: () => ({ ...mocks.auth, refreshAccessToken: mocks.refresh,
     get accessToken() { return mocks.auth.accessToken; } }),
 }));
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { roomId: 'room' } }),
   useRouter: () => ({ replace: mocks.replace, push: vi.fn() }),
 }));
-vi.mock('@/global/apiClient', () => ({
+vi.mock('@/shared/api/apiClient', () => ({
   CSRF_TOKEN_HEADER_NAME: 'X-CSRF-TOKEN', getCsrfToken: () => 'csrf',
 }));
-vi.mock('@/global/composables/useAlert', () => ({
-  useAlert: () => ({ toast: { error: mocks.toastError }, apiError: mocks.apiError }),
+vi.mock('@/app/feedback/toast/useToast', () => ({
+  useToast: () => ({ error: mocks.toastError }),
 }));
 vi.mock('@/chat/api/chat.api', () => ({
   getChatRoom: vi.fn().mockResolvedValue({ postId: 'post' }),
@@ -53,7 +54,7 @@ describe('chat connection authentication', () => {
     mocks.auth.accessToken = 'old-token';
     mocks.refresh.mockImplementation(async () => {
       mocks.auth.accessToken = 'fresh-token';
-      return true;
+      return 'fresh-token';
     });
   });
 
@@ -70,7 +71,7 @@ describe('chat connection authentication', () => {
       client.onWebSocketClose({ code: 4001 });
       mocks.refresh.mockImplementationOnce(async () => {
         mocks.auth.accessToken = 'renewed-token';
-        return true;
+        return 'renewed-token';
       });
       await client.beforeConnect();
       client.onConnect();
@@ -81,11 +82,28 @@ describe('chat connection authentication', () => {
     } finally { wrapper.unmount(); }
   });
 
+  it('sends only roomId and message without sender information', async () => {
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      const client = mocks.clients[0];
+      client.connected = true;
+      client.onConnect();
+      await wrapper.find('textarea').setValue('hello');
+      await wrapper.find('textarea').trigger('keyup.enter');
+
+      expect(client.publish).toHaveBeenCalledWith({
+        destination: '/pub/chat/message',
+        body: JSON.stringify({ roomId: 'room', message: 'hello' }),
+      });
+    } finally { wrapper.unmount(); }
+  });
+
   it('stops reconnecting and requests login when refresh fails', async () => {
     const wrapper = shallowMount(ChatRoomView);
     try {
       await flushPromises();
-      mocks.refresh.mockResolvedValueOnce(false);
+      mocks.refresh.mockResolvedValueOnce(null);
       const client = mocks.clients[0];
       await client.beforeConnect();
       expect(client.reconnectDelay).toBe(0);
@@ -105,20 +123,20 @@ describe('chat connection authentication', () => {
       await flushPromises();
       expect(client.deactivate).toHaveBeenCalled();
       expect(mocks.replace).not.toHaveBeenCalled();
-      expect(mocks.apiError).toHaveBeenCalledWith(failure, expect.any(String));
-      expect(wrapper.text()).toContain('다시 시도');
+      expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining('다시 시도'));
+      expect(wrapper.findComponent(RetryButton).exists()).toBe(true);
     } finally { wrapper.unmount(); }
   });
 
   it('does not update connection headers after unmount during refresh', async () => {
     const wrapper = shallowMount(ChatRoomView);
     await flushPromises();
-    let finish!: (value: boolean) => void;
-    mocks.refresh.mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = resolve; }));
+    let finish!: (value: string) => void;
+    mocks.refresh.mockImplementationOnce(() => new Promise<string>(resolve => { finish = resolve; }));
     const client = mocks.clients[0];
     const pending = client.beforeConnect();
     wrapper.unmount();
-    finish(true);
+    finish('fresh-token');
     await pending;
     expect(client.connectHeaders).toBeUndefined();
     expect(client.deactivate).toHaveBeenCalled();

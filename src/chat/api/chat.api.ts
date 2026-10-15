@@ -1,9 +1,9 @@
-import api from "@/global/apiClient";
+import api from "@/shared/api/apiClient";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
 import {Long_String, PageableParams, TSID_String} from "@/global/types/common.ts";
 
 export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: TSID_String): Promise<ChatRoomDto> => {
-  const {data} = await api.post<ChatRoomDto>(`/chat/rooms`, {adoptionPostId, receiverId}, { errorMode: "local" });
+  const {data} = await api.post<ChatRoomDto>(`/chat/rooms`, {adoptionPostId, receiverId});
   return data;
 };
 
@@ -17,7 +17,7 @@ export const getChatRoom = async (roomId: TSID_String): Promise<ChatRoomDto> => 
 };
 
 export const getMyChatRooms = async (params?: ChatRoomSearchParams): Promise<ChatRoomPageResponse> => {
-  const {data} = await api.get<ChatRoomPageResponse>(`/chat/rooms`, {params, errorMode: "local"});
+  const {data} = await api.get<ChatRoomPageResponse>(`/chat/rooms`, {params});
   return data;
 };
 
@@ -27,13 +27,11 @@ export const getChatRoomMessages = async (roomId: TSID_String): Promise<ChatMess
 };
 
 export const createChatFileMessage = async (roomId: TSID_String, formData: FormData): Promise<ChatMessageDto> => {
-  const {data} = await api.post<ChatMessageDto>(`/chat/rooms/${roomId}/messages/files`, formData, {
-    errorMode: "local",
-  });
+  const {data} = await api.post<ChatMessageDto>(`/chat/rooms/${roomId}/messages/files`, formData);
   return data;
 };
 
 export const getChatAttachmentDownloadUrl = async (roomId: TSID_String, attachmentId: Long_String): Promise<string> => {
-  const {data} = await api.get<string>(`/chat/rooms/${roomId}/attachments/${attachmentId}/download-url`, { errorMode: "local" });
+  const {data} = await api.get<string>(`/chat/rooms/${roomId}/attachments/${attachmentId}/download-url`);
   return data;
 };

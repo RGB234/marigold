@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { getErrorMessage } from "@/global/i18n/errorMessages";
+import { getErrorMessage } from "@/shared/errors/errorMessages";
 import AppIcon from '@/global/components/AppIcon.vue';
+import RetryButton from '@/shared/ui/request-state/RetryButton.vue';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import { useAuthStore } from '@/auth/stores/auth';
-import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/global/apiClient';
+import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/shared/api/apiClient';
 import { logger } from '@/global/logger';
 import { ErrorCodes } from '@/global/errorCodes';
 import {
@@ -17,7 +20,7 @@ import {
   getChatAttachmentDownloadUrl,
 } from '@/chat/api/chat.api';
 import { getAdoptionPostSummary } from '@/adoption/api/adoptionPost.api';
-import type { ChatAttachmentDto, ChatMessageDto, ChatRoomDto } from '@/chat/types/chat';
+import type { ChatAttachmentDto, ChatMessageDto, ChatMessageRequestDto, ChatRoomDto } from '@/chat/types/chat';
 import { parseStompErrorResponse } from '@/chat/types/stomp';
 import { chatDestinations } from '@/chat/chatDestinations';
 import type { AdoptionPostResponse } from '@/adoption/types/adoptionPost';
@@ -25,14 +28,15 @@ import { RouteHelper } from '@/global/router/routeHelper';
 import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
 import NoImage from '@/assets/images/no-image.jpeg';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
-import { useAlert } from '@/global/composables/useAlert';
+import { useToast } from '@/app/feedback/toast/useToast';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 import { validationPolicy } from '@/global/validation/validationPolicy';
 import { formatFileSize, validateChatAttachmentFiles } from '@/global/validation/validators';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const { toast, apiError } = useAlert();
+const toast = useToast();
 const roomId = computed(() => {
   const id = route.params.roomId;
   return Array.isArray(id) ? id[0] : id;
@@ -65,6 +69,8 @@ const postInfo = ref<AdoptionPostResponse | null>(null);
 const isReconnecting = ref(false);
 const isConnectionFailed = ref(false);
 const isSending = ref(false);
+const initialLoading = ref(true);
+const loadError = ref('');
 const retryCount = ref(0);
 const MAX_RETRIES = 5;
 const RETRYABLE_CONNECT_ERROR_CODES = new Set<string>([
@@ -116,7 +122,7 @@ const connectWebSocket = () => {
     // 자동 재연결도 매번 새 토큰과 최신 CSRF 헤더로 CONNECT합니다.
     let refreshed: boolean;
     try {
-      refreshed = await authStore.silentRefresh();
+      refreshed = await authStore.refreshAccessToken();
     } catch (error) {
       if (isUnmounted || stompClient !== client || isManualDisconnect) return;
       isManualDisconnect = true;
@@ -124,11 +130,11 @@ const connectWebSocket = () => {
       isConnectionFailed.value = true;
       client.reconnectDelay = 0;
       void client.deactivate();
-      apiError(error, '연결을 복구하지 못했습니다. 다시 시도해주세요.');
+      toast.error(getApiErrorMessage(error, '연결을 복구하지 못했습니다. 다시 시도해주세요.'));
       return;
     }
     if (isUnmounted || stompClient !== client || isManualDisconnect) return;
-    if (!refreshed || !authStore.accessToken) {
+    if (!refreshed) {
       isManualDisconnect = true;
       isReconnecting.value = false;
       isConnectionFailed.value = true;
@@ -242,7 +248,7 @@ const downloadAttachment = async (attachment: ChatAttachmentDto) => {
     const downloadUrl = await getChatAttachmentDownloadUrl(roomId.value, attachment.id);
     triggerDownload(downloadUrl, attachment.originalFileName);
   } catch (error) {
-    apiError(error, '파일 다운로드 중 오류가 발생했습니다.');
+    toast.error(getApiErrorMessage(error, '파일 다운로드 중 오류가 발생했습니다.'));
   }
 };
 
@@ -278,9 +284,8 @@ const handleFileChange = (event: Event) => {
 const sendTextMessage = () => {
   if (newMessage.value.trim() === '' || !stompClient || !stompClient.connected) return;
 
-  const messageDto = {
+  const messageDto: ChatMessageRequestDto = {
     roomId: roomId.value,
-    senderId: currentUserId.value,
     message: newMessage.value,
   };
 
@@ -311,7 +316,7 @@ const sendFileMessage = async () => {
     newMessage.value = '';
     clearSelectedFiles();
   } catch (error) {
-    apiError(error, '파일 전송 중 오류가 발생했습니다.');
+    toast.error(getApiErrorMessage(error, '파일 전송 중 오류가 발생했습니다.'));
   } finally {
     isSending.value = false;
   }
@@ -337,10 +342,10 @@ const fetchPostDetail = async (): Promise<boolean> => {
     chatRoom.value = room;
     postInfo.value = post;
     return true;
-  } catch {
+  } catch (error) {
     chatRoom.value = null;
     postInfo.value = null;
-    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+    loadError.value = getApiErrorMessage(error, '채팅방 정보를 불러오지 못했습니다.');
     return false;
   }
 };
@@ -355,22 +360,32 @@ const handleImageError = (event: Event) => {
   (event.target as HTMLImageElement).src = NoImage;
 };
 
-onMounted(async () => {
-  isUnmounted = false;
-
+const loadChat = async () => {
+  initialLoading.value = true;
+  loadError.value = '';
   const loaded = await fetchPostDetail();
-  if (!loaded || isUnmounted) return;
+  if (!loaded || isUnmounted) {
+    initialLoading.value = false;
+    return;
+  }
 
   try {
     messages.value = await getChatRoomMessages(roomId.value);
     scrollToBottom();
-  } catch {
-    // 전역 API 인터셉터에서 사용자 알림을 처리합니다.
+  } catch (error) {
+    loadError.value = getApiErrorMessage(error, '메시지를 불러오지 못했습니다.');
+    initialLoading.value = false;
     return;
   }
 
+  initialLoading.value = false;
   if (isUnmounted) return;
   connectWebSocket();
+};
+
+onMounted(async () => {
+  isUnmounted = false;
+  await loadChat();
 });
 
 onUnmounted(() => {
@@ -387,6 +402,9 @@ onUnmounted(() => {
 
 <template>
   <div class="chat-container">
+    <RequestLoadingState v-if="initialLoading" message="채팅방을 불러오는 중입니다..." />
+    <RequestErrorState v-else-if="loadError" :message="loadError" @retry="loadChat" />
+    <template v-else>
     <div class="chat-header">
       <div v-if="postInfo" class="post-summary" @click="goToPostDetail">
         <div class="summary-img">
@@ -410,7 +428,7 @@ onUnmounted(() => {
     </div>
     <div v-if="isConnectionFailed" class="connection-banner failed">
       서버에 연결할 수 없습니다.
-      <button class="retry-btn" @click="retryConnect">다시 시도</button>
+      <RetryButton class="retry-btn" @click="retryConnect" />
     </div>
 
     <div v-if="chatRoom?.status === 'CLOSED'" class="connection-banner failed"
@@ -533,6 +551,7 @@ onUnmounted(() => {
         <button @click="sendMessage" :disabled="!canSend || chatRoom?.status === 'CLOSED' || isSending">전송</button>
       </div>
     </div>
+    </template>
   </div>
 </template>
 

@@ -5,8 +5,10 @@ import { useAuthStore } from '@/auth/stores/auth';
 import { getMyChatRooms } from '@/chat/api/chat.api';
 import type { ChatRoomDto } from '@/chat/types/chat';
 import { RouteHelper } from '@/global/router/routeHelper';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
-import { getApiErrorMessage } from '@/global/utils/apiError';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -96,15 +98,9 @@ onMounted(() => fetchRooms());
       </button>
     </div>
 
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>목록을 불러오는 중입니다...</p>
-    </div>
+    <RequestLoadingState v-if="loading" message="목록을 불러오는 중입니다..." />
 
-    <div v-else-if="loadError" class="empty-state" role="alert">
-      <p>{{ loadError }}</p>
-      <button type="button" @click="fetchRooms">다시 시도</button>
-    </div>
+    <RequestErrorState v-else-if="loadError" :message="loadError" @retry="fetchRooms" />
 
     <div v-else-if="allRooms.length > 0" class="room-list">
       <div v-for="room in allRooms" :key="room.id" class="room-card" :class="{ 'closed': room.status === 'CLOSED' }" @click="goToChatRoom(room.id)">

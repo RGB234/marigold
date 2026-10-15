@@ -13,6 +13,11 @@ export interface ChatRoomDto {
     status: 'ACTIVE' | 'CLOSED';
 }
 
+export interface ChatMessageRequestDto {
+    roomId: TSID_String;
+    message: string;
+}
+
 export interface ChatMessageDto {
     roomId: TSID_String;
     senderId: TSID_String;
