@@ -33,12 +33,16 @@
     </div>
   </div>
 
-  <div v-if="loading" class="card-container">목록을 불러오는 중입니다...</div>
-  <div v-else-if="loadError" class="card-container" role="alert">
-    <p>{{ loadError }}</p>
-    <button type="button" @click="handleSearch(currentPage)">다시 시도</button>
-  </div>
-  <div v-else class="card-container">
+  <RequestLoadingState
+    v-if="loading && searchResult === undefined"
+    message="목록을 불러오는 중입니다..."
+  />
+  <RequestErrorState
+    v-if="loadError"
+    :message="loadError"
+    @retry="handleSearch(currentPage)"
+  />
+  <div v-if="searchResult !== undefined" class="card-container">
     <div v-for="(card, index) in visibleCards" :key="index" class="card" @click="handleCardClick(card)">
       <div class="card-image">
         <img :src="card.imageUrl || NoImage" alt="대표이미지" class="thumb" @error="handleImageError" />
@@ -96,8 +100,10 @@ import { getAdoptionStatusLabel } from "@/adoption/enums/AdoptionPostStatus.ts";
 import { cleanParams } from "@/global/utils/objectUtils";
 import { getAdoptionPostList } from "@/adoption/api/adoptionPost.api";
 import { RouteHelper } from "@/global/router/routeHelper";
+import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
+import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
 import NoImage from "@/assets/images/no-image.jpeg";
-import { getApiErrorMessage } from "@/global/utils/apiError";
+import { getApiErrorMessage } from "@/shared/errors/apiError";
 import {
   AdoptionPostResponse,
   AdoptionPostPageResponse
@@ -153,7 +159,6 @@ const fetchSearchResult = async (page = 0): Promise<number | null> => {
   loading.value = true;
   loadError.value = '';
   currentPage.value = page;
-  searchResult.value = [];
   try {
     const params = { ...cleanParams(searchFilters.value), page };
     const data: AdoptionPostPageResponse = await getAdoptionPostList(params);

@@ -132,12 +132,12 @@
       </div>
 
       <div class="btn-row">
-        <button type="button" class="button secondary" @click="handleCancel">
+        <button type="button" class="button secondary" :disabled="isSubmitting" @click="handleCancel">
           취소
         </button>
-        <button type="button" class="button" @click="handleSubmit">
+        <AsyncButton class="button" :pending="isSubmitting" pending-label="등록 중..." @click="handleSubmit">
           제출
-        </button>
+        </AsyncButton>
       </div>
     </div>
   </section>
@@ -150,13 +150,14 @@ import { createAdoptionPost } from "@/adoption/api/adoptionPost.api";
 import { Neutering } from "@/adoption/enums/Neutering";
 import { Sex } from "@/adoption/enums/Sex";
 import { Species } from "@/adoption/enums/Species";
-import { useAlert } from "@/global/composables/useAlert";
+import { useToast } from "@/app/feedback/toast/useToast";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
-import { extractProblemDetail } from "@/global/utils/apiError";
+import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
+import AsyncButton from "@/shared/ui/request-state/AsyncButton.vue";
 
 const MAX_IMAGE_COUNT = validationPolicy.adoptionPost.images.maxCount;
 const MIN_IMAGE_COUNT = validationPolicy.adoptionPost.images.minCount;
@@ -198,10 +199,11 @@ const errors = reactive<Record<keyof AdoptionForm, string>>({
 });
 
 const router = useRouter();
-const { toast, apiError } = useAlert();
+const toast = useToast();
 const imagePreviews = ref<string[]>([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
+const isSubmitting = ref(false);
 
 const openLightbox = (index: number) => {
   lightboxIndex.value = index;
@@ -283,6 +285,8 @@ const removeImage = (index: number) => {
 };
 
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+
   resetFieldErrors();
   const localErrors = validateAdoptionPostForm(form, form.images.length);
   if (localErrors.length > 0) {
@@ -292,6 +296,7 @@ const handleSubmit = async () => {
 
   const formData = convertToFormData({ ...form }) as FormData;
 
+  isSubmitting.value = true;
   try {
     const response = await createAdoptionPost(formData);
     const createdPostId = response.id;
@@ -304,8 +309,10 @@ const handleSubmit = async () => {
     const problem = extractProblemDetail(error);
 
     if (!applyFieldErrors(problem?.errors)) {
-      apiError(error);
+      toast.error(getApiErrorMessage(error));
     }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 

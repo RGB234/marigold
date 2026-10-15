@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { createAdoptionComment } from '@/adoption/api/adoptionPost.api';
-import { useAlert } from '@/global/composables/useAlert';
+import { useToast } from '@/app/feedback/toast/useToast';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 import { validationPolicy } from '@/global/validation/validationPolicy';
 import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
 import type { Long_String } from '@/global/types/common';
@@ -16,7 +17,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
 }>();
 
-const { toast, apiError } = useAlert();
+const toast = useToast();
 
 const content = ref('');
 const images = ref<File[]>([]);
@@ -86,7 +87,7 @@ const submitComment = async () => {
     
     emit('comment-created');
   } catch (error) {
-    apiError(error, '댓글 등록 중 오류가 발생했습니다.');
+    toast.error(getApiErrorMessage(error, '댓글 등록 중 오류가 발생했습니다.'));
   } finally {
     isSubmitting.value = false;
   }

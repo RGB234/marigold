@@ -5,7 +5,9 @@ import AdoptionCommentInput from './AdoptionCommentInput.vue';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import { useAuthStore } from '@/auth/stores/auth';
 import { deleteAdoptionComment, updateAdoptionComment } from '@/adoption/api/adoptionPost.api';
-import { useAlert } from '@/global/composables/useAlert';
+import { useDialog } from '@/app/feedback/dialog/useDialog';
+import { useToast } from '@/app/feedback/toast/useToast';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 import { validationPolicy } from '@/global/validation/validationPolicy';
 import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
 import type { Long_String } from '@/global/types/common';
@@ -23,7 +25,8 @@ const emit = defineEmits<{
 }>();
 
 const authStore = useAuthStore();
-const { confirm, toast, apiError } = useAlert();
+const { confirm } = useDialog();
+const toast = useToast();
 
 const showReplyInput = ref(false);
 const isEditing = ref(false);
@@ -135,7 +138,7 @@ const handleDelete = async () => {
       toast.success('댓글을 삭제했습니다.');
       emit('refresh');
     } catch (error) {
-      apiError(error, '댓글 삭제 중 오류가 발생했습니다.');
+      toast.error(getApiErrorMessage(error, '댓글 삭제 중 오류가 발생했습니다.'));
     }
   }
 };
@@ -216,7 +219,7 @@ const submitEdit = async () => {
     isEditing.value = false;
     emit('refresh');
   } catch (error) {
-    apiError(error, '댓글 수정 중 오류가 발생했습니다.');
+    toast.error(getApiErrorMessage(error, '댓글 수정 중 오류가 발생했습니다.'));
   } finally {
     isUpdating.value = false;
   }

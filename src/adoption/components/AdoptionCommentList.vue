@@ -4,8 +4,10 @@ import { getAdoptionComments } from '@/adoption/api/adoptionPost.api';
 import { AdoptionCommentResponse } from '@/adoption/types/adoptionPost.ts';
 import AdoptionCommentItem from './AdoptionCommentItem.vue';
 import AdoptionCommentInput from './AdoptionCommentInput.vue';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import type { Long_String } from '@/global/types/common';
-import { getApiErrorMessage } from '@/global/utils/apiError';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const props = defineProps<{
   postId: Long_String;
@@ -75,14 +77,9 @@ const flattenedComments = computed<FlattenedCommentItem[]>(() => {
     <h3>입양 후 근황</h3>
 
     <!-- 댓글 목록 -->
-    <div v-if="loading" class="loading">
-      댓글을 불러오는 중...
-    </div>
+    <RequestLoadingState v-if="loading" message="댓글을 불러오는 중입니다..." />
     
-    <div v-else-if="loadError" class="empty-comments" role="alert">
-      <p>{{ loadError }}</p>
-      <button type="button" @click="fetchComments">다시 시도</button>
-    </div>
+    <RequestErrorState v-else-if="loadError" :message="loadError" @retry="fetchComments" />
 
     <div v-else-if="comments.length === 0" class="empty-comments">
       아직 등록된 댓글이 없습니다.

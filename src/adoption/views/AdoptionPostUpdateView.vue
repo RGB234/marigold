@@ -1,6 +1,13 @@
 <template>
   <section>
-    <div class="writing-wrap">
+    <RequestLoadingState v-if="isLoading" message="게시글을 불러오는 중입니다..." />
+    <RequestErrorState
+      v-else-if="loadError"
+      :message="loadError"
+      :retrying="isLoading"
+      @retry="handleFetchAdoption"
+    />
+    <div v-else class="writing-wrap">
       <div class="writing-header">
         <h1>입양글 수정</h1>
       </div>
@@ -129,12 +136,12 @@
       </div>
 
       <div class="btn-row">
-        <button type="button" class="button secondary" @click="handleCancel">
+        <button type="button" class="button secondary" :disabled="isSubmitting" @click="handleCancel">
           취소
         </button>
-        <button type="button" class="button" @click="handleSubmit">
+        <AsyncButton class="button" :pending="isSubmitting" pending-label="수정 중..." @click="handleSubmit">
           제출
-        </button>
+        </AsyncButton>
       </div>
     </div>
   </section>
@@ -147,14 +154,17 @@ import { getAdoptionPostDetail, updateAdoptionPost } from "@/adoption/api/adopti
 import { Neutering } from "@/adoption/enums/Neutering";
 import { Sex } from "@/adoption/enums/Sex";
 import { Species } from "@/adoption/enums/Species";
-import { useAlert } from "@/global/composables/useAlert";
+import { useToast } from "@/app/feedback/toast/useToast";
 import { RouteHelper } from "@/global/router/routeHelper";
 import type { ErrorDetail } from "@/global/types/common";
-import { extractProblemDetail } from "@/global/utils/apiError";
+import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
 import { convertToFormData } from "@/global/utils/objectUtils";
 import { validationPolicy } from "@/global/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/global/validation/validators";
 import NoImage from "@/assets/images/no-image.jpeg";
+import AsyncButton from "@/shared/ui/request-state/AsyncButton.vue";
+import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
+import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
 
 const MAX_IMAGE_COUNT = validationPolicy.adoptionPost.images.maxCount;
 const MIN_IMAGE_COUNT = validationPolicy.adoptionPost.images.minCount;
@@ -204,10 +214,13 @@ const errors = reactive<Record<keyof AdoptionForm | string, string>>({
 
 const route = useRoute();
 const router = useRouter();
-const { toast, apiError } = useAlert();
+const toast = useToast();
 const imagePreviews = ref<string[]>([]);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const lightboxIndex = ref<number | null>(null);
+const isLoading = ref(true);
+const isSubmitting = ref(false);
+const loadError = ref("");
 
 const openLightbox = (index: number) => {
   lightboxIndex.value = index;
@@ -252,6 +265,8 @@ const clearFileInput = () => {
 };
 
 const handleFetchAdoption = async () => {
+  isLoading.value = true;
+  loadError.value = "";
   try {
     const routeId = getRouteId();
     const data = await getAdoptionPostDetail(routeId);
@@ -287,8 +302,9 @@ const handleFetchAdoption = async () => {
       await router.replace(RouteHelper.adoption.deleted());
       return;
     }
-    apiError(error, "게시글을 불러오지 못했습니다. 다시 시도해주세요.");
-    await router.push(RouteHelper.adoption.list());
+    loadError.value = getApiErrorMessage(error, "게시글을 불러오지 못했습니다. 다시 시도해주세요.");
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -343,6 +359,8 @@ const removeImage = (index: number) => {
 };
 
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+
   resetErrors();
   const imageCount = form.imagesToKeep.length + form.images.length;
   const localErrors = validateAdoptionPostForm(form, imageCount);
@@ -353,6 +371,7 @@ const handleSubmit = async () => {
 
   const formData = convertToFormData(form);
 
+  isSubmitting.value = true;
   try {
     const routeId = getRouteId();
     await updateAdoptionPost(routeId, formData);
@@ -367,8 +386,10 @@ const handleSubmit = async () => {
       return;
     }
     if (!applyFieldErrors(problem?.errors)) {
-      apiError(error);
+      toast.error(getApiErrorMessage(error));
     }
+  } finally {
+    isSubmitting.value = false;
   }
 };
 

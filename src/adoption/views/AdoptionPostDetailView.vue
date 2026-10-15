@@ -11,22 +11,29 @@ import { getOrCreateChatRoom } from '@/chat/api/chat.api';
 
 import { useAuthStore } from '@/auth/stores/auth';
 
-import { useAlert } from '@/global/composables/useAlert';
+import { useDialog } from '@/app/feedback/dialog/useDialog';
+import { useToast } from '@/app/feedback/toast/useToast';
 import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoption/types/adoptionPost.ts";
 import { RouteHelper } from "@/global/router/routeHelper.ts";
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
+import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
 import UserProfileLink from '@/global/components/UserProfileLink.vue';
 import AdoptionCommentList from '@/adoption/components/AdoptionCommentList.vue';
 import axios from "axios";
-import { getApiErrorMessage } from '@/global/utils/apiError';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 import NoImage from "@/assets/images/no-image.jpeg";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const { confirm, toast, alert, apiError } = useAlert();
+const { confirm, alert } = useDialog();
+const toast = useToast();
 
 const detail = ref<AdoptionPostDetailResponse | null>(null);
 const loadError = ref('');
+const loading = ref(false);
+const pendingAction = ref<"delete" | "status" | "candidates" | "complete" | "cancelComplete" | "chat" | null>(null);
 
 const candidates = ref<AdoptionCandidateResponse[]>([]);
 const showCandidateModal = ref(false);
@@ -34,7 +41,7 @@ const selectedAdopterId = ref<string>('');
 const selectedImageUrl = ref<string | null>(null);
 
 // 로그인 상태 확인
-const isLoggedIn = computed(() => authStore.isLoggedIn);
+const isLoggedIn = computed(() => authStore.isAuthenticated);
 const currentUserId = computed(() => authStore.userId);
 
 // 작성자 본인인지 확인
@@ -67,6 +74,7 @@ const formatDate = (dateString: string) => {
 };
 
 const fetchDetail = async (id: string | string[]) => {
+  loading.value = true;
   loadError.value = '';
   try {
     const data = await getAdoptionPostDetail(Array.isArray(id) ? id[0] : id);
@@ -77,6 +85,8 @@ const fetchDetail = async (id: string | string[]) => {
       return;
     }
     loadError.value = getApiErrorMessage(error);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -95,28 +105,36 @@ const confirmDelete = async () => {
 
 // 게시글 삭제
 const deletePost = async () => {
+  if (pendingAction.value) return;
+  pendingAction.value = "delete";
   try {
     await deleteAdoptionPost(Array.isArray(route.params.id) ? route.params.id[0] : route.params.id);
     toast.success('게시글이 삭제되었습니다.');
     router.push(RouteHelper.home());
   } catch (error) {
-    apiError(error, "게시글 삭제 중 오류가 발생했습니다.");
+    toast.error(getApiErrorMessage(error, "게시글 삭제 중 오류가 발생했습니다."));
+  } finally {
+    pendingAction.value = null;
   }
 };
 
 const handleStatusChange = async (status: AdoptionPostStatus) => {
-  if (!detail.value) return;
+  if (!detail.value || pendingAction.value) return;
+  pendingAction.value = "status";
   try {
     await updateAdoptionPostStatus(detail.value.id, status);
     detail.value.status = status;
     toast.success(`상태가 '${getAdoptionStatusLabel(status)}'(으)로 변경되었습니다.`);
   } catch (error) {
-    apiError(error, "상태 변경 중 오류가 발생했습니다.");
+    toast.error(getApiErrorMessage(error, "상태 변경 중 오류가 발생했습니다."));
+  } finally {
+    pendingAction.value = null;
   }
 };
 
 const handleCompleteAdoptionClick = async () => {
-  if (!detail.value) return;
+  if (!detail.value || pendingAction.value) return;
+  pendingAction.value = "candidates";
   try {
     const data = await getAdoptionCandidates(detail.value.id);
     if (data.length === 0) {
@@ -127,7 +145,9 @@ const handleCompleteAdoptionClick = async () => {
     selectedAdopterId.value = '';
     showCandidateModal.value = true;
   } catch (error) {
-    apiError(error, "후보자 목록을 불러오는 데 실패했습니다.");
+    toast.error(getApiErrorMessage(error, "후보자 목록을 불러오는 데 실패했습니다."));
+  } finally {
+    pendingAction.value = null;
   }
 };
 
@@ -136,33 +156,40 @@ const confirmCompleteAdoption = async () => {
     toast.error("입양자를 선택해주세요.");
     return;
   }
-  if (!detail.value) return;
+  if (!detail.value || pendingAction.value) return;
+  pendingAction.value = "complete";
   try {
     await completeAdoption(detail.value.id, { adopterId: selectedAdopterId.value });
     toast.success("입양 완료 처리되었습니다.");
     showCandidateModal.value = false;
     await fetchDetail(detail.value.id.toString());
   } catch (error) {
-    apiError(error, "입양 완료 처리 중 오류가 발생했습니다.");
+    toast.error(getApiErrorMessage(error, "입양 완료 처리 중 오류가 발생했습니다."));
+  } finally {
+    pendingAction.value = null;
   }
 };
 
 const handleCancelCompleteAdoption = async () => {
-  if (!detail.value) return;
+  if (!detail.value || pendingAction.value) return;
   if (await confirm("확인", "입양 완료를 취소하시겠습니까?")) {
+    pendingAction.value = "cancelComplete";
     try {
       await cancelCompleteAdoption(detail.value.id);
       toast.success("입양 완료가 취소되었습니다.");
       await fetchDetail(detail.value.id.toString());
     } catch (error) {
-      apiError(error, "입양 완료 취소 중 오류가 발생했습니다.");
+      toast.error(getApiErrorMessage(error, "입양 완료 취소 중 오류가 발생했습니다."));
+    } finally {
+      pendingAction.value = null;
     }
   }
 };
 
 const handleChatRequest = async () => {
-  if (!detail.value || !detail.value.writer) return;
+  if (!detail.value || !detail.value.writer || pendingAction.value) return;
 
+  pendingAction.value = "chat";
   try {
     // 채팅방 생성 (이미 있으면 기존 방 반환)
     const adoptionInfoId = detail.value.id;
@@ -173,7 +200,9 @@ const handleChatRequest = async () => {
 
     router.push(RouteHelper.chat.room(chatRoom.id.toString()));
   } catch (error) {
-    apiError(error, "채팅방 생성 중 오류가 발생했습니다.");
+    toast.error(getApiErrorMessage(error, "채팅방 생성 중 오류가 발생했습니다."));
+  } finally {
+    pendingAction.value = null;
   }
 };
 
@@ -212,10 +241,13 @@ onMounted(async () => {
 
 <template>
   <div class="detail-container">
-    <div v-if="loadError" role="alert">
-      <p>{{ loadError }}</p>
-      <button type="button" @click="fetchDetail(route.params.id)">다시 시도</button>
-    </div>
+    <RequestLoadingState v-if="loading && !detail" message="게시글을 불러오는 중입니다..." />
+    <RequestErrorState
+      v-if="loadError"
+      :message="loadError"
+      :retrying="loading"
+      @retry="fetchDetail(route.params.id)"
+    />
     <div class="back-btn-wrapper">
       <button class="btn-back" @click="goBack">
         < 목록으로 </button>
@@ -234,7 +266,15 @@ onMounted(async () => {
           <!-- 작성자 본인만 수정/삭제 버튼 표시 (상단 우측) -->
           <div v-if="isLoggedIn && isAuthor" class="action-buttons">
             <button class="btn-small edit" @click="editPost">수정</button>
-            <button class="btn-small delete" @click="confirmDelete">삭제</button>
+            <AsyncButton
+              class="btn-small delete"
+              :pending="pendingAction === 'delete'"
+              :disabled="pendingAction !== null"
+              pending-label="삭제 중..."
+              @click="confirmDelete"
+            >
+              삭제
+            </AsyncButton>
           </div>
         </div>
         <div class="meta-info">
@@ -299,31 +339,53 @@ onMounted(async () => {
       <div class="button-group">
         <div class="action-buttons-wrapper">
           <!-- 작성자가 아닌 경우: 입양 문의하기 -->
-          <button v-if="isLoggedIn && !isAuthor" class="btn primary" @click="handleChatRequest">
+          <AsyncButton
+            v-if="isLoggedIn && !isAuthor"
+            class="btn primary"
+            :pending="pendingAction === 'chat'"
+            :disabled="pendingAction !== null"
+            pending-label="이동 중..."
+            @click="handleChatRequest"
+          >
             입양 문의 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
-          </button>
+          </AsyncButton>
 
           <!-- 작성자일 경우 -->
           <div v-if="isLoggedIn && isAuthor && detail.status" class="author-actions">
             <div class="status-actions">
-              <button
+              <AsyncButton
                 v-if="detail.status !== AdoptionPostStatus.PROCEEDING && detail.status !== AdoptionPostStatus.COMPLETED"
-                class="btn reserved" @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
+                class="btn reserved"
+                :pending="pendingAction === 'status'"
+                :disabled="pendingAction !== null"
+                @click="handleStatusChange(AdoptionPostStatus.PROCEEDING)">
                 모집중으로 변경
-              </button>
-              <button
+              </AsyncButton>
+              <AsyncButton
                 v-if="detail.status !== AdoptionPostStatus.RESERVED && detail.status !== AdoptionPostStatus.COMPLETED"
-                class="btn proceeding" @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
+                class="btn proceeding"
+                :pending="pendingAction === 'status'"
+                :disabled="pendingAction !== null"
+                @click="handleStatusChange(AdoptionPostStatus.RESERVED)">
                 예약중으로 변경
-              </button>
-              <button v-if="detail.status !== AdoptionPostStatus.COMPLETED" class="btn completed"
+              </AsyncButton>
+              <AsyncButton
+                v-if="detail.status !== AdoptionPostStatus.COMPLETED"
+                class="btn completed"
+                :pending="pendingAction === 'candidates'"
+                :disabled="pendingAction !== null"
+                pending-label="불러오는 중..."
                 @click="handleCompleteAdoptionClick">
                 입양 완료 처리
-              </button>
-              <button v-if="detail.status === AdoptionPostStatus.COMPLETED" class="btn cancel"
+              </AsyncButton>
+              <AsyncButton
+                v-if="detail.status === AdoptionPostStatus.COMPLETED"
+                class="btn cancel"
+                :pending="pendingAction === 'cancelComplete'"
+                :disabled="pendingAction !== null"
                 @click="handleCancelCompleteAdoption">
                 입양 완료 취소
-              </button>
+              </AsyncButton>
             </div>
             <button class="btn chat-list" @click="goToChatList">
               문의 온 채팅 {{ detail.chatRoomCount !== undefined ? `(${detail.chatRoomCount})` : '' }}
@@ -377,7 +439,15 @@ onMounted(async () => {
 
         <div class="modal-actions">
           <button class="btn secondary" @click="showCandidateModal = false">취소</button>
-          <button class="btn primary" @click="confirmCompleteAdoption">확인</button>
+          <AsyncButton
+            class="btn primary"
+            :pending="pendingAction === 'complete'"
+            :disabled="pendingAction !== null"
+            pending-label="처리 중..."
+            @click="confirmCompleteAdoption"
+          >
+            확인
+          </AsyncButton>
         </div>
       </div>
     </div>

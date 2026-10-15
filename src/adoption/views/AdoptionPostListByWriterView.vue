@@ -8,8 +8,10 @@ import { SpeciesLabels } from '@/adoption/enums/Species.ts';
 import { AdoptionPostResponse, AdoptionPostPageResponse } from '@/adoption/types/adoptionPost';
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
 import { RouteHelper } from '@/global/router/routeHelper';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import { Long_String } from '@/global/types/common';
-import { getApiErrorMessage } from '@/global/utils/apiError';
+import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const router = useRouter(); 
 const route = useRoute();
@@ -77,15 +79,13 @@ onMounted(() => {
             <h2>작성한 입양 공고</h2>
         </div>
 
-        <div v-if="loading" class="loading-state">
-            <div class="spinner"></div>
-            <p>목록을 불러오는 중입니다...</p>
-        </div>
+        <RequestLoadingState v-if="loading" message="목록을 불러오는 중입니다..." />
 
-        <div v-else-if="loadError" class="empty-state" role="alert">
-            <p>{{ loadError }}</p>
-            <button type="button" @click="fetchAdoptionPostListByWriter(currentPage)">다시 시도</button>
-        </div>
+        <RequestErrorState
+            v-else-if="loadError"
+            :message="loadError"
+            @retry="fetchAdoptionPostListByWriter(currentPage)"
+        />
 
         <div v-else-if="myAdoptionInfoList.length > 0">
             <div class="card-grid">

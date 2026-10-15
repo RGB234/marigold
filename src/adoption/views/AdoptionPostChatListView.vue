@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { extractProblemDetail, getApiErrorMessage } from '@/global/utils/apiError';
+import { extractProblemDetail, getApiErrorMessage } from '@/shared/errors/apiError';
 import { useRoute, useRouter } from 'vue-router';
 import { getAdoptionCandidates, getAdoptionPostDetail } from '@/adoption/api/adoptionPost.api';
 import { getOrCreateChatRoom } from '@/chat/api/chat.api';
 import { RouteHelper } from '@/global/router/routeHelper';
+import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
+import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import { AdoptionCandidateResponse, AdoptionPostDetailResponse } from '@/adoption/types/adoptionPost';
-import { useAlert } from '@/global/composables/useAlert';
+import { useToast } from '@/app/feedback/toast/useToast';
 import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
 import NoImage from '@/assets/images/no-image.jpeg';
 
 const route = useRoute();
 const router = useRouter();
-const { apiError } = useAlert();
+const toast = useToast();
 
 const adoptionPostId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id;
 
@@ -53,7 +55,7 @@ const goToChatRoom = async (candidateId: string) => {
         const chatRoom = await getOrCreateChatRoom(adoptionPostId, candidateId);
         router.push(RouteHelper.chat.room(chatRoom.id.toString()));
     } catch (error) {
-        apiError(error, "채팅방 이동 중 오류가 발생했습니다.");
+        toast.error(getApiErrorMessage(error, "채팅방 이동 중 오류가 발생했습니다."));
     }
 };
 
@@ -83,15 +85,9 @@ onMounted(() => {
             <h2>채팅 목록</h2>
         </div>
 
-        <div v-if="loading" class="loading-state">
-            <div class="spinner"></div>
-            <p>목록을 불러오는 중입니다...</p>
-        </div>
+        <RequestLoadingState v-if="loading" message="목록을 불러오는 중입니다..." />
 
-        <div v-else-if="loadError" class="empty-state" role="alert">
-            <p>{{ loadError }}</p>
-            <button type="button" @click="fetchData">다시 시도</button>
-        </div>
+        <RequestErrorState v-else-if="loadError" :message="loadError" @retry="fetchData" />
 
         <div v-else class="content-wrapper">
             <!-- 요약 게시글 정보 영역 -->

@@ -1,4 +1,4 @@
-import api from "@/global/apiClient";
+import api from "@/shared/api/apiClient";
 import { Long_String, PageableParams, TSID_String } from "@/global/types/common";
 import {
   AdoptionPostPageResponse, AdoptionPostDetailResponse,
@@ -12,28 +12,24 @@ import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 생성
 export const createAdoptionPost = async (formData: FormData): Promise<{ id: Long_String }> => {
-  const {data} = await api.post<{ id: Long_String }>("/adoption", formData, {
-    errorMode: "local",
-  });
+  const {data} = await api.post<{ id: Long_String }>("/adoption", formData);
   return data;
 };
 
 // 수정
 export const updateAdoptionPost = async (id: Long_String, formData: FormData): Promise<void> => {
-  await api.patch<void>(`/adoption/${id}`, formData, {
-    errorMode: "local",
-  });
+  await api.patch<void>(`/adoption/${id}`, formData);
 };
 
 // 삭제
 export const deleteAdoptionPost = async (id: Long_String): Promise<void> => {
-    await api.delete<void>(`/adoption/${id}`, { errorMode: "local" });
+    await api.delete<void>(`/adoption/${id}`);
 };
 
 // 입양 상태 변경
 export const updateAdoptionPostStatus = async (id: Long_String, status: string): Promise<void> => {
     const params = { status };
-    await api.patch<void>(`/adoption/${id}/status`, null, { params, errorMode: "local" });
+    await api.patch<void>(`/adoption/${id}/status`, null, { params });
 };
 
 
@@ -45,9 +41,7 @@ export const getAdoptionPostSummary = async (id: Long_String): Promise<AdoptionP
 
 // 상세보기
 export const getAdoptionPostDetail = async (id: Long_String): Promise<AdoptionPostDetailResponse> => {
-  const {data: detail} = await api.get<AdoptionPostDetailResponse>(`/adoption/${id}`, {
-    errorMode: "local",
-  });
+  const {data: detail} = await api.get<AdoptionPostDetailResponse>(`/adoption/${id}`);
 
   // 작성자 프로필 이미지
   if (!detail.writer?.imageUrl) {
@@ -63,25 +57,25 @@ export const getAdoptionPostDetail = async (id: Long_String): Promise<AdoptionPo
 
 // 목록 보기
 export const getAdoptionPostList = async (params: AdoptionPostSearchParams): Promise<AdoptionPostPageResponse> => {
-  const {data} = await api.get<AdoptionPostPageResponse>("/adoption", { params, errorMode: "local" });
+  const {data} = await api.get<AdoptionPostPageResponse>("/adoption", { params });
   return data;
 };
 
 // 작성글 목록 보기
 export const getAdoptionPostListByWriter = async (userId: TSID_String, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
-  const {data} = await api.get<AdoptionPostPageResponse>(`/adoption/writer/${userId}`, { params, errorMode: "local" });
+  const {data} = await api.get<AdoptionPostPageResponse>(`/adoption/writer/${userId}`, { params });
   return data;
 };
 
 export const getAdoptionPostListByAdopter = async (userId: TSID_String, params?: PageableParams): Promise<AdoptionPostPageResponse> => {
-  const {data} = await api.get<AdoptionPostPageResponse>(`/adoption/adopter/${userId}`, { params, errorMode: "local" });
+  const {data} = await api.get<AdoptionPostPageResponse>(`/adoption/adopter/${userId}`, { params });
   return data;
 };
 
 
 // 입양 후보자(채팅 상대) 목록 조회
 export const getAdoptionCandidates = async (id: Long_String): Promise<AdoptionCandidateResponse[]> => {
-  const {data: candidates} = await api.get<AdoptionCandidateResponse[]>(`/adoption/${id}/candidates`, { errorMode: "local" });
+  const {data: candidates} = await api.get<AdoptionCandidateResponse[]>(`/adoption/${id}/candidates`);
   if (candidates.length) {
     candidates.forEach((candidate) => {
       if (!candidate.imageUrl) {
@@ -94,17 +88,17 @@ export const getAdoptionCandidates = async (id: Long_String): Promise<AdoptionCa
 
 // 입양 완료 처리
 export const completeAdoption = async (id: Long_String, data: CompleteAdoptionRequest): Promise<void> => {
-  await api.post<void>(`/adoption/${id}/complete`, data, { errorMode: "local" });
+  await api.post<void>(`/adoption/${id}/complete`, data);
 };
 
 // 입양 완료 취소
 export const cancelCompleteAdoption = async (id: Long_String): Promise<void> => {
-  await api.post<void>(`/adoption/${id}/cancel-complete`, null, { errorMode: "local" });
+  await api.post<void>(`/adoption/${id}/cancel-complete`);
 };
 
 // 댓글 목록 조회
 export const getAdoptionComments = async (postId: Long_String): Promise<AdoptionCommentResponse[]> => {
-  const { data: comments } = await api.get<AdoptionCommentResponse[]>(`/adoption/${postId}/comments`, { errorMode: "local" });
+  const { data: comments } = await api.get<AdoptionCommentResponse[]>(`/adoption/${postId}/comments`);
   
   // 모든 작성자의 이미지가 없으면 기본 프로필로 설정
   const setDefaultImage = (comment: AdoptionCommentResponse) => {
@@ -122,7 +116,7 @@ export const getAdoptionComments = async (postId: Long_String): Promise<Adoption
 
 // 댓글 생성
 export const createAdoptionComment = async (postId: Long_String, formData: FormData): Promise<{ id: Long_String }> => {
-  const { data } = await api.post<{ id: Long_String }>(`/adoption/${postId}/comments`, formData, { errorMode: "local" });
+  const { data } = await api.post<{ id: Long_String }>(`/adoption/${postId}/comments`, formData);
   return data;
 };
 
@@ -132,12 +126,10 @@ export const updateAdoptionComment = async (
   commentId: Long_String,
   formData: FormData,
 ): Promise<void> => {
-  await api.patch<void>(`/adoption/${postId}/comments/${commentId}`, formData, {
-    errorMode: "local",
-  });
+  await api.patch<void>(`/adoption/${postId}/comments/${commentId}`, formData);
 };
 
 // 댓글 삭제
 export const deleteAdoptionComment = async (postId: Long_String, commentId: Long_String): Promise<void> => {
-  await api.delete<void>(`/adoption/${postId}/comments/${commentId}`, { errorMode: "local" });
+  await api.delete<void>(`/adoption/${postId}/comments/${commentId}`);
 };
