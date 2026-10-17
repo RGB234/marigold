@@ -86,9 +86,9 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/auth/stores/auth";
 import { startOAuth } from "@/auth/services/oauthFlow";
 import { ProviderInfo } from "@/auth/types/auth";
-import { useDialog } from "@/app/feedback/dialog/useDialog";
-import { useToast } from "@/app/feedback/toast/useToast";
-import { RouteHelper } from "@/global/router/routeHelper";
+import { useDialog } from "@/shared/feedback/dialog/useDialog";
+import { useToast } from "@/shared/feedback/toast/useToast";
+import { RouteHelper } from "@/shared/navigation/routeHelper";
 import { getUserSecurityInfo } from "@/user/api/user.api";
 import type { UserSecurityInfoDto } from "@/user/types/user";
 import {

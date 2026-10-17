@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import type { TSID_String } from "@/global/types/common";
+import type { TSID_String } from "@/shared/types/common";
 import {
   getCurrentUserProfile,
   updateCurrentUserProfile,

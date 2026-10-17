@@ -34,12 +34,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { startOAuth } from '@/auth/services/oauthFlow';
 import { ProviderInfo } from '@/auth/types/auth';
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
-import router from '@/global/router';
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 
 interface Provider {
   name: ProviderInfo;
@@ -47,6 +47,8 @@ interface Provider {
   class: string;
   icon: string;
 }
+
+const router = useRouter();
 
 // 소셜 로그인 제공자 데이터
 const providers = ref<Provider[]>([

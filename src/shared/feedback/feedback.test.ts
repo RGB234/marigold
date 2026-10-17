@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useDialogStore } from '@/app/feedback/dialog/dialog.store';
-import { useToastStore } from '@/app/feedback/toast/toast.store';
+import { useDialogStore } from '@/shared/feedback/dialog/dialog.store';
+import { useToastStore } from '@/shared/feedback/toast/toast.store';
 
 describe('dialog queue', () => {
   beforeEach(() => setActivePinia(createPinia()));

@@ -32,10 +32,10 @@ vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { roomId: 'room' } }),
   useRouter: () => ({ replace: mocks.replace, push: vi.fn() }),
 }));
-vi.mock('@/shared/api/apiClient', () => ({
+vi.mock('@/shared/http/client', () => ({
   CSRF_TOKEN_HEADER_NAME: 'X-CSRF-TOKEN', getCsrfToken: () => 'csrf',
 }));
-vi.mock('@/app/feedback/toast/useToast', () => ({
+vi.mock('@/shared/feedback/toast/useToast', () => ({
   useToast: () => ({ error: mocks.toastError }),
 }));
 vi.mock('@/chat/api/chat.api', () => ({

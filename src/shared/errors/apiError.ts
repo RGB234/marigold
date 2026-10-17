@@ -1,6 +1,6 @@
 import axios from "axios";
-import type { ProblemDetail } from "@/global/types/common";
-import { isProblemDetail } from "@/global/types/common";
+import type { ProblemDetail } from "@/shared/types/common";
+import { isProblemDetail } from "@/shared/types/common";
 import { getErrorMessage } from "@/shared/errors/errorMessages";
 
 export type AppError =

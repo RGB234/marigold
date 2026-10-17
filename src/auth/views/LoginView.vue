@@ -50,12 +50,12 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from "@/auth/stores/auth";
 import { startOAuth } from "@/auth/services/oauthFlow";
 import { ProviderInfo } from "@/auth/types/auth";
-import { useDialog } from '@/app/feedback/dialog/useDialog';
+import { useDialog } from '@/shared/feedback/dialog/useDialog';
 
 import naverIcon from '@/assets/images/naver-icon.png';
 import kakaoIcon from '@/assets/images/kakaotalk-icon.png';
-import { RouteHelper } from '@/global/router/routeHelper';
-import { validateEmail } from '@/global/validation/validators';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
+import { validateEmail } from '@/shared/validation/validators';
 import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
 
 const authStore = useAuthStore();

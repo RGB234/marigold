@@ -1,5 +1,5 @@
-import api from "@/shared/api/apiClient";
-import { Long_String, PageableParams, TSID_String } from "@/global/types/common";
+import api from "@/shared/http/client";
+import { Long_String, PageableParams, TSID_String } from "@/shared/types/common";
 import {
   AdoptionPostPageResponse, AdoptionPostDetailResponse,
   AdoptionPostSearchParams,

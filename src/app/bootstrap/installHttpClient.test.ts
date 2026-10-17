@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { installApiInterceptors } from './installApiInterceptors';
+import { installHttpClient } from './installHttpClient';
 import apiClient, {
   API_TIMEOUT_MS,
   cacheCsrfToken,
@@ -9,7 +9,7 @@ import apiClient, {
   CSRF_TOKEN_HEADER_NAME,
   getCsrfToken,
   UPLOAD_TIMEOUT_MS,
-} from '@/shared/api/apiClient';
+} from '@/shared/http/client';
 
 function failure(config: InternalAxiosRequestConfig, status: number, errorCode = 'INTERNAL_SERVER_ERROR') {
   return new AxiosError('request failed', 'ERR_BAD_RESPONSE', config, undefined, {
@@ -18,7 +18,7 @@ function failure(config: InternalAxiosRequestConfig, status: number, errorCode =
   });
 }
 function install(client: AxiosInstance, auth: { accessToken: string; refreshAccessToken: ReturnType<typeof vi.fn> }) {
-  installApiInterceptors(client, auth as unknown as Parameters<typeof installApiInterceptors>[1]);
+  installHttpClient(client, auth as unknown as Parameters<typeof installHttpClient>[1]);
 }
 
 describe('API interceptors', () => {

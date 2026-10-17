@@ -1,4 +1,4 @@
-import { TSID_String } from "@/global/types/common";
+import { TSID_String } from "@/shared/types/common";
 
 export type UserStatus = "ACTIVE" | "DELETED" | "BANNED" | "SLEEP";
 

@@ -1,4 +1,4 @@
-import {Long_String, TSID_String} from "@/global/types/common.ts";
+import {Long_String, TSID_String} from "@/shared/types/common.ts";
 
 export const RouteNames = {
   HOME: "Home",

@@ -114,20 +114,21 @@
 <script setup lang="ts">
 import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { registerWithPassword } from "@/auth/api/registration.api";
-import { useToast } from "@/app/feedback/toast/useToast";
-import router from "@/global/router";
-import { RouteHelper } from "@/global/router/routeHelper";
-import type { ValidationError } from "@/global/validation/validators";
+import { useToast } from "@/shared/feedback/toast/useToast";
+import { RouteHelper } from "@/shared/navigation/routeHelper";
+import type { ValidationError } from "@/shared/validation/validators";
 import {
   compactValidationErrors,
   validateEmail,
   validateNickname,
   validatePassword,
   validatePasswordConfirmation,
-} from "@/global/validation/validators";
+} from "@/shared/validation/validators";
 import AsyncButton from "@/shared/ui/request-state/AsyncButton.vue";
 
+const router = useRouter();
 const toast = useToast();
 
 const signupDto = ref({ email: "", password: "", nickname: "" });

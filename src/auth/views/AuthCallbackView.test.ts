@@ -12,7 +12,7 @@ vi.mock('vue-router', () => ({
 vi.mock('@/auth/stores/auth', () => ({
   useAuthStore: () => ({ restoreSession: mocks.initialize, isAuthenticated: true, userId: 'user' }),
 }));
-vi.mock('@/app/feedback/dialog/useDialog', () => ({ useDialog: () => ({ alert: vi.fn() }) }));
+vi.mock('@/shared/feedback/dialog/useDialog', () => ({ useDialog: () => ({ alert: vi.fn() }) }));
 vi.mock('@/auth/utils/pendingAuth', () => ({
   getPendingAuthState: () => ({ redirectTo: '/chat', expectedUserId: 'user' }),
   clearPendingAuthState: mocks.clearPending,

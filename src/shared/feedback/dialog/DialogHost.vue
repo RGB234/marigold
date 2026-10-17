@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDialogStore } from "@/app/feedback/dialog/dialog.store";
+import { useDialogStore } from "@/shared/feedback/dialog/dialog.store";
 
 const store = useDialogStore();
 </script>

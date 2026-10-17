@@ -4,7 +4,7 @@ import {
   PageableParams,
   PageResponse,
   TSID_String
-} from "@/global/types/common";
+} from "@/shared/types/common";
 import {Species} from "@/adoption/enums/Species.ts";
 import {Sex} from "@/adoption/enums/Sex.ts";
 import {Neutering} from "@/adoption/enums/Neutering.ts";

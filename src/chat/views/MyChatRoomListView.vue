@@ -4,10 +4,10 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/auth/stores/auth';
 import { getMyChatRooms } from '@/chat/api/chat.api';
 import type { ChatRoomDto } from '@/chat/types/chat';
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
-import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import UserProfileLink from '@/user/components/UserProfileLink.vue';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const router = useRouter();

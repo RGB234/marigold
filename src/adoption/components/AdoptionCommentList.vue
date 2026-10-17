@@ -6,7 +6,7 @@ import AdoptionCommentItem from './AdoptionCommentItem.vue';
 import AdoptionCommentInput from './AdoptionCommentInput.vue';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
-import type { Long_String } from '@/global/types/common';
+import type { Long_String } from '@/shared/types/common';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const props = defineProps<{

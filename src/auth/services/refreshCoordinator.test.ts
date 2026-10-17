@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { RefreshCoordinator } from "@/global/refreshCoordinator";
+import { RefreshCoordinator } from "@/auth/services/refreshCoordinator";
 
 describe("RefreshCoordinator", () => {
   it("동시에 들어온 요청은 하나의 갱신 작업을 공유한다", async () => {

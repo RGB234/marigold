@@ -1,4 +1,4 @@
-import type { ErrorDetail } from '@/global/types/common';
+import type { ErrorDetail } from '@/shared/types/common';
 
 export interface StompErrorResponse {
   timestamp: string;

@@ -1,4 +1,4 @@
-import type { TSID_String } from "@/global/types/common";
+import type { TSID_String } from "@/shared/types/common";
 
 const PENDING_AUTH_STORAGE_KEY = "auth.pending";
 

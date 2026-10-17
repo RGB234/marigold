@@ -2,7 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError } from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
-import { useToastStore } from '@/app/feedback/toast/toast.store';
+import { useToastStore } from '@/shared/feedback/toast/toast.store';
 import ProfileUpdateView from '@/user/views/ProfileUpdateView.vue';
 import AdoptionPostCreateView from '@/adoption/views/AdoptionPostCreateView.vue';
 import MyChatRoomListView from '@/chat/views/MyChatRoomListView.vue';
@@ -25,8 +25,8 @@ vi.mock('@/adoption/api/adoptionPost.api', () => ({
   createAdoptionPost: mocks.createPost, getAdoptionComments: mocks.getComments,
 }));
 vi.mock('@/chat/api/chat.api', () => ({ getMyChatRooms: mocks.getRooms }));
-vi.mock('@/global/validation/validators', async importOriginal => ({
-  ...await importOriginal<typeof import('@/global/validation/validators')>(),
+vi.mock('@/shared/validation/validators', async importOriginal => ({
+  ...await importOriginal<typeof import('@/shared/validation/validators')>(),
   validateAdoptionPostForm: () => [],
 }));
 

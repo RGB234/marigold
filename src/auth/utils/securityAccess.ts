@@ -1,4 +1,4 @@
-import type { TSID_String } from "@/global/types/common";
+import type { TSID_String } from "@/shared/types/common";
 
 const SECURITY_ACCESS_STORAGE_KEY = "user.security.access";
 const SECURITY_ACCESS_TTL_MS = 5 * 60 * 1000;

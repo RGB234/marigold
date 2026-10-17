@@ -2,15 +2,15 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { AdoptionCommentResponse } from '@/adoption/types/adoptionPost.ts';
 import AdoptionCommentInput from './AdoptionCommentInput.vue';
-import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import UserProfileLink from '@/user/components/UserProfileLink.vue';
 import { useAuthStore } from '@/auth/stores/auth';
 import { deleteAdoptionComment, updateAdoptionComment } from '@/adoption/api/adoptionPost.api';
-import { useDialog } from '@/app/feedback/dialog/useDialog';
-import { useToast } from '@/app/feedback/toast/useToast';
+import { useDialog } from '@/shared/feedback/dialog/useDialog';
+import { useToast } from '@/shared/feedback/toast/useToast';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
-import { validationPolicy } from '@/global/validation/validationPolicy';
-import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
-import type { Long_String } from '@/global/types/common';
+import { validationPolicy } from '@/shared/validation/validationPolicy';
+import { validateCommentContent, validateImageFiles } from '@/shared/validation/validators';
+import type { Long_String } from '@/shared/types/common';
 
 const props = defineProps<{
   comment: AdoptionCommentResponse;

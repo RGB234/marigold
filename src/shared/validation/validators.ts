@@ -1,5 +1,5 @@
-import type { ErrorDetail } from "@/global/types/common";
-import { validationPolicy } from "@/global/validation/validationPolicy";
+import type { ErrorDetail } from "@/shared/types/common";
+import { validationPolicy } from "@/shared/validation/validationPolicy";
 
 export type ValidationError = ErrorDetail;
 

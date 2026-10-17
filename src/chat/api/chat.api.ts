@@ -1,6 +1,6 @@
-import api from "@/shared/api/apiClient";
+import api from "@/shared/http/client";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
-import {Long_String, PageableParams, TSID_String} from "@/global/types/common.ts";
+import {Long_String, PageableParams, TSID_String} from "@/shared/types/common.ts";
 
 export const getOrCreateChatRoom = async (adoptionPostId: Long_String, receiverId: TSID_String): Promise<ChatRoomDto> => {
   const {data} = await api.post<ChatRoomDto>(`/chat/rooms`, {adoptionPostId, receiverId});

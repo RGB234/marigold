@@ -1,11 +1,11 @@
 import { useAuthStore } from "@/auth/stores/auth";
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import { useDialog } from "@/app/feedback/dialog/useDialog";
-import { useToast } from "@/app/feedback/toast/useToast";
+import { useDialog } from "@/shared/feedback/dialog/useDialog";
+import { useToast } from "@/shared/feedback/toast/useToast";
 import { getApiErrorMessage } from "@/shared/errors/apiError";
 import { hasSecurityAccess } from "@/auth/utils/securityAccess";
-import { RouteHelper, RouteNames } from "./routeHelper";
+import { RouteHelper, RouteNames } from "@/shared/navigation/routeHelper";
 
 // 라우트 설정에 RouteRecordRaw 타입 적용
 const routes: Array<RouteRecordRaw> = [
@@ -185,7 +185,10 @@ router.beforeEach(async (to, _from, next) => {
     } catch (error) {
       toast.error(getApiErrorMessage(error, "인증 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."));
       if (to.meta?.requiresAuth) {
-        return next(_from.matched.length ? false : RouteHelper.home());
+         if (_from.matched.length) {
+          return next(false);
+        }
+        return next(RouteHelper.home());
       }
     }
   }

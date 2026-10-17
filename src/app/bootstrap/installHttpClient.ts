@@ -1,7 +1,7 @@
 import type { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import type { useAuthStore } from "@/auth/stores/auth";
-import { ErrorCodes } from "@/global/errorCodes";
-import { logger } from "@/global/logger";
+import { ErrorCodes } from "@/shared/errors/errorCodes";
+import { logger } from "@/shared/lib/logger";
 import { normalizeApiError, type AppError } from "@/shared/errors/apiError";
 import {
   cacheCsrfToken,
@@ -9,7 +9,7 @@ import {
   getCsrfToken,
   API_TIMEOUT_MS,
   UPLOAD_TIMEOUT_MS,
-} from "@/shared/api/apiClient";
+} from "@/shared/http/client";
 
 type AuthStore = ReturnType<typeof useAuthStore>;
 
@@ -38,7 +38,7 @@ const shouldRefresh = (
   !!problemCode &&
   REFRESHABLE_AUTH_ERRORS.has(problemCode);
 
-export function installApiInterceptors(apiClient: AxiosInstance, authStore: AuthStore): void {
+export function installHttpClient(apiClient: AxiosInstance, authStore: AuthStore): void {
   const refreshAccessToken = async (): Promise<string | null> => {
     return authStore.refreshAccessToken();
   };

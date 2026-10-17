@@ -7,10 +7,10 @@ import { SexLabels } from '@/adoption/enums/Sex.ts';
 import { SpeciesLabels } from '@/adoption/enums/Species.ts';
 import { AdoptionPostResponse, AdoptionPostPageResponse } from '@/adoption/types/adoptionPost';
 import {AdoptionPostStatus, getAdoptionStatusLabel} from "@/adoption/enums/AdoptionPostStatus.ts";
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
-import { Long_String } from '@/global/types/common';
+import { Long_String } from '@/shared/types/common';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
 
 const router = useRouter(); 

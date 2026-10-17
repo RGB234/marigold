@@ -1,4 +1,4 @@
-import api from "@/shared/api/apiClient";
+import api from "@/shared/http/client";
 import type {
     RegisterEmailPasswordDto,
     UserInfoDto,

@@ -224,10 +224,10 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/auth/stores/auth";
 import { startOAuth } from "@/auth/services/oauthFlow";
 import { ProviderInfo } from "@/auth/types/auth";
-import { useDialog } from "@/app/feedback/dialog/useDialog";
-import { useToast } from "@/app/feedback/toast/useToast";
-import { ErrorCodes } from "@/global/errorCodes";
-import { RouteHelper } from "@/global/router/routeHelper";
+import { useDialog } from "@/shared/feedback/dialog/useDialog";
+import { useToast } from "@/shared/feedback/toast/useToast";
+import { ErrorCodes } from "@/shared/errors/errorCodes";
+import { RouteHelper } from "@/shared/navigation/routeHelper";
 import {
   deleteUser,
   getUserSecurityInfo,
@@ -237,7 +237,7 @@ import {
   validateEmail,
   validatePassword,
   validatePasswordConfirmation,
-} from "@/global/validation/validators";
+} from "@/shared/validation/validators";
 import type { LinkedOAuthProvider, UserSecurityInfoDto } from "@/user/types/user";
 import {
   clearSecurityAccess,

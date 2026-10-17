@@ -4,11 +4,11 @@ import { extractProblemDetail, getApiErrorMessage } from '@/shared/errors/apiErr
 import { useRoute, useRouter } from 'vue-router';
 import { getAdoptionCandidates, getAdoptionPostDetail } from '@/adoption/api/adoptionPost.api';
 import { getOrCreateChatRoom } from '@/chat/api/chat.api';
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import { AdoptionCandidateResponse, AdoptionPostDetailResponse } from '@/adoption/types/adoptionPost';
-import { useToast } from '@/app/feedback/toast/useToast';
+import { useToast } from '@/shared/feedback/toast/useToast';
 import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
 import NoImage from '@/assets/images/no-image.jpeg';
 

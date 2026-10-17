@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RouteHelper, RouteNames } from './routeHelper';
+import { RouteHelper, RouteNames } from '@/shared/navigation/routeHelper';
 import './index';
 
 const mocks = vi.hoisted(() => ({
@@ -12,8 +12,8 @@ vi.mock('vue-router', () => ({
 vi.mock('@/auth/stores/auth', () => ({
   useAuthStore: () => ({ ...mocks.auth, ensureInitialized: mocks.initialize }),
 }));
-vi.mock('@/app/feedback/dialog/useDialog', () => ({ useDialog: () => ({ alert: mocks.alert }) }));
-vi.mock('@/app/feedback/toast/useToast', () => ({ useToast: () => ({ error: mocks.toastError }) }));
+vi.mock('@/shared/feedback/dialog/useDialog', () => ({ useDialog: () => ({ alert: mocks.alert }) }));
+vi.mock('@/shared/feedback/toast/useToast', () => ({ useToast: () => ({ error: mocks.toastError }) }));
 
 const guard = mocks.beforeEach.mock.calls[0][0];
 

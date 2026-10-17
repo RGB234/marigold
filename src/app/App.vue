@@ -54,24 +54,24 @@
     </nav>
 
     <router-view />
-    <GlobalDialog />
-    <GlobalToast />
+    <DialogHost />
+    <ToastHost />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed, ref } from "vue";
-import { useAuthStore } from "./auth/stores/auth";
+import { useAuthStore } from "@/auth/stores/auth";
 import { useUserStore } from "@/user/stores/user";
-import GlobalDialog from "@/app/feedback/dialog/GlobalDialog.vue";
-import GlobalToast from "@/app/feedback/toast/GlobalToast.vue";
-import { RouteHelper } from "@/global/router/routeHelper.ts";
-import router from "@/global/router";
+import DialogHost from "@/shared/feedback/dialog/DialogHost.vue";
+import ToastHost from "@/shared/feedback/toast/ToastHost.vue";
+import { RouteHelper } from "@/shared/navigation/routeHelper.ts";
+import router from "@/app/router";
 import { RouteLocationRaw } from "vue-router";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
-import UserProfileLink from '@/global/components/UserProfileLink.vue';
-import AppIcon from '@/global/components/AppIcon.vue';
+import UserProfileLink from '@/user/components/UserProfileLink.vue';
+import AppIcon from '@/shared/ui/AppIcon.vue';
 
 const authStore = useAuthStore();
 const userStore = useUserStore();

@@ -29,7 +29,7 @@ import { useAuthStore } from '@/auth/stores/auth';
 import { useUserStore } from '@/user/stores/user';
 import type { UserInfoDto } from '@/user/types/user';
 import defaultProfileImage from '@/assets/images/default-profile.png';
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import { getApiErrorMessage } from '@/shared/errors/apiError';

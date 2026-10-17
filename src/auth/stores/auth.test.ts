@@ -6,7 +6,7 @@ import {
   refreshAuthSession,
   requestLogout,
 } from "@/auth/api/auth.api";
-import { clearCsrfToken } from "@/shared/api/apiClient";
+import { clearCsrfToken } from "@/shared/http/client";
 import { useAuthStore } from "@/auth/stores/auth";
 import type { AuthSession } from "@/auth/types/auth";
 
@@ -25,7 +25,7 @@ vi.mock("@/auth/utils/securityAccess", () => ({
   clearSecurityAccess: vi.fn(),
 }));
 
-vi.mock("@/shared/api/apiClient", () => ({
+vi.mock("@/shared/http/client", () => ({
   clearCsrfToken: vi.fn(),
 }));
 

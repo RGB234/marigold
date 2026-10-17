@@ -13,10 +13,10 @@ import type {
 } from "@/auth/types/auth";
 import { clearPendingAuthState } from "@/auth/utils/pendingAuth";
 import { clearSecurityAccess } from "@/auth/utils/securityAccess";
-import { clearCsrfToken } from "@/shared/api/apiClient";
-import { RefreshCoordinator } from "@/global/refreshCoordinator";
+import { clearCsrfToken } from "@/shared/http/client";
+import { RefreshCoordinator } from "@/auth/services/refreshCoordinator";
 import { normalizeApiError } from "@/shared/errors/apiError";
-import { validateTsid } from "@/global/validation/validators";
+import { validateTsid } from "@/shared/validation/validators";
 
 function isValidSession(session: unknown): session is AuthSession {
   if (!session || typeof session !== "object") {

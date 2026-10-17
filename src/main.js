@@ -2,17 +2,17 @@ import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
 import { useAuthStore } from "@/auth/stores/auth";
 import { useUserStore } from "@/user/stores/user";
-import apiClient from "@/shared/api/apiClient";
-import { installApiInterceptors } from "@/app/api/installApiInterceptors";
-import App from "./App.vue";
-import router from "./global/router";
-import { RouteHelper } from "@/global/router/routeHelper";
+import apiClient from "@/shared/http/client";
+import { installHttpClient } from "@/app/bootstrap/installHttpClient";
+import App from "@/app/App.vue";
+import router from "@/app/router";
+import { RouteHelper } from "@/shared/navigation/routeHelper";
 import { createVuetify } from "vuetify";
 import "vuetify/styles";
 import "./main.css"; // 최하단에서 import
 
 
-import { logger } from "@/global/logger";
+import { logger } from "@/shared/lib/logger";
 
 
 const vuetify = createVuetify();
@@ -48,7 +48,7 @@ watch(
   },
 );
 
-installApiInterceptors(apiClient, authStore);
+installHttpClient(apiClient, authStore);
 app.use(router);
 app.use(vuetify);
 

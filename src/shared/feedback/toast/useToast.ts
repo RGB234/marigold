@@ -1,4 +1,4 @@
-import { useToastStore, type ToastColor } from "@/app/feedback/toast/toast.store";
+import { useToastStore, type ToastColor } from "@/shared/feedback/toast/toast.store";
 
 export function useToast() {
   const store = useToastStore();

@@ -11,14 +11,14 @@ import { getOrCreateChatRoom } from '@/chat/api/chat.api';
 
 import { useAuthStore } from '@/auth/stores/auth';
 
-import { useDialog } from '@/app/feedback/dialog/useDialog';
-import { useToast } from '@/app/feedback/toast/useToast';
+import { useDialog } from '@/shared/feedback/dialog/useDialog';
+import { useToast } from '@/shared/feedback/toast/useToast';
 import { AdoptionPostDetailResponse, AdoptionCandidateResponse } from "@/adoption/types/adoptionPost.ts";
-import { RouteHelper } from "@/global/router/routeHelper.ts";
+import { RouteHelper } from "@/shared/navigation/routeHelper.ts";
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
 import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
-import UserProfileLink from '@/global/components/UserProfileLink.vue';
+import UserProfileLink from '@/user/components/UserProfileLink.vue';
 import AdoptionCommentList from '@/adoption/components/AdoptionCommentList.vue';
 import axios from "axios";
 import { getApiErrorMessage } from '@/shared/errors/apiError';

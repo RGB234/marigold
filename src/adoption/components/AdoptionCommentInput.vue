@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { createAdoptionComment } from '@/adoption/api/adoptionPost.api';
-import { useToast } from '@/app/feedback/toast/useToast';
+import { useToast } from '@/shared/feedback/toast/useToast';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
-import { validationPolicy } from '@/global/validation/validationPolicy';
-import { validateCommentContent, validateImageFiles } from '@/global/validation/validators';
-import type { Long_String } from '@/global/types/common';
+import { validationPolicy } from '@/shared/validation/validationPolicy';
+import { validateCommentContent, validateImageFiles } from '@/shared/validation/validators';
+import type { Long_String } from '@/shared/types/common';
 
 const props = defineProps<{
   postId: Long_String;

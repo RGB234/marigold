@@ -6,7 +6,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const source = resolve(
   process.env.VALIDATION_POLICY_SOURCE ?? resolve(scriptDir, "../../back/src/main/resources/validation-policy.json"),
 );
-const target = resolve(scriptDir, "../src/global/validation/validation-policy.json");
+const target = resolve(scriptDir, "../src/shared/validation/validation-policy.json");
 const command = process.argv[2];
 if (!["--check", "--write"].includes(command)) {
   console.error("Usage: node scripts/sync-validation-policy.mjs --check|--write");

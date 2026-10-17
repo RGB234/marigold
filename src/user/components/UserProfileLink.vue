@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { RouteHelper } from '@/global/router/routeHelper';
-import type { TSID_String } from '@/global/types/common';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
+import type { TSID_String } from '@/shared/types/common';
 import type { UserStatus } from '@/user/types/user';
 import defaultProfileImage from '@/assets/images/default-profile.png';
 

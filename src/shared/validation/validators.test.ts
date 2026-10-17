@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { validationPolicy } from "@/global/validation/validationPolicy";
+import { validationPolicy } from "@/shared/validation/validationPolicy";
 import {
   validateChatAttachmentFiles,
   validateImageFiles,
   validateNickname,
   validatePassword,
   validateTsid,
-} from "@/global/validation/validators";
+} from "@/shared/validation/validators";
 
 const file = (name: string, type: string, size: number) => {
   return new File(["a".repeat(size)], name, { type });

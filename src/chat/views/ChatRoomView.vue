@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getErrorMessage } from "@/shared/errors/errorMessages";
-import AppIcon from '@/global/components/AppIcon.vue';
+import AppIcon from '@/shared/ui/AppIcon.vue';
 import RetryButton from '@/shared/ui/request-state/RetryButton.vue';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
 import RequestLoadingState from '@/shared/ui/request-state/RequestLoadingState.vue';
@@ -10,9 +10,9 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import { useAuthStore } from '@/auth/stores/auth';
-import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/shared/api/apiClient';
-import { logger } from '@/global/logger';
-import { ErrorCodes } from '@/global/errorCodes';
+import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/shared/http/client';
+import { logger } from '@/shared/lib/logger';
+import { ErrorCodes } from '@/shared/errors/errorCodes';
 import {
   getChatRoomMessages,
   getChatRoom,
@@ -24,14 +24,14 @@ import type { ChatAttachmentDto, ChatMessageDto, ChatMessageRequestDto, ChatRoom
 import { parseStompErrorResponse } from '@/chat/types/stomp';
 import { chatDestinations } from '@/chat/chatDestinations';
 import type { AdoptionPostResponse } from '@/adoption/types/adoptionPost';
-import { RouteHelper } from '@/global/router/routeHelper';
+import { RouteHelper } from '@/shared/navigation/routeHelper';
 import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/AdoptionPostStatus';
 import NoImage from '@/assets/images/no-image.jpeg';
-import UserProfileLink from '@/global/components/UserProfileLink.vue';
-import { useToast } from '@/app/feedback/toast/useToast';
+import UserProfileLink from '@/user/components/UserProfileLink.vue';
+import { useToast } from '@/shared/feedback/toast/useToast';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
-import { validationPolicy } from '@/global/validation/validationPolicy';
-import { formatFileSize, validateChatAttachmentFiles } from '@/global/validation/validators';
+import { validationPolicy } from '@/shared/validation/validationPolicy';
+import { formatFileSize, validateChatAttachmentFiles } from '@/shared/validation/validators';
 
 const route = useRoute();
 const router = useRouter();

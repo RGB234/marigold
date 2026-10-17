@@ -1,4 +1,4 @@
-import {Long_String, PageResponse, TSID_String} from "@/global/types/common.ts";
+import {Long_String, PageResponse, TSID_String} from "@/shared/types/common.ts";
 
 export interface ChatRoomDto {
     id: TSID_String;

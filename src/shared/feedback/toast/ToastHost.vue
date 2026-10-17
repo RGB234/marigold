@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import AppIcon from "@/global/components/AppIcon.vue";
-import { useToastStore } from "@/app/feedback/toast/toast.store";
+import AppIcon from "@/shared/ui/AppIcon.vue";
+import { useToastStore } from "@/shared/feedback/toast/toast.store";
 
 const store = useToastStore();
 </script>

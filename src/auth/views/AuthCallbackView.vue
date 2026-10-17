@@ -8,9 +8,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useDialog } from "@/app/feedback/dialog/useDialog";
+import { useDialog } from "@/shared/feedback/dialog/useDialog";
 import { useAuthStore } from "@/auth/stores/auth";
-import { RouteHelper } from "@/global/router/routeHelper";
+import { RouteHelper } from "@/shared/navigation/routeHelper";
 import RequestErrorState from "@/shared/ui/request-state/RequestErrorState.vue";
 import RequestLoadingState from "@/shared/ui/request-state/RequestLoadingState.vue";
 import { getErrorMessage } from "@/shared/errors/errorMessages";

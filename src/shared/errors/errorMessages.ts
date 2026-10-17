@@ -1,4 +1,4 @@
-import type { ProblemDetail } from "@/global/types/common";
+import type { ProblemDetail } from "@/shared/types/common";
 
 // 언어를 추가할 때 같은 errorCode 키로 사전을 등록합니다.
 export const errorMessages: Record<string, Record<string, string>> = {
