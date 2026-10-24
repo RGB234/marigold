@@ -27,6 +27,7 @@ export const errorMessages: Record<string, Record<string, string>> = {
     CHAT_ROOM_CLOSED: "종료된 채팅방에는 메시지를 보낼 수 없습니다.",
     CHAT_ROOM_NOT_FOUND: "존재하지 않는 채팅방입니다.",
     CHAT_ROOM_TYPE_INVALID: "채팅방 조회 유형이 올바르지 않습니다.",
+    CONCURRENT_MODIFICATION: "다른 요청이 먼저 변경했습니다. 새로고침 후 다시 시도해 주세요.",
     FILE_INVALID: "파일이 올바르지 않습니다.",
     FILE_NOT_FOUND: "파일을 찾을 수 없습니다.",
     FILE_READ_FAILED: "파일을 읽는 중 오류가 발생했습니다.",
