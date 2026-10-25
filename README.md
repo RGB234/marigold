@@ -94,9 +94,18 @@ UI 또는 Store → 도메인 API 모듈 → 공통 HTTP client → 백엔드 RE
 - 공통 HTTP client는 만료된 access token의 갱신과 요청 재시도를 처리합니다. 로그아웃하면 메모리의 인증 상태와 현재 사용자 정보를 비웁니다.
 - 파일은 `@/shared/http/upload`의 `uploadFiles`로 올립니다. 백엔드에서 업로드 URL과 토큰을 발급받아 저장소에 직접 `PUT`하고, 도메인 API에는 JSON으로 토큰만 보냅니다. 직접 `PUT`은 인증 헤더와 쿠키가 붙지 않도록 공통 HTTP client 대신 `fetch`를 씁니다.
 
+### 오류 처리
+
+- 백엔드 오류 응답은 RFC 9457 Problem Details 형식이며, `errorCode`, `requestId`와 입력 검증 실패 시 `errors`를 함께 담습니다.
+- `@/shared/errors/apiError`의 `normalizeApiError`는 요청 오류를 `api`, `network`, `timeout`, `cancelled`, `unknown`으로 분류합니다.
+- 화면에 보여 줄 문구는 `getApiErrorMessage`로 얻습니다. `errorMessages.ts`에 해당 `errorCode`의 문구가 있으면 그 문구를, 없으면 응답의 `detail`을, 그것도 없으면 호출한 쪽이 넘긴 기본 문구를 씁니다. 취소된 요청은 빈 문자열을 반환하고, 저장소 직접 업로드 실패는 별도 문구를 씁니다.
+- 공통 HTTP client는 오류를 로그로 남기고, 인증 오류 코드가 담긴 401 응답에 대해서만 access token 갱신과 재시도를 처리합니다. 오류 표시는 각 화면이 toast나 화면 내 문구로 담당합니다.
+- 입력 검증 오류는 `extractProblemDetail`로 꺼낸 `errors`를 필드별 오류로 표시합니다.
+- 백엔드에 오류 코드를 추가하면 `errorMessages.ts`에 같은 키로 문구를 추가합니다.
+
 ## 6. 실시간 채팅
 
-채팅방과 기존 메시지 조회, 첨부 파일 업로드와 다운로드 URL 조회는 REST를 사용합니다. 텍스트 메시지 송수신은 SockJS/STOMP 연결을 사용합니다. 실시간 연결과 메시지 처리 시 서버가 인증 상태와 채팅방 참가 여부를 검증합니다.
+채팅방과 기존 메시지 조회, 첨부 파일 다운로드 URL 조회는 REST를 사용합니다. 첨부 파일은 저장소에 직접 올린 뒤, 발급받은 업로드 토큰을 REST로 보내 파일 메시지를 만듭니다. 텍스트 메시지 송수신은 SockJS/STOMP 연결을 사용합니다. 실시간 연결과 메시지 처리 시 서버가 인증 상태와 채팅방 참가 여부를 검증합니다.
 
 채팅방을 나간 사용자는 메시지와 첨부파일에 접근할 수 없습니다. 다시 참여하면 참여 시점 이전의 대화 내용도 볼 수 있습니다.
 
