@@ -67,16 +67,11 @@ const submitComment = async () => {
 
   isSubmitting.value = true;
   try {
-    const formData = new FormData();
-    formData.append('content', content.value);
-    if (props.parentId) {
-      formData.append('parentId', props.parentId.toString());
-    }
-    images.value.forEach(file => {
-      formData.append('images', file);
-    });
-
-    await createAdoptionComment(props.postId, formData);
+    await createAdoptionComment(
+      props.postId,
+      { content: content.value, parentId: props.parentId },
+      images.value,
+    );
     toast.success('댓글이 등록되었습니다.');
     
     // 초기화

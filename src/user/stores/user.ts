@@ -5,7 +5,7 @@ import {
   getCurrentUserProfile,
   updateCurrentUserProfile,
 } from "@/user/api/user.api";
-import type { UserInfoDto } from "@/user/types/user";
+import type { UserInfoDto, UserUpdateRequest } from "@/user/types/user";
 
 export type CurrentUserPhase = "idle" | "loading" | "ready" | "updating" | "error";
 
@@ -70,7 +70,7 @@ export const useUserStore = defineStore("user", () => {
     return pending;
   }
 
-  async function updateCurrentUser(formData: FormData): Promise<void> {
+  async function updateCurrentUser(request: UserUpdateRequest, image: File | null): Promise<void> {
     const expectedUserId = ownerId.value;
     if (!expectedUserId) {
       throw new Error("Cannot update a profile without an authenticated user");
@@ -79,7 +79,7 @@ export const useUserStore = defineStore("user", () => {
     const generation = requestGeneration;
     phase.value = "updating";
     try {
-      const updatedProfile = await updateCurrentUserProfile(formData);
+      const updatedProfile = await updateCurrentUserProfile(request, image);
       if (generation !== requestGeneration || ownerId.value !== expectedUserId) {
         return;
       }

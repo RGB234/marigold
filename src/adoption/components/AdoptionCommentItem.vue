@@ -206,14 +206,12 @@ const submitEdit = async () => {
 
   isUpdating.value = true;
   try {
-    const formData = new FormData();
-    formData.append('content', editContent.value);
-    formData.append('removeImage', String(removeImageOnEdit.value));
-    if (editImage.value) {
-      formData.append('images', editImage.value);
-    }
-
-    await updateAdoptionComment(props.postId, props.comment.id, formData);
+    await updateAdoptionComment(
+      props.postId,
+      props.comment.id,
+      { content: editContent.value, removeImage: removeImageOnEdit.value },
+      editImage.value ? [editImage.value] : [],
+    );
     toast.success('댓글이 수정되었습니다.');
     resetEditImageState();
     isEditing.value = false;

@@ -154,7 +154,6 @@ import { useToast } from "@/shared/feedback/toast/useToast";
 import { RouteHelper } from "@/shared/navigation/routeHelper";
 import type { ErrorDetail } from "@/shared/types/common";
 import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
-import { convertToFormData } from "@/shared/lib/objectUtils";
 import { validationPolicy } from "@/shared/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/shared/validation/validators";
 import AsyncButton from "@/shared/ui/request-state/AsyncButton.vue";
@@ -294,11 +293,21 @@ const handleSubmit = async () => {
     return;
   }
 
-  const formData = convertToFormData({ ...form }) as FormData;
-
   isSubmitting.value = true;
   try {
-    const response = await createAdoptionPost(formData);
+    const response = await createAdoptionPost(
+      {
+        species: form.species,
+        title: form.title.trim(),
+        age: form.age,
+        sex: form.sex,
+        area: form.area.trim(),
+        weight: form.weight,
+        neutering: form.neutering,
+        features: form.features.trim(),
+      },
+      form.images,
+    );
     const createdPostId = response.id;
 
     toast.success("입양글 작성이 완료되었습니다.");

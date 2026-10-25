@@ -1,4 +1,5 @@
 import api from "@/shared/http/client";
+import { uploadFiles } from "@/shared/http/upload";
 import { Long_String, PageableParams, TSID_String } from "@/shared/types/common";
 import {
   AdoptionPostPageResponse, AdoptionPostDetailResponse,
@@ -7,18 +8,31 @@ import {
   CompleteAdoptionRequest,
   AdoptionPostResponse,
   AdoptionCommentResponse,
+  AdoptionPostCreateRequest,
+  AdoptionPostUpdateRequest,
+  AdoptionCommentCreateRequest,
+  AdoptionCommentUpdateRequest,
 } from "@/adoption/types/adoptionPost";
 import defaultProfileImage from '@/assets/images/default-profile.png';
 
 // 생성
-export const createAdoptionPost = async (formData: FormData): Promise<{ id: Long_String }> => {
-  const {data} = await api.post<{ id: Long_String }>("/adoption", formData);
+export const createAdoptionPost = async (
+  request: AdoptionPostCreateRequest,
+  images: File[],
+): Promise<{ id: Long_String }> => {
+  const uploadTokens = await uploadFiles("ADOPTION_POST_IMAGE", images);
+  const {data} = await api.post<{ id: Long_String }>("/adoption", { ...request, uploadTokens });
   return data;
 };
 
 // 수정
-export const updateAdoptionPost = async (id: Long_String, formData: FormData): Promise<void> => {
-  await api.patch<void>(`/adoption/${id}`, formData);
+export const updateAdoptionPost = async (
+  id: Long_String,
+  request: AdoptionPostUpdateRequest,
+  newImages: File[],
+): Promise<void> => {
+  const uploadTokens = await uploadFiles("ADOPTION_POST_IMAGE", newImages);
+  await api.patch<void>(`/adoption/${id}`, { ...request, uploadTokens });
 };
 
 // 삭제
@@ -115,8 +129,16 @@ export const getAdoptionComments = async (postId: Long_String): Promise<Adoption
 };
 
 // 댓글 생성
-export const createAdoptionComment = async (postId: Long_String, formData: FormData): Promise<{ id: Long_String }> => {
-  const { data } = await api.post<{ id: Long_String }>(`/adoption/${postId}/comments`, formData);
+export const createAdoptionComment = async (
+  postId: Long_String,
+  request: AdoptionCommentCreateRequest,
+  images: File[],
+): Promise<{ id: Long_String }> => {
+  const uploadTokens = await uploadFiles("ADOPTION_COMMENT_IMAGE", images);
+  const { data } = await api.post<{ id: Long_String }>(`/adoption/${postId}/comments`, {
+    ...request,
+    uploadTokens,
+  });
   return data;
 };
 
@@ -124,9 +146,11 @@ export const createAdoptionComment = async (postId: Long_String, formData: FormD
 export const updateAdoptionComment = async (
   postId: Long_String,
   commentId: Long_String,
-  formData: FormData,
+  request: AdoptionCommentUpdateRequest,
+  newImages: File[],
 ): Promise<void> => {
-  await api.patch<void>(`/adoption/${postId}/comments/${commentId}`, formData);
+  const uploadTokens = await uploadFiles("ADOPTION_COMMENT_IMAGE", newImages);
+  await api.patch<void>(`/adoption/${postId}/comments/${commentId}`, { ...request, uploadTokens });
 };
 
 // 댓글 삭제

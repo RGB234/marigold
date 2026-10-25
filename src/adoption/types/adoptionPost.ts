@@ -90,6 +90,35 @@ export interface CompleteAdoptionRequest {
   adopterId: TSID_String;
 }
 
+/**
+ * 입양 게시글 생성 요청. 이미지는 API 모듈이 업로드 토큰으로 바꿔 보냅니다.
+ */
+export interface AdoptionPostCreateRequest {
+  species: Species | string;
+  title: string;
+  age: number;
+  sex: Sex | string;
+  area: string;
+  weight: number;
+  neutering: Neutering | string;
+  features: string;
+}
+
+export interface AdoptionPostUpdateRequest extends AdoptionPostCreateRequest {
+  /** 유지할 기존 이미지의 저장 파일명 */
+  imagesToKeep: string[];
+}
+
+export interface AdoptionCommentCreateRequest {
+  content: string;
+  parentId?: Long_String;
+}
+
+export interface AdoptionCommentUpdateRequest {
+  content: string;
+  removeImage: boolean;
+}
+
 export interface AdoptionCommentResponse {
   id: Long_String;
   adoptionPostId: Long_String;

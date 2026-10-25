@@ -298,17 +298,11 @@ const sendTextMessage = () => {
 };
 
 const sendFileMessage = async () => {
-  const formData = new FormData();
-  if (newMessage.value.trim()) {
-    formData.append('message', newMessage.value);
-  }
-  selectedFiles.value.forEach((file) => {
-    formData.append('files', file);
-  });
+  const message = newMessage.value.trim() ? newMessage.value : undefined;
 
   isSending.value = true;
   try {
-    const savedMessage = await createChatFileMessage(roomId.value, formData);
+    const savedMessage = await createChatFileMessage(roomId.value, message, selectedFiles.value);
     if (!stompClient?.connected) {
       messages.value.push(savedMessage);
       scrollToBottom();

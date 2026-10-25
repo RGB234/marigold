@@ -92,6 +92,7 @@ UI 또는 Store → 도메인 API 모듈 → 공통 HTTP client → 백엔드 RE
 - CSRF token은 인증 관련 응답의 `X-CSRF-TOKEN` 헤더에서 받아 메모리에 보관합니다. 백엔드는 같은 값을 `XSRF-TOKEN` 쿠키에도 설정하며, 상태 변경 요청에서는 브라우저가 전송하는 쿠키와 프론트엔드가 추가하는 헤더를 함께 검증하여 CSRF 공격을 방어합니다.
 - `/auth/status`는 refresh token cookie의 존재 여부를 확인하고, `/auth/refresh`는 token을 검증하여 인증 상태를 복원합니다.
 - 공통 HTTP client는 만료된 access token의 갱신과 요청 재시도를 처리합니다. 로그아웃하면 메모리의 인증 상태와 현재 사용자 정보를 비웁니다.
+- 파일은 `@/shared/http/upload`의 `uploadFiles`로 올립니다. 백엔드에서 업로드 URL과 토큰을 발급받아 저장소에 직접 `PUT`하고, 도메인 API에는 JSON으로 토큰만 보냅니다. 직접 `PUT`은 인증 헤더와 쿠키가 붙지 않도록 공통 HTTP client 대신 `fetch`를 씁니다.
 
 ## 6. 실시간 채팅
 

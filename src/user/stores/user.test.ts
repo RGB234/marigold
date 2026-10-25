@@ -91,7 +91,7 @@ describe("user store", () => {
 
     const user = useUserStore();
     await user.loadCurrentUser("user-a");
-    await user.updateCurrentUser(new FormData());
+    await user.updateCurrentUser({ nickname: "after", removeImage: false }, null);
 
     expect(user.profile?.nickname).toBe("after");
     expect(user.phase).toBe("ready");

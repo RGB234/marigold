@@ -158,7 +158,6 @@ import { useToast } from "@/shared/feedback/toast/useToast";
 import { RouteHelper } from "@/shared/navigation/routeHelper";
 import type { ErrorDetail } from "@/shared/types/common";
 import { extractProblemDetail, getApiErrorMessage } from "@/shared/errors/apiError";
-import { convertToFormData } from "@/shared/lib/objectUtils";
 import { validationPolicy } from "@/shared/validation/validationPolicy";
 import { validateAdoptionPostForm, validateImageFiles } from "@/shared/validation/validators";
 import NoImage from "@/assets/images/no-image.jpeg";
@@ -369,12 +368,24 @@ const handleSubmit = async () => {
     return;
   }
 
-  const formData = convertToFormData(form);
-
   isSubmitting.value = true;
   try {
     const routeId = getRouteId();
-    await updateAdoptionPost(routeId, formData);
+    await updateAdoptionPost(
+      routeId,
+      {
+        species: form.species,
+        title: form.title.trim(),
+        age: form.age,
+        sex: form.sex,
+        area: form.area.trim(),
+        weight: form.weight,
+        neutering: form.neutering,
+        features: form.features.trim(),
+        imagesToKeep: form.imagesToKeep.map((image) => image.fileName),
+      },
+      form.images,
+    );
 
     toast.success("입양글 수정이 완료되었습니다.");
     await router.push(RouteHelper.adoption.detail(routeId));

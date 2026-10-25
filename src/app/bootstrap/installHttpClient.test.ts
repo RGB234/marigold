@@ -8,7 +8,6 @@ import apiClient, {
   clearCsrfToken,
   CSRF_TOKEN_HEADER_NAME,
   getCsrfToken,
-  UPLOAD_TIMEOUT_MS,
 } from '@/shared/http/client';
 
 function failure(config: InternalAxiosRequestConfig, status: number, errorCode = 'INTERNAL_SERVER_ERROR') {
@@ -101,7 +100,7 @@ describe('API interceptors', () => {
     await expect(client.get('/private')).rejects.toBe(temporary);
   });
 
-  it('limits normal requests and gives multipart uploads a longer timeout', async () => {
+  it('limits normal requests and keeps an explicit timeout', async () => {
     const received: number[] = [];
     const client = axios.create({ timeout: apiClient.defaults.timeout, adapter: async config => {
       received.push(config.timeout!);
@@ -109,9 +108,8 @@ describe('API interceptors', () => {
     } });
     install(client, { accessToken: '', refreshAccessToken: vi.fn() });
     await client.get('/list');
-    await client.post('/upload', new FormData());
-    await client.post('/upload', new FormData(), { timeout: 90_000 });
-    expect(received).toEqual([API_TIMEOUT_MS, UPLOAD_TIMEOUT_MS, 90_000]);
+    await client.post('/slow', {}, { timeout: 90_000 });
+    expect(received).toEqual([API_TIMEOUT_MS, 90_000]);
     expect(API_TIMEOUT_MS).toBeGreaterThan(0);
   });
 

@@ -21,6 +21,14 @@ export interface UserSecurityInfoDto {
     hasOAuth2Link: boolean;
 }
 
+/**
+ * 프로필 수정 요청. 새 이미지는 API 모듈이 업로드 토큰으로 바꿔 보냅니다.
+ */
+export interface UserUpdateRequest {
+    nickname: string;
+    removeImage: boolean;
+}
+
 export interface RegisterEmailPasswordDto {
     email: string;
     password: string;

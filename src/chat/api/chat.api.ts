@@ -1,4 +1,5 @@
 import api from "@/shared/http/client";
+import { uploadFiles } from "@/shared/http/upload";
 import {ChatMessageDto, ChatRoomDto, ChatRoomPageResponse} from "@/chat/types/chat";
 import {Long_String, PageableParams, TSID_String} from "@/shared/types/common.ts";
 
@@ -26,8 +27,16 @@ export const getChatRoomMessages = async (roomId: TSID_String): Promise<ChatMess
   return data;
 };
 
-export const createChatFileMessage = async (roomId: TSID_String, formData: FormData): Promise<ChatMessageDto> => {
-  const {data} = await api.post<ChatMessageDto>(`/chat/rooms/${roomId}/messages/files`, formData);
+export const createChatFileMessage = async (
+  roomId: TSID_String,
+  message: string | undefined,
+  files: File[],
+): Promise<ChatMessageDto> => {
+  const uploadTokens = await uploadFiles("CHAT_ATTACHMENT", files);
+  const {data} = await api.post<ChatMessageDto>(`/chat/rooms/${roomId}/messages/files`, {
+    message,
+    uploadTokens,
+  });
   return data;
 };
 

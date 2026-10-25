@@ -7,8 +7,6 @@ import {
   cacheCsrfToken,
   CSRF_TOKEN_HEADER_NAME,
   getCsrfToken,
-  API_TIMEOUT_MS,
-  UPLOAD_TIMEOUT_MS,
 } from "@/shared/http/client";
 
 type AuthStore = ReturnType<typeof useAuthStore>;
@@ -45,10 +43,6 @@ export function installHttpClient(apiClient: AxiosInstance, authStore: AuthStore
 
   apiClient.interceptors.request.use(
     async (config) => {
-      if (config.data instanceof FormData && config.timeout === API_TIMEOUT_MS) {
-        config.timeout = UPLOAD_TIMEOUT_MS;
-      }
-
       if (authStore.accessToken) {
         config.headers.Authorization = `Bearer ${authStore.accessToken}`;
       }

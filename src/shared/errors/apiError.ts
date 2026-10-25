@@ -2,6 +2,7 @@ import axios from "axios";
 import type { ProblemDetail } from "@/shared/types/common";
 import { isProblemDetail } from "@/shared/types/common";
 import { getErrorMessage } from "@/shared/errors/errorMessages";
+import { DirectUploadError } from "@/shared/http/upload";
 
 export type AppError =
   | { type: "api"; status: number; problem: ProblemDetail | null }
@@ -40,6 +41,9 @@ export function normalizeApiError(error: unknown): AppError {
 }
 
 export function getApiErrorMessage(error: unknown, fallback?: string): string {
+  if (error instanceof DirectUploadError) {
+    return "파일 업로드에 실패했습니다. 네트워크 상태를 확인한 후 다시 시도해주세요.";
+  }
   const normalized = normalizeApiError(error);
   switch (normalized.type) {
     case "cancelled":

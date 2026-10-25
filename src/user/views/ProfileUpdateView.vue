@@ -60,7 +60,6 @@ import defaultProfileImage from '@/assets/images/default-profile.png';
 import { RouteHelper } from '@/shared/navigation/routeHelper';
 import type { ErrorDetail } from '@/shared/types/common';
 import { extractProblemDetail, getApiErrorMessage } from '@/shared/errors/apiError';
-import { convertToFormData } from '@/shared/lib/objectUtils';
 import { validateImageFiles, validateNickname } from '@/shared/validation/validators';
 import AsyncButton from '@/shared/ui/request-state/AsyncButton.vue';
 import RequestErrorState from '@/shared/ui/request-state/RequestErrorState.vue';
@@ -207,9 +206,11 @@ const submitForm = async () => {
 
     try {
         isSubmitting.value = true;
-        const formData = convertToFormData(form);
-
-        await userStore.updateCurrentUser(formData);
+        // 기본 이미지로 되돌릴 때는 새 이미지를 올리지 않는다
+        await userStore.updateCurrentUser(
+            { nickname: form.nickname.trim(), removeImage: form.removeImage },
+            form.removeImage ? null : form.image,
+        );
 
         if (userId.value) {
             await router.push(RouteHelper.user.profile(userId.value));
