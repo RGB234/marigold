@@ -109,4 +109,6 @@ UI 또는 Store → 도메인 API 모듈 → 공통 HTTP client → 백엔드 RE
 | `VITE_API_OAUTH2_KAKAO` | Kakao OAuth 시작 주소 |
 | `VITE_API_OAUTH2_NAVER` | Naver OAuth 시작 주소 |
 
+로컬 개발은 `.env.local`, 운영 빌드(`npm run build:prod`, `npm run deploy`)는 `.env.prod`를 읽습니다. 두 파일 모두 저장소에 포함하지 않으므로 `.env.example`을 복사해 환경에 맞는 주소로 채웁니다.
+
 `VITE_*` 값은 브라우저 번들에 포함될 수 있으므로 비밀값을 넣지 않습니다.
