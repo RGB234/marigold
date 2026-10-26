@@ -2,13 +2,14 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatRoomView from './ChatRoomView.vue';
 import RetryButton from '@/shared/ui/request-state/RetryButton.vue';
-import { getChatRoomMessages } from '@/chat/api/chat.api';
+import { getChatRoomMessages, leaveChatRoom } from '@/chat/api/chat.api';
 
 const mocks = vi.hoisted(() => ({
   clients: [] as any[],
   refresh: vi.fn(),
   replace: vi.fn(),
   toastError: vi.fn(),
+  confirm: vi.fn(),
   auth: { accessToken: 'old-token', userId: 'user' } as any,
 }));
 
@@ -39,10 +40,14 @@ vi.mock('@/shared/http/client', () => ({
 vi.mock('@/shared/feedback/toast/useToast', () => ({
   useToast: () => ({ error: mocks.toastError }),
 }));
+vi.mock('@/shared/feedback/dialog/useDialog', () => ({
+  useDialog: () => ({ confirm: mocks.confirm }),
+}));
 vi.mock('@/chat/api/chat.api', () => ({
   getChatRoom: vi.fn().mockResolvedValue({ postId: 'post' }),
   getChatRoomMessages: vi.fn().mockResolvedValue([]),
   createChatFileMessage: vi.fn(), getChatAttachmentDownloadUrl: vi.fn(),
+  leaveChatRoom: vi.fn(),
 }));
 vi.mock('@/adoption/api/adoptionPost.api', () => ({
   getAdoptionPostSummary: vi.fn().mockResolvedValue({ id: 'post' }),
@@ -186,6 +191,52 @@ describe('chat connection authentication', () => {
     } finally {
       wrapper.unmount();
     }
+  });
+
+  it('closes the connection before leaving and moves to the chat list', async () => {
+    mocks.confirm.mockResolvedValueOnce(true);
+    vi.mocked(leaveChatRoom).mockResolvedValueOnce(undefined);
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      const client = mocks.clients[0];
+      await wrapper.find('.leave-btn').trigger('click');
+      await flushPromises();
+
+      expect(client.reconnectDelay).toBe(0);
+      expect(client.deactivate).toHaveBeenCalled();
+      expect(leaveChatRoom).toHaveBeenCalledWith('room');
+      expect(mocks.replace).toHaveBeenCalledWith({ name: 'chat_list' });
+    } finally { wrapper.unmount(); }
+  });
+
+  it('reconnects and stays in the room when leaving fails', async () => {
+    mocks.confirm.mockResolvedValueOnce(true);
+    vi.mocked(leaveChatRoom).mockRejectedValueOnce(new Error('fail'));
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      await wrapper.find('.leave-btn').trigger('click');
+      await flushPromises();
+
+      expect(mocks.toastError).toHaveBeenCalledWith('채팅방을 나가지 못했습니다.');
+      expect(mocks.clients).toHaveLength(2);
+      expect(mocks.clients[1].activate).toHaveBeenCalled();
+      expect(mocks.replace).not.toHaveBeenCalled();
+    } finally { wrapper.unmount(); }
+  });
+
+  it('does not leave when the confirmation is cancelled', async () => {
+    mocks.confirm.mockResolvedValueOnce(false);
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      await wrapper.find('.leave-btn').trigger('click');
+      await flushPromises();
+
+      expect(leaveChatRoom).not.toHaveBeenCalled();
+      expect(mocks.clients[0].deactivate).not.toHaveBeenCalled();
+    } finally { wrapper.unmount(); }
   });
 
   it('handles retryable and non-retryable fatal STOMP errors', async () => {

@@ -18,6 +18,7 @@ import {
   getChatRoom,
   createChatFileMessage,
   getChatAttachmentDownloadUrl,
+  leaveChatRoom,
 } from '@/chat/api/chat.api';
 import { getAdoptionPostSummary } from '@/adoption/api/adoptionPost.api';
 import type { ChatAttachmentDto, ChatMessageDto, ChatMessageRequestDto, ChatRoomDto } from '@/chat/types/chat';
@@ -29,6 +30,7 @@ import { AdoptionPostStatus, getAdoptionStatusLabel } from '@/adoption/enums/Ado
 import NoImage from '@/assets/images/no-image.jpeg';
 import UserProfileLink from '@/user/components/UserProfileLink.vue';
 import { useToast } from '@/shared/feedback/toast/useToast';
+import { useDialog } from '@/shared/feedback/dialog/useDialog';
 import { getApiErrorMessage } from '@/shared/errors/apiError';
 import { validationPolicy } from '@/shared/validation/validationPolicy';
 import { formatFileSize, validateChatAttachmentFiles } from '@/shared/validation/validators';
@@ -37,6 +39,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
+const { confirm } = useDialog();
 const roomId = computed(() => {
   const id = route.params.roomId;
   return Array.isArray(id) ? id[0] : id;
@@ -69,6 +72,7 @@ const postInfo = ref<AdoptionPostResponse | null>(null);
 const isReconnecting = ref(false);
 const isConnectionFailed = ref(false);
 const isSending = ref(false);
+const isLeaving = ref(false);
 const initialLoading = ref(true);
 const loadError = ref('');
 const retryCount = ref(0);
@@ -238,8 +242,36 @@ const connectWebSocket = () => {
   client.activate();
 };
 
+const disconnectWebSocket = () => {
+  isManualDisconnect = true;
+  const client = stompClient;
+  stompClient = null;
+  if (client) {
+    client.reconnectDelay = 0;
+    void client.deactivate();
+  }
+};
+
 const retryConnect = () => {
   connectWebSocket();
+};
+
+const leaveRoom = async () => {
+  if (isLeaving.value) return;
+  if (!(await confirm('확인', '채팅방을 나가면 대화 내용을 볼 수 없습니다. 상대가 메시지를 보내면 다시 참여합니다.'))) return;
+
+  isLeaving.value = true;
+  // 서버가 나간 방의 연결을 4003으로 끊으므로, 재연결 대상으로 보지 않도록 먼저 연결을 닫는다.
+  disconnectWebSocket();
+  try {
+    await leaveChatRoom(roomId.value);
+    void router.replace(RouteHelper.chat.list());
+  } catch (error) {
+    toast.error(getApiErrorMessage(error, '채팅방을 나가지 못했습니다.'));
+    connectWebSocket();
+  } finally {
+    isLeaving.value = false;
+  }
 };
 
 const isImageAttachment = (attachment: ChatAttachmentDto) => attachment.contentType?.startsWith('image/') ?? false;
@@ -402,13 +434,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   isUnmounted = true;
-  isManualDisconnect = true;
-  const client = stompClient;
-  stompClient = null;
-  if (client) {
-    client.reconnectDelay = 0;
-    void client.deactivate();
-  }
+  disconnectWebSocket();
 });
 </script>
 
@@ -433,6 +459,7 @@ onUnmounted(() => {
         <div class="shortcut-btn">게시글 바로가기 〉</div>
       </div>
       <h2 v-else>1:1 채팅</h2>
+      <button type="button" class="leave-btn" :disabled="isLeaving" @click="leaveRoom">나가기</button>
     </div>
 
     <div v-if="isReconnecting" class="connection-banner reconnecting">
@@ -582,10 +609,41 @@ onUnmounted(() => {
 }
 
 .chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
   background: #fff;
   border-bottom: 1px solid #eee;
   text-align: left;
+}
+
+.chat-header > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.leave-btn {
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.leave-btn:hover:not(:disabled) {
+  border-color: #e53935;
+  color: #e53935;
+}
+
+.leave-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .post-summary {

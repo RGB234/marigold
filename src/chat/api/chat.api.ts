@@ -22,6 +22,10 @@ export const getMyChatRooms = async (params?: ChatRoomSearchParams): Promise<Cha
   return data;
 };
 
+export const leaveChatRoom = async (roomId: TSID_String): Promise<void> => {
+  await api.delete(`/chat/rooms/${roomId}/leave`);
+};
+
 export const getChatRoomMessages = async (roomId: TSID_String): Promise<ChatMessageDto[]> => {
   const {data} = await api.get<ChatMessageDto[]>(`/chat/rooms/${roomId}/messages`);
   return data;
