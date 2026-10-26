@@ -484,8 +484,8 @@ onMounted(async () => {
 
 /* 컨테이너 */
 .detail-container {
-  max-width: 800px;
-  min-width: max-content;
+  width: 800px;
+  overflow-wrap: anywhere;
   margin: 20px auto;
   padding: 40px 20px;
   background-color: #fff;
