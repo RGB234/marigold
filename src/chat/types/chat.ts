@@ -19,6 +19,7 @@ export interface ChatMessageRequestDto {
 }
 
 export interface ChatMessageDto {
+    id: TSID_String;
     roomId: TSID_String;
     senderId: TSID_String;
     senderNickname: string;

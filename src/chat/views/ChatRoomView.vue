@@ -94,6 +94,21 @@ const scrollToBottom = async () => {
   }
 };
 
+const syncMessages = async (client: Client) => {
+  try {
+    const history = await getChatRoomMessages(roomId.value);
+    if (isUnmounted || stompClient !== client) return;
+
+    // 이력을 받는 동안 구독으로 먼저 도착해 이력에 없는 메시지는 뒤에 남긴다.
+    const historyIds = new Set(history.map((message) => message.id));
+    messages.value = [...history, ...messages.value.filter((message) => !historyIds.has(message.id))];
+    scrollToBottom();
+  } catch (error) {
+    if (isUnmounted || stompClient !== client) return;
+    toast.error(getApiErrorMessage(error, '놓친 메시지를 불러오지 못했습니다. 새로고침해주세요.'));
+  }
+};
+
 const connectWebSocket = () => {
   if (isUnmounted || !chatRoom.value) return;
 
@@ -172,6 +187,9 @@ const connectWebSocket = () => {
       messages.value.push(receivedMessage);
       scrollToBottom();
     });
+
+    // 연결이 끊긴 동안(토큰 만료로 약 10분마다)과 구독 전에 온 메시지는 실시간으로 받지 못하므로 이력을 다시 읽는다.
+    void syncMessages(client);
   };
 
   client.onStompError = (frame) => {
@@ -431,7 +449,7 @@ onUnmounted(() => {
     </div>
 
     <div class="messages-wrapper" ref="messageContainer">
-      <div v-for="(msg, index) in messages" :key="index"
+      <div v-for="msg in messages" :key="msg.id"
         :class="['message-item', msg.senderId === currentUserId ? 'my-message' : 'other-message']">
         <div v-if="msg.senderId !== currentUserId" class="sender-profile">
           <UserProfileLink :userId="msg.senderId" :nickname="msg.senderNickname" :showImage="true" :imageUrl="msg.senderImageUrl" />

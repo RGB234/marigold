@@ -2,6 +2,7 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatRoomView from './ChatRoomView.vue';
 import RetryButton from '@/shared/ui/request-state/RetryButton.vue';
+import { getChatRoomMessages } from '@/chat/api/chat.api';
 
 const mocks = vi.hoisted(() => ({
   clients: [] as any[],
@@ -79,6 +80,26 @@ describe('chat connection authentication', () => {
       expect(client.subscribe).toHaveBeenCalledTimes(4);
       expect(client.subscribe).toHaveBeenNthCalledWith(3, '/user/queue/errors', expect.any(Function));
       expect(client.subscribe).toHaveBeenLastCalledWith('/sub/chat/room/room', expect.any(Function));
+    } finally { wrapper.unmount(); }
+  });
+
+  it('reloads history on connect and keeps live messages missing from it', async () => {
+    const message = (id: string) => ({ id, roomId: 'room', senderId: 'other', message: id, attachments: [] });
+    vi.mocked(getChatRoomMessages).mockResolvedValueOnce([message('m1')] as any);
+    const wrapper = shallowMount(ChatRoomView);
+    try {
+      await flushPromises();
+      const client = mocks.clients[0];
+      vi.mocked(getChatRoomMessages)
+        .mockResolvedValueOnce([message('m1'), message('m2'), message('m3')] as any);
+      client.onConnect();
+      const roomCallback = client.subscribe.mock.calls[1][1];
+      roomCallback({ body: JSON.stringify(message('m3')) });
+      roomCallback({ body: JSON.stringify(message('m4')) });
+      await flushPromises();
+
+      expect(wrapper.findAll('.message-item p').map(node => node.text()))
+        .toEqual(['m1', 'm2', 'm3', 'm4']);
     } finally { wrapper.unmount(); }
   });
 
