@@ -48,68 +48,7 @@ npm run dev
 
 기본 스크립트는 저장소 루트에 `back`과 `front`가 함께 있는 구조를 기준으로 합니다. 원본 JSON의 위치가 다르면 스크립트를 수정하는 대신 `VALIDATION_POLICY_SOURCE` 환경변수로 경로를 지정합니다.
 
-## 3. 주요 디렉터리와 역할
-
-```text
-src/
-  adoption/  입양 게시글과 댓글
-  auth/      로그인, 회원가입, 인증 상태 복구
-  chat/      채팅방, 메시지, 첨부 파일, 실시간 연결
-  user/      프로필과 보안 설정
-  app/       애플리케이션 셸, 초기화, 라우터
-  shared/    HTTP, 오류, 피드백, 내비게이션, UI, 검증, 공통 유틸리티·타입
-  assets/    이미지와 폰트
-```
-
-애플리케이션 수준의 조립 코드는 `app`, 특정 도메인에 의존하지 않고 여러 기능에서 재사용하는 기반 코드는 `shared`에 둡니다. `shared`는 `app`이나 특정 도메인에 의존하지 않습니다. 도메인 간 협력이 필요한 화면에서는 다른 도메인의 모듈을 직접 사용합니다.
-
-## 4. 애플리케이션 구조
-
-main.js에서 `app`과 Pinia를 구성합니다.
-
-`app`은 애플리케이션 초기화와 라우팅, 공통 화면 구성을 담당합니다.
-
-Pinia는 클라이언트 인증 상태, 현재 사용자 정보, dialog와 toast 상태를 관리합니다.
-
-### 라우팅과 접근 제어
-
-라우터는 로그인 여부, 역할 기반 권한, 최근 본인 인증 여부에 따른 접근 제어를 지원합니다.
-
-- `requiresAuth`: 로그인한 사용자만 접근할 수 있습니다.
-- `roles`: 라우트에 지정하면 해당 권한 중 하나를 가진 사용자만 접근할 수 있습니다. 현재 이 메타데이터를 적용한 라우트는 없습니다.
-- `requiresRecentAuth`: 최근에 본인 인증을 완료한 사용자만 접근할 수 있습니다.
-
-`requiresRecentAuth`의 프론트엔드 표식은 사용자별로 `sessionStorage`에 저장되며 5분 동안 유효합니다. 이 표식은 화면 이동을 제어하기 위한 것이며, 민감한 API의 최근 인증 여부는 백엔드가 별도로 검증합니다. 조건을 만족하지 못하면 본인 인증 화면으로 이동합니다.
-
-## 5. HTTP 클라이언트와 인증
-
-```text
-UI 또는 Store → 도메인 API 모듈 → 공통 HTTP client → 백엔드 REST API
-```
-
-- access token과 인증 주체는 메모리에만 저장합니다.
-- refresh token은 HttpOnly cookie로 관리하므로 프론트엔드에서 직접 읽지 않습니다.
-- CSRF token은 인증 관련 응답의 `X-CSRF-TOKEN` 헤더에서 받아 메모리에 보관합니다. 백엔드는 같은 값을 `XSRF-TOKEN` 쿠키에도 설정하며, 상태 변경 요청에서는 브라우저가 전송하는 쿠키와 프론트엔드가 추가하는 헤더를 함께 검증하여 CSRF 공격을 방어합니다.
-- `/auth/status`는 refresh token cookie의 존재 여부를 확인하고, `/auth/refresh`는 token을 검증하여 인증 상태를 복원합니다.
-- 공통 HTTP client는 만료된 access token의 갱신과 요청 재시도를 처리합니다. 로그아웃하면 메모리의 인증 상태와 현재 사용자 정보를 비웁니다.
-- 파일은 `@/shared/http/upload`의 `uploadFiles`로 올립니다. 백엔드에서 업로드 URL과 토큰을 발급받아 저장소에 직접 `PUT`하고, 도메인 API에는 JSON으로 토큰만 보냅니다. 직접 `PUT`은 인증 헤더와 쿠키가 붙지 않도록 공통 HTTP client 대신 `fetch`를 씁니다.
-
-### 오류 처리
-
-- 백엔드 오류 응답은 RFC 9457 Problem Details 형식이며, `errorCode`, `requestId`와 입력 검증 실패 시 `errors`를 함께 담습니다.
-- `@/shared/errors/apiError`의 `normalizeApiError`는 요청 오류를 `api`, `network`, `timeout`, `cancelled`, `unknown`으로 분류합니다.
-- 화면에 보여 줄 문구는 `getApiErrorMessage`로 얻습니다. `errorMessages.ts`에 해당 `errorCode`의 문구가 있으면 그 문구를, 없으면 응답의 `detail`을, 그것도 없으면 호출한 쪽이 넘긴 기본 문구를 씁니다. 취소된 요청은 빈 문자열을 반환하고, 저장소 직접 업로드 실패는 별도 문구를 씁니다.
-- 공통 HTTP client는 오류를 로그로 남기고, 인증 오류 코드가 담긴 401 응답에 대해서만 access token 갱신과 재시도를 처리합니다. 오류 표시는 각 화면이 toast나 화면 내 문구로 담당합니다.
-- 입력 검증 오류는 `extractProblemDetail`로 꺼낸 `errors`를 필드별 오류로 표시합니다.
-- 백엔드에 오류 코드를 추가하면 `errorMessages.ts`에 같은 키로 문구를 추가합니다.
-
-## 6. 실시간 채팅
-
-채팅방과 기존 메시지 조회, 첨부 파일 다운로드 URL 조회는 REST를 사용합니다. 첨부 파일은 저장소에 직접 올린 뒤, 발급받은 업로드 토큰을 REST로 보내 파일 메시지를 만듭니다. 텍스트 메시지 송수신은 SockJS/STOMP 연결을 사용합니다. 실시간 연결과 메시지 처리 시 서버가 인증 상태와 채팅방 참가 여부를 검증합니다.
-
-채팅방을 나간 사용자는 메시지와 첨부파일에 접근할 수 없습니다. 다시 참여하면 참여 시점 이전의 대화 내용도 볼 수 있습니다.
-
-## 7. 환경변수
+## 3. 환경변수
 
 | 변수 | 용도 |
 | --- | --- |
@@ -118,6 +57,15 @@ UI 또는 Store → 도메인 API 모듈 → 공통 HTTP client → 백엔드 RE
 | `VITE_API_OAUTH2_KAKAO` | Kakao OAuth 시작 주소 |
 | `VITE_API_OAUTH2_NAVER` | Naver OAuth 시작 주소 |
 
-로컬 개발은 `.env.local`, 운영 빌드(`npm run build:prod`, `npm run deploy`)는 `.env.prod`를 읽습니다. 두 파일 모두 저장소에 포함하지 않으므로 `.env.example`을 복사해 환경에 맞는 주소로 채웁니다.
+로컬 개발은 `.env.local`, 운영 빌드(`npm run build:prod`, `npm run deploy`)는 `.env.prod`를 읽습니다. 두 파일 모두 저장소에 포함하지 않으므로 `.env.example`을 복사해 환경에 맞는 주소로 채웁니다. 변수 목록의 원본은 `.env.example`이며, `npm run check:env`가 소스의 참조와 맞는지 확인합니다.
 
 `VITE_*` 값은 브라우저 번들에 포함될 수 있으므로 비밀값을 넣지 않습니다.
+
+## 4. 문서
+
+| 문서 | 내용 |
+| --- | --- |
+| [아키텍처](docs/architecture.md) | 디렉터리와 의존 방향, 초기화, 인증 상태, 라우팅, HTTP client, 오류 표시, 업로드, 채팅 연결 |
+| [백엔드 계약](../back/docs/contracts/http.md) | 응답·오류 형식. 같은 폴더에 [인증](../back/docs/contracts/auth.md), [업로드](../back/docs/contracts/uploads.md), [실시간](../back/docs/contracts/realtime.md) |
+
+백엔드와 주고받는 형식과 규칙은 백엔드 계약 문서가 기준입니다. 프론트엔드 문서는 그 계약을 이 코드에서 어떻게 구현했는지만 설명합니다.
