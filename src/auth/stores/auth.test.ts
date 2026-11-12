@@ -6,7 +6,6 @@ import {
   refreshAuthSession,
   requestLogout,
 } from "@/auth/api/auth.api";
-import { clearCsrfToken } from "@/shared/http/client";
 import { useAuthStore } from "@/auth/stores/auth";
 import type { AuthSession } from "@/auth/types/auth";
 
@@ -25,15 +24,10 @@ vi.mock("@/auth/utils/securityAccess", () => ({
   clearSecurityAccess: vi.fn(),
 }));
 
-vi.mock("@/shared/http/client", () => ({
-  clearCsrfToken: vi.fn(),
-}));
-
 const status = vi.mocked(getAuthStatus);
 const login = vi.mocked(loginWithPassword);
 const refresh = vi.mocked(refreshAuthSession);
 const logout = vi.mocked(requestLogout);
-const clearCsrf = vi.mocked(clearCsrfToken);
 
 const session = (token = "access-token", userId = "01ARZ3NDEKTSV"): AuthSession => ({
   accessToken: token,
@@ -174,18 +168,6 @@ describe("auth store", () => {
 
     expect(auth.phase).toBe("anonymous");
     expect(auth.userId).toBeNull();
-    expect(clearCsrf).not.toHaveBeenCalled();
-  });
-
-  it("clears the CSRF token after successful logout", async () => {
-    login.mockResolvedValue(session());
-    logout.mockResolvedValue(undefined);
-
-    const auth = useAuthStore();
-    await auth.signInWithPassword({ email: "user@example.com", password: "password" });
-    await auth.signOut();
-
-    expect(clearCsrf).toHaveBeenCalledOnce();
   });
 
   it("does not revive a session when refresh finishes after logout", async () => {

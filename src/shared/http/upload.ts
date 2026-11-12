@@ -36,7 +36,7 @@ export const uploadFiles = async (purpose: UploadPurpose, files: File[]): Promis
   return data.map((issued) => issued.uploadToken);
 };
 
-// 공용 apiClient를 쓰지 않는다. 인터셉터가 붙이는 인증·CSRF 헤더와 쿠키 때문에 S3 presigned URL 서명이 어긋나거나 CORS에서 막힌다.
+// 공용 apiClient를 쓰지 않는다. 인터셉터가 붙이는 인증 헤더와 쿠키 때문에 S3 presigned URL 서명이 어긋나거나 CORS에서 막힌다.
 const putFile = async (issued: UploadIssueResponse, file: File): Promise<void> => {
   let response: Response;
   try {

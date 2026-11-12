@@ -29,8 +29,8 @@ src/
 
 ## 인증 상태
 
-access token과 인증 주체는 메모리에만 저장합니다. refresh token은 HttpOnly 쿠키라 읽지 않고, CSRF token은 응답의 `X-CSRF-TOKEN` 헤더에서
-받아 메모리에 보관합니다(`@/shared/http/client`).
+access token과 인증 주체는 메모리에만 저장합니다. refresh token은 HttpOnly 쿠키라 읽지 않습니다. CSRF는 백엔드와 같은 사이트에서
+`SameSite=Lax` 쿠키로 막으므로 프론트엔드가 따로 보내는 token이나 헤더는 없습니다([인증 계약](../../back/docs/contracts/auth.md)).
 
 인증 store(`@/auth/stores/auth`)는 `uninitialized → restoring → authenticated | anonymous | unavailable` 상태를 가집니다.
 
@@ -57,8 +57,7 @@ UI 또는 Store → 도메인 API 모듈(*.api.ts) → 공통 HTTP client → �
 
 모든 REST 요청은 `@/shared/http/client`의 단일 Axios 인스턴스를 씁니다. `@/app/bootstrap/installHttpClient`가 설치하는 인터셉터는 다음만 합니다.
 
-- access token을 `Authorization` 헤더에, POST·PUT·PATCH·DELETE에는 CSRF 헤더를 붙입니다.
-- 응답 헤더의 CSRF token을 캐시합니다.
+- access token을 `Authorization` 헤더에 붙입니다.
 - 오류를 로그로 남깁니다.
 - 인증 오류 코드(`AUTH_UNAUTHORIZED`, `AUTH_TOKEN_INVALID`, `AUTH_TOKEN_EXPIRED`)가 담긴 401에서만 access token을 갱신하고 요청을 한 번 다시 보냅니다.
 
@@ -75,7 +74,7 @@ UI 또는 Store → 도메인 API 모듈(*.api.ts) → 공통 HTTP client → �
 ## 파일 업로드
 
 파일은 `@/shared/http/upload`의 `uploadFiles(purpose, files)`로 올리고, 도메인 API에는 돌려받은 토큰만 JSON으로 보냅니다. 저장소로 직접 보내는 `PUT`은
-공통 HTTP client 대신 `fetch`를 씁니다. client의 인증·CSRF 헤더와 쿠키가 붙으면 S3 presigned URL 서명과 CORS가 깨지기 때문입니다. 절차와 오류
+공통 HTTP client 대신 `fetch`를 씁니다. client의 인증 헤더와 쿠키가 붙으면 S3 presigned URL 서명과 CORS가 깨지기 때문입니다. 절차와 오류
 코드는 [업로드 계약](../../back/docs/contracts/uploads.md)을 따릅니다.
 
 ## 실시간 채팅
@@ -84,7 +83,7 @@ UI 또는 Store → 도메인 API 모듈(*.api.ts) → 공통 HTTP client → �
 [실시간 계약](../../back/docs/contracts/realtime.md)을 따릅니다.
 
 1. 화면을 열면 채팅방 정보와 메시지 이력을 REST로 읽은 뒤 연결합니다.
-2. 연결할 때마다(자동 재연결 포함) `beforeConnect`가 access token을 갱신하고 새 토큰과 CSRF 헤더로 CONNECT합니다. 갱신이 401이면 로그인 화면으로,
+2. 연결할 때마다(자동 재연결 포함) `beforeConnect`가 access token을 갱신하고 새 토큰으로 CONNECT합니다. 갱신이 401이면 로그인 화면으로,
    일시적 오류면 재시도 화면으로 갑니다.
 3. 연결되면 `/user/queue/errors`와 방 경로를 구독하고, 이력을 다시 읽어 메시지 `id` 기준으로 합칩니다. 끊긴 동안 온 메시지를 채우기 위해서입니다.
 4. 연결이 끊기면 5초 뒤 다시 연결하며, 연속 5번 실패하면 멈추고 재시도 버튼을 보여 줍니다. 서버는 토큰 만료로 약 10분마다 연결을 끊으므로 이 재연결은

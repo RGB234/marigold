@@ -10,20 +10,6 @@ declare module "axios" {
   }
 }
 
-export const CSRF_TOKEN_HEADER_NAME = "X-CSRF-TOKEN";
-
-let csrfTokenCache: string | null = null;
-
-export const getCsrfToken = (): string | null => csrfTokenCache;
-
-export const cacheCsrfToken = (token: string | null | undefined): void => {
-  csrfTokenCache = token ?? csrfTokenCache;
-};
-
-export const clearCsrfToken = (): void => {
-  csrfTokenCache = null;
-};
-
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_V1_BASE,
   withCredentials: true,

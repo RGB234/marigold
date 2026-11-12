@@ -2,13 +2,7 @@ import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig 
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installHttpClient } from './installHttpClient';
-import apiClient, {
-  API_TIMEOUT_MS,
-  cacheCsrfToken,
-  clearCsrfToken,
-  CSRF_TOKEN_HEADER_NAME,
-  getCsrfToken,
-} from '@/shared/http/client';
+import apiClient, { API_TIMEOUT_MS } from '@/shared/http/client';
 
 function failure(config: InternalAxiosRequestConfig, status: number, errorCode = 'INTERNAL_SERVER_ERROR') {
   return new AxiosError('request failed', 'ERR_BAD_RESPONSE', config, undefined, {
@@ -23,44 +17,7 @@ function install(client: AxiosInstance, auth: { accessToken: string; refreshAcce
 describe('API interceptors', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    clearCsrfToken();
     vi.clearAllMocks();
-  });
-
-  it('caches the CSRF response header and sends it with unsafe requests', async () => {
-    const requestTokens: Array<string | undefined> = [];
-    const client = axios.create({ adapter: async config => {
-      requestTokens.push(config.headers[CSRF_TOKEN_HEADER_NAME]?.toString());
-      return {
-        config,
-        data: {},
-        headers: config.url === '/session' ? { 'x-csrf-token': 'csrf-from-header' } : {},
-        status: 200,
-        statusText: 'OK',
-      };
-    } });
-    install(client, { accessToken: '', refreshAccessToken: vi.fn() });
-
-    await client.get('/session');
-    expect(getCsrfToken()).toBe('csrf-from-header');
-    await client.post('/profile', {});
-
-    expect(requestTokens).toEqual([undefined, 'csrf-from-header']);
-  });
-
-  it('can clear the in-memory CSRF token', () => {
-    cacheCsrfToken('csrf-token');
-    clearCsrfToken();
-
-    expect(getCsrfToken()).toBeNull();
-  });
-
-  it('does not use a browser cookie as the CSRF token source', () => {
-    document.cookie = 'XSRF-TOKEN=csrf-from-cookie; path=/';
-
-    expect(getCsrfToken()).toBeNull();
-
-    document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
   });
 
   it('rejects concurrent failures without waiting for global UI', async () => {

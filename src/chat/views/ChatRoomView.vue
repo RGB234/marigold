@@ -10,7 +10,6 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 import { useAuthStore } from '@/auth/stores/auth';
-import { CSRF_TOKEN_HEADER_NAME, getCsrfToken } from '@/shared/http/client';
 import { logger } from '@/shared/lib/logger';
 import { ErrorCodes } from '@/shared/errors/errorCodes';
 import {
@@ -47,13 +46,9 @@ const roomId = computed(() => {
 const currentUserId = computed(() => authStore.userId);
 const getStompAuthHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {};
-  const csrfToken = getCsrfToken();
 
   if (authStore.accessToken) {
     headers.Authorization = `Bearer ${authStore.accessToken}`;
-  }
-  if (csrfToken) {
-    headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
   }
 
   return headers;
@@ -138,7 +133,7 @@ const connectWebSocket = () => {
   isManualDisconnect = false;
 
   client.beforeConnect = async () => {
-    // 자동 재연결도 매번 새 토큰과 최신 CSRF 헤더로 CONNECT합니다.
+    // 자동 재연결도 매번 새 토큰으로 CONNECT합니다.
     let refreshed: boolean;
     try {
       refreshed = await authStore.refreshAccessToken();

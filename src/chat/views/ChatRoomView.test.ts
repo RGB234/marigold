@@ -34,9 +34,6 @@ vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { roomId: 'room' } }),
   useRouter: () => ({ replace: mocks.replace, push: vi.fn() }),
 }));
-vi.mock('@/shared/http/client', () => ({
-  CSRF_TOKEN_HEADER_NAME: 'X-CSRF-TOKEN', getCsrfToken: () => 'csrf',
-}));
 vi.mock('@/shared/feedback/toast/useToast', () => ({
   useToast: () => ({ error: mocks.toastError }),
 }));
@@ -71,7 +68,7 @@ describe('chat connection authentication', () => {
       const client = mocks.clients[0];
       await client.beforeConnect();
       expect(client.connectHeaders).toEqual({
-        Authorization: 'Bearer fresh-token', 'X-CSRF-TOKEN': 'csrf',
+        Authorization: 'Bearer fresh-token',
       });
       client.onConnect();
       client.onWebSocketClose({ code: 4001 });

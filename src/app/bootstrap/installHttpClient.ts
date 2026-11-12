@@ -3,11 +3,6 @@ import type { useAuthStore } from "@/auth/stores/auth";
 import { ErrorCodes } from "@/shared/errors/errorCodes";
 import { logger } from "@/shared/lib/logger";
 import { normalizeApiError, type AppError } from "@/shared/errors/apiError";
-import {
-  cacheCsrfToken,
-  CSRF_TOKEN_HEADER_NAME,
-  getCsrfToken,
-} from "@/shared/http/client";
 
 type AuthStore = ReturnType<typeof useAuthStore>;
 
@@ -16,7 +11,6 @@ type RetriableRequestConfig = InternalAxiosRequestConfig & {
   skipAuthRefresh?: boolean;
 };
 
-const CSRF_PROTECTED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const REFRESHABLE_AUTH_ERRORS = new Set<string>([
   ErrorCodes.AUTH_UNAUTHORIZED,
   ErrorCodes.AUTH_TOKEN_INVALID,
@@ -46,25 +40,14 @@ export function installHttpClient(apiClient: AxiosInstance, authStore: AuthStore
       if (authStore.accessToken) {
         config.headers.Authorization = `Bearer ${authStore.accessToken}`;
       }
-
-      const method = config.method?.toUpperCase();
-      const csrfToken = getCsrfToken();
-      if (method && CSRF_PROTECTED_METHODS.has(method) && csrfToken) {
-        config.headers[CSRF_TOKEN_HEADER_NAME] = csrfToken;
-      }
       return config;
     },
     (error) => Promise.reject(error),
   );
 
   apiClient.interceptors.response.use(
-    (response: AxiosResponse<unknown>) => {
-      cacheCsrfToken(response.headers[CSRF_TOKEN_HEADER_NAME.toLowerCase()]);
-      return response;
-    },
+    (response: AxiosResponse<unknown>) => response,
     async (axiosError: AxiosError<unknown>) => {
-      cacheCsrfToken(axiosError.response?.headers?.[CSRF_TOKEN_HEADER_NAME.toLowerCase()]);
-
       let failure: unknown = axiosError;
       let error = normalizeApiError(axiosError);
       const request = axiosError.config as RetriableRequestConfig | undefined;

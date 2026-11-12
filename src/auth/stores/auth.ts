@@ -13,7 +13,6 @@ import type {
 } from "@/auth/types/auth";
 import { clearPendingAuthState } from "@/auth/utils/pendingAuth";
 import { clearSecurityAccess } from "@/auth/utils/securityAccess";
-import { clearCsrfToken } from "@/shared/http/client";
 import { RefreshCoordinator } from "@/auth/services/refreshCoordinator";
 import { normalizeApiError } from "@/shared/errors/apiError";
 import { validateTsid } from "@/shared/validation/validators";
@@ -169,7 +168,6 @@ export const useAuthStore = defineStore("auth", () => {
     invalidateSession();
     try {
       await requestLogout();
-      clearCsrfToken();
     } catch {
       // A server-side failure must not keep the local session alive.
     }
