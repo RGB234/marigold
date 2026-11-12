@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { RefreshCoordinator } from "@/auth/services/refreshCoordinator";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { REFRESH_LOCK_NAME, RefreshCoordinator } from "@/auth/services/refreshCoordinator";
 
 describe("RefreshCoordinator", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("동시에 들어온 요청은 하나의 갱신 작업을 공유한다", async () => {
     const coordinator = new RefreshCoordinator<string>();
     const refresh = vi.fn(async () => "new-token");
@@ -28,5 +32,16 @@ describe("RefreshCoordinator", () => {
     await expect(second).rejects.toBe(failure);
     await expect(coordinator.run(refresh)).resolves.toBe("new-token");
     expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it("다른 탭의 갱신과 겹치지 않도록 Web Lock 안에서 갱신한다", async () => {
+    const request = vi.fn((_name: string, callback: () => Promise<string>) => callback());
+    vi.stubGlobal("navigator", { locks: { request } });
+    const coordinator = new RefreshCoordinator<string>();
+
+    await expect(coordinator.run(async () => "new-token")).resolves.toBe("new-token");
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith(REFRESH_LOCK_NAME, expect.any(Function));
   });
 });

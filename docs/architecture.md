@@ -37,6 +37,8 @@ access token과 인증 주체는 메모리에만 저장합니다. refresh token�
 - 첫 라우팅 때 `ensureInitialized`가 `/auth/status`로 refresh 쿠키를 확인하고, 있으면 `/auth/refresh`로 access token을 받습니다.
 - 복원 중 네트워크 오류가 나면 `unavailable`이 되고, 로그인이 필요한 화면으로의 이동은 막거나(이전 화면이 있을 때) 홈으로 보냅니다.
 - 동시에 여러 요청이 갱신을 시도해도 `RefreshCoordinator`가 한 번의 갱신 결과를 공유합니다. 갱신이 401이면 세션을 비웁니다.
+- 같은 브라우저의 다른 탭과는 Web Locks(`navigator.locks`)로 갱신을 차례로 실행합니다. 서버가 이미 회전된 refresh token의 재사용을
+  세션 폐기로 처리하기 때문입니다([인증 계약](../../back/docs/contracts/auth.md)).
 
 ## 라우팅과 접근 제어
 
