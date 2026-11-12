@@ -49,7 +49,6 @@ export const errorMessages: Record<string, Record<string, string>> = {
     USER_NOT_FOUND: "존재하지 않는 사용자입니다.",
     USER_OAUTH2_ACCOUNT_ALREADY_IN_USE: "이미 다른 계정에 연결된 소셜 계정입니다.",
     USER_OAUTH2_ALREADY_LINKED: "이미 소셜 로그인 정보가 연동된 사용자입니다.",
-    USER_SLEEPING: "휴면 상태인 사용자입니다.",
   },
 };
 

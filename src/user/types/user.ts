@@ -1,6 +1,6 @@
 import { TSID_String } from "@/shared/types/common";
 
-export type UserStatus = "ACTIVE" | "DELETED" | "BANNED" | "SLEEP";
+export type UserStatus = "ACTIVE" | "DELETED" | "BANNED";
 
 /**
  * 유저 프로필 응답 (UserInfoDto)

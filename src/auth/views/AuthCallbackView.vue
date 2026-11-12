@@ -117,11 +117,6 @@ async function handleOAuthCallback() {
       await alert("정지된 계정", "관리자에 의해 정지된 계정입니다.");
       await router.replace(RouteHelper.auth.login());
       break;
-    case "SLEEP":
-      clearSecurityAccess();
-      await alert("휴면 계정", "휴면 상태인 계정입니다. 해제가 필요합니다.");
-      await router.replace(RouteHelper.home());
-      break;
     case "DELETED":
       clearSecurityAccess();
       await alert("탈퇴한 계정", "탈퇴 처리된 계정입니다. 재가입이 필요합니다.");
